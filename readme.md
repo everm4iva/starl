@@ -8,5 +8,5 @@ NOTICE:
 
 <div align="center">
 
-[LICENSE](/LICENSE) | [Changelog](CHANGELOG.md)
+[LICENSE](/LICENSE) | [Changelog](changelog.md)
 </div>
