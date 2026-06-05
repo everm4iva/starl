@@ -1,0 +1,177 @@
+.track-context-menu {
+	position: fixed;
+	inset: auto 0 0 0;
+	z-index: 60;
+	width: 100vw;
+	max-width: none;
+	min-width: 0;
+	padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+	border-radius: 20px 20px 0 0;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(20, 20, 20, 0.97);
+	backdrop-filter: blur(10px);
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	opacity: 0;
+	transform: translateY(100%);
+	transform-origin: center bottom;
+	pointer-events: auto;
+	transition:
+		opacity 0.18s ease,
+		transform 0.18s ease;
+}
+
+.track-context-menu.opens-up {
+	transform: translateY(100%);
+}
+
+.track-context-menu.is-open {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.track-context-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding-bottom: 2px;
+}
+
+.track-context-title {
+	font-size: 0.98rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #ffffff;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.track-context-subtitle {
+	font-size: 0.84rem;
+	line-height: 1.35;
+	color: #ffffffb3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.track-context-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.track-context-button {
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 12px;
+	padding: 10px 12px;
+	background: rgba(255, 255, 255, 0.06);
+	color: #ffffff;
+	font: inherit;
+	font-size: 0.88rem;
+	font-weight: 600;
+	text-align: left;
+	width: 100%;
+	cursor: pointer;
+	transition:
+		transform 0.14s ease,
+		background-color 0.14s ease,
+		border-color 0.14s ease;
+}
+
+.track-context-button:hover,
+.track-context-button:focus-visible {
+	transform: translateY(-1px);
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.2);
+	outline: none;
+}
+
+.track-context-button.primary {
+	background: var(--user-accentcolor-transparent);
+}
+
+.track-context-button.primary:hover,
+.track-context-button.primary:focus-visible {
+	background: var(--user-accentcolor);
+}
+
+.track-context-button.danger {
+	border-color: rgba(255, 120, 120, 0.22);
+	background: rgba(255, 88, 88, 0.12);
+	color: #ffd8d8;
+}
+
+.track-context-button.danger:hover,
+.track-context-button.danger:focus-visible {
+	background: rgba(255, 88, 88, 0.18);
+	border-color: rgba(255, 120, 120, 0.36);
+}
+
+.track-context-button.muted {
+	color: #ffffff8a;
+}
+
+.track-context-button:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.track-context-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-top: 4px;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.track-context-section-title {
+	font-size: 0.76rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #ffffff82;
+}
+
+.track-context-empty {
+	font-size: 0.84rem;
+	color: #ffffff7a;
+}
+
+.track-context-playlist-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: min(32vh, 280px);
+	overflow-y: auto;
+	padding-right: 2px;
+}
+
+.track-context-playlist-button {
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 12px;
+	padding: 10px 12px;
+	background: rgba(255, 255, 255, 0.05);
+	color: #ffffff;
+	font: inherit;
+	font-size: 0.86rem;
+	font-weight: 600;
+	text-align: left;
+	width: 100%;
+	cursor: pointer;
+	transition:
+		transform 0.14s ease,
+		background-color 0.14s ease,
+		border-color 0.14s ease;
+}
+
+.track-context-playlist-button:hover,
+.track-context-playlist-button:focus-visible {
+	transform: translateY(-1px);
+	background: rgba(255, 255, 255, 0.09);
+	border-color: rgba(255, 255, 255, 0.22);
+	outline: none;
+}

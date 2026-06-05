@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-starl-music-controls" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>StarlMusicControls</name>
+    <description>First-party media notification for starl (Android)</description>
+    <license>PFF1.0</license>
+    <keywords>cordova,android,media,notification</keywords>
+
+    <js-module src="www/MusicControls.js" name="MusicControls">
+        <clobbers target="MusicControls" />
+    </js-module>
+
+    <platform name="android">
+        <framework src="androidx.media:media:1.7.0" />
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+        </config-file>
+
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="MusicControls">
+                <param name="android-package" value="com.everm4iva.starl.musiccontrols.MusicControls" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <receiver
+                android:name="com.everm4iva.starl.musiccontrols.MusicControlsReceiver"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="com.everm4iva.starl.musiccontrols.ACTION_PLAY" />
+                    <action android:name="com.everm4iva.starl.musiccontrols.ACTION_PAUSE" />
+                    <action android:name="com.everm4iva.starl.musiccontrols.ACTION_NEXT" />
+                    <action android:name="com.everm4iva.starl.musiccontrols.ACTION_PREVIOUS" />
+                    <action android:name="com.everm4iva.starl.musiccontrols.ACTION_DESTROY" />
+                </intent-filter>
+            </receiver>
+
+            <service
+                android:name="com.everm4iva.starl.musiccontrols.MediaPlaybackService"
+                android:exported="false"
+                android:foregroundServiceType="mediaPlayback" />
+        </config-file>
+
+        <resource-file src="res/drawable/ic_stat_starl.xml" target="res/drawable/ic_stat_starl.xml" />
+        <resource-file src="res/drawable/ic_stat_starl.xml" target="app/src/main/res/drawable/ic_stat_starl.xml" />
+        <resource-file src="res/drawable/ic_stat_starl.xml" target="res/mipmap/ic_stat_starl.xml" />
+        <resource-file src="res/drawable/ic_stat_starl.xml" target="app/src/main/res/mipmap/ic_stat_starl.xml" />
+        <resource-file src="img/StatusIcon.png" target="res/mipmap/ic_stat_starl.png" />
+        <resource-file src="img/StatusIcon.png" target="app/src/main/res/mipmap/ic_stat_starl.png" />
+
+        <source-file src="src/android/MusicControls.java" target-dir="src/com/everm4iva/starl/musiccontrols" />
+        <source-file src="src/android/MusicControlsReceiver.java" target-dir="src/com/everm4iva/starl/musiccontrols" />
+        <source-file src="src/android/MediaPlaybackService.java" target-dir="src/com/everm4iva/starl/musiccontrols" />
+    </platform>
+</plugin>

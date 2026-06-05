@@ -1,0 +1,26 @@
+{
+    "name": "Starl",
+    "short_name": "Starl",
+    "description": "",
+    "start_url": "./index.html",
+    "scope": "/",
+    "categories": ["music"],
+    "prefer_related_applications": false,
+    "display": "standalone",
+    "background_color": "#181818",
+    "theme_color": "#E43967",
+    "orientation": "portrait-primary",
+    "icons": [
+        {"src": "shc/StarIcon.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+        {"src": "shc/StarIcon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    ],
+    "shortcuts": [
+        {
+            "name": "Open Starl",
+            "short_name": "Open",
+            "description": "Open the music player",
+            "url": "./index.html",
+            "icons": [{"src": "shc/StarIcon.png", "sizes": "192x192"}]
+        }
+    ]
+}

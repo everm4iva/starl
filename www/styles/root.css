@@ -1,0 +1,116 @@
+@import url('../media/fonts/fonts.css');
+@import url('./icons.css');
+/* -- pages -- */
+@import url('./login.css');
+@import url('./bottom-nav.css');
+@import url('./maximized-player.css');
+@import url('./tabs/track-context-menu.css');
+@import url('./tab-logic.css');
+
+/* -- root properties -- */
+:root {
+	--bg-color: #181818;
+	--font-color: rgb(255, 255, 255);
+	--status-bar-space: 32px;
+
+	--user-accentcolor: #e43967;
+	--user-accentcolor-transparent: #e4396788;
+
+	--default-font: 'Fredoka', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+	/* player */
+	--player-bg: url('../media/img/example.png');
+	--player-song-title: 'crybaby';
+	--player-song-artist: 'BEX';
+	--player-song-album: 'SCUM';
+	--player-time-elapsed: '0:38';
+	--player-time-total: '3:17';
+	--player-time-progress: 23%;
+	--player-time-cached: 0%;
+	--user-profile-pic: url('../../media/img/DefaultUser.png');
+	--user-profile-name: 'StarChaser';
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+body {
+	user-select: none;
+	-moz-user-select: none;
+	-webkit-user-drag: none;
+	overflow: hidden;
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	font-size: 1rem;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--bg-color);
+	color: var(--font-color);
+	font-family: 'Fredoka', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.img-button {
+	width: 50px;
+	height: 50px;
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+}
+
+.hidden {
+	display: none !important;
+	z-index: -1;
+	width: 0;
+	height: 0;
+	opacity: 0;
+}
+
+/* -- main app -- */
+.app {
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.globalbg {
+	overflow: hidden;
+	position: absolute;
+	top: var(--status-bar-space);
+	width: 200%;
+	height: calc(200vh - var(--status-bar-space));
+	background-color: var(--bg-color);
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	filter: blur(100px);
+	opacity: 0.4;
+	mix-blend-mode: screen;
+	transition: 1s ease background-image;
+}
+
+/* .globalbg::after{
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-image: url('../media/img/gradient3.png');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	opacity: 0.9;
+} */

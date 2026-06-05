@@ -1,0 +1,323 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Starl</title>
+		<meta name="description" content="Art of sound for free" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="./styles/root.css" />
+		<link rel="stylesheet" href="./styles/playlist-features.css" />
+		<link rel="manifest" href="manifest.json" />
+		<link rel="shortcut icon" href="./shc/StarIcon.png" type="image/x-icon" />
+	</head>
+	<body>
+		<div class="app">
+			<div class="globalbg"></div>
+			<!-- ---- Main player ---- -->
+			<div class="main-player hidden clean">
+				<div class="mp-bg"></div>
+				<div class="mp-display">
+					<div class="mp-album"></div>
+					<div class="mp-cover"></div>
+				</div>
+				<div class="mp-details">
+					<div class="mp-track-info">
+						<div class="mp-track-title"></div>
+						<div class="mp-track-artist"></div>
+					</div>
+					<div class="mp-track-actions">
+						<div class="img-button icon star light"></div>
+						<div class="img-button icon more_vert light cleanrem"></div>
+					</div>
+				</div>
+				<div class="mp-controls">
+					<div class="mp-controls-time">
+						<div class="slider-wrapper">
+							<div class="player-time-cached hidden"></div>
+							<div class="slider-progress" id="slider-progress"></div>
+							<input type="range" name="player-time" id="player-time" min="0" max="100" value="0" />
+						</div>
+					</div>
+					<div class="mp-controls-timeinfo">
+						<div class="timeinfo-elapsed"></div>
+						<div class="timeinfo-total"></div>
+					</div>
+					<div class="mp-controls-btncontainer">
+						<div class="mp-btn icon shuffle"></div>
+						<div class="mp-btn icon skip-previous active"></div>
+						<div class="mp-btn icon pause active"></div>
+						<div class="mp-btn icon skip-next active"></div>
+						<div class="mp-btn icon repeat active"></div>
+					</div>
+				</div>
+				<div class="mp-additional">
+					<div class="mp-scrollupindicator"></div>
+					<div class="mp-add-btn-contain hidden">
+						<div class="mp-add-btn">
+							<div class="icon arrow_left light active" id="close-player"></div>
+						</div>
+						<div class="mp-add-btn">
+							<div class="icon list light active"></div>
+							<div class="mp-add-btn-text">see track in album</div>
+						</div>
+						<div class="mp-add-btn active">
+							<div class="icon lyrics light active"></div>
+							<div class="mp-add-btn-text">lyrics</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- ---- Artist / Album page overlay (global, above all tabs) ---- -->
+			<div class="artist-page hidden">
+				<div class="header">
+					<div class="header-bg"></div>
+					<div class="artist-cover"></div>
+					<div class="artist-info">
+						<div class="artist-name"></div>
+						<div class="artist-details"></div>
+					</div>
+				</div>
+				<div class="body"></div>
+			</div>
+			<!-- ---- Bottom ---- -->
+			<div class="bottom">
+				<div class="bottom-timeelapsed hidden"></div>
+				<div class="bottom-timetotal hidden"></div>
+				<div class="bottom-container">
+					<div class="loading-indicator hidden" id="loading-indicator" aria-hidden="true"></div>
+					<div class="bottom-bg hidden"></div>
+					<div class="mini-player hidden">
+						<div class="mini-player-info">
+							<div class="mini-player-cover"></div>
+							<div class="mini-player-text">
+								<div class="mini-player-title"></div>
+								<div class="mini-player-artist"></div>
+							</div>
+						</div>
+						<div class="mini-player-controls">
+							<div class="mini-player-btn icon pause active"></div>
+							<div class="mini-player-btn icon skip-next active"></div>
+						</div>
+					</div>
+					<div class="tabs">
+						<div class="tabs-btn" data-tab="home">
+							<div class="tabs-btn-icon icon home active"></div>
+							<div class="tabs-btn-text">Home</div>
+						</div>
+						<div class="tabs-btn" data-tab="search">
+							<div class="tabs-btn-icon icon search"></div>
+							<div class="tabs-btn-text">Search</div>
+						</div>
+						<div class="tabs-btn" data-tab="library">
+							<div class="tabs-btn-icon icon music_list"></div>
+							<div class="tabs-btn-text">Library</div>
+						</div>
+						<!-- Radio feature is comming when i implement a recommendation system.
+						<div class="tabs-btn hidden" data-tab="radio">
+							<div class="tabs-btn-icon icon radio"></div>
+							<div class="tabs-btn-text">Radio</div>
+						</div> -->
+						<div class="tabs-btn" data-tab="account">
+							<div class="tabs-btn-icon icon account"></div>
+							<div class="tabs-btn-text">Me</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- ---- Tabs ---- -->
+			<div class="tab-container">
+				<!-- ---- Home ---- -->
+				<div class="tab home" data-tab="home">
+					<div class="sec-header">
+						<div class="sec-phrase">
+							<div class="sec-phrase-icon"></div>
+							<div class="sec-phrase-text welcome-text"></div>
+						</div>
+						<!-- <div class="sec-container">
+							<div class="sh-shortcut">
+								<div class="sh-shortcut-icon favorites"></div>
+								<div class="sh-shortcut-text">Favorites</div>
+							</div>
+							<div class="sh-shortcut">
+								<div class="sh-shortcut-icon playlists"></div>
+								<div class="sh-shortcut-text">Playlists</div>
+							</div>
+						</div> -->
+					</div>
+					<div class="sec-LastTracks">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">Recently played</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by last-tracks.js -->
+						</div>
+					</div>
+				</div>
+				<!-- ---- Search ---- -->
+				<div class="tab search is-hidden" data-tab="search">
+					<div class="searchbar">
+						<div class="icon search active"></div>
+						<input type="search" name="search" id="search" placeholder="search music" />
+					</div>
+					<div class="search-results"></div>
+				</div>
+				<!-- ---- Library ---- -->
+				<div class="tab library is-hidden" data-tab="library">
+					<!-- Search bar -->
+					<div class="library search-container">
+						<div class="search-container icon search"></div>
+						<input
+							type="search"
+							name="search-library"
+							id="search-library"
+							placeholder="Search in library" />
+						<div class="search-container icon add"></div>
+						<div class="search-container icon arrow_left hidden" id="library-search-close"></div>
+					</div>
+					<!-- Library search results (hidden until active) -->
+					<div class="library search-results hidden"></div>
+					<!-- Header tiles + pills -->
+					<div class="library head">
+						<div class="head list-big">
+							<div class="list-big tile artists">
+								<div class="img-frame">
+									<div class="img1"></div>
+									<div class="img2"></div>
+									<div class="img3"></div>
+									<div class="img4"></div>
+									<div class="img5"></div>
+								</div>
+								<div class="icon-s"></div>
+								Artists
+							</div>
+							<div class="list-big tile albums">
+								<div class="img-frame">
+									<div class="img1"></div>
+									<div class="img2"></div>
+								</div>
+								<div class="icon-s"></div>
+								Albums
+							</div>
+						</div>
+						<div class="head list-small">
+							<div class="list-small music">
+								<div class="music icons"></div>
+								All music
+							</div>
+							<div class="list-small history">
+								<div class="history icons"></div>
+								History
+							</div>
+							<div class="list-small favorites">
+								<div class="favorites icons"></div>
+								Starred
+							</div>
+						</div>
+					</div>
+					<!-- Inside-playlist overlay -->
+					<div class="inside-playlist hidden">
+						<div class="header">
+							<div class="header-bg"></div>
+							<div class="playlist-icon"></div>
+							<div class="playlist-cover count-0"></div>
+							<div class="playlist-info">
+								<div class="playlist-title"></div>
+								<div class="playlist-details"></div>
+							</div>
+							<div class="playlist-actions">
+								<div class="playlist-btn play active"></div>
+								<div class="playlist-btn shuffle"></div>
+								<div class="playlist-btn more-vert"></div>
+							</div>
+						</div>
+						<div class="body"></div>
+					</div>
+					<!-- My Playlists -->
+					<div class="playlists">
+						<div class="playlists header">
+							<div class="text">My Playlists</div>
+							<div class="viewtype">
+								<div class="tile"></div>
+								<div class="list active"></div>
+							</div>
+						</div>
+						<div class="playlists list">
+							<!-- populated by library.js -->
+						</div>
+					</div>
+				</div>
+				<!-- ---- Radio ---- -->
+				<div class="tab radio is-hidden" data-tab="radio"></div>
+				<!-- ---- Account ---- -->
+				<div class="tab account is-hidden" data-tab="account">
+					<div class="account-panel">
+						<div class="account-title">account tools</div>
+						<div class="update-banner hidden" id="update-banner">
+							<div class="update-banner-text">
+								<div class="update-banner-title" id="update-banner-title">Update available</div>
+								<div class="update-banner-sub" id="update-banner-sub"></div>
+							</div>
+							<button class="account-button account-button-update" id="update-app-button" type="button">Update app</button>
+						</div>
+						<div class="account-status hidden" id="cache-status">Loading cache status...</div>
+						<div class="account-field-group hidden">
+							<label class="account-field-label" for="export-location-select">Export location</label>
+							<select class="account-select" id="export-location-select"></select>
+							<div class="account-field-hint" id="export-location-hint">Loading export location...</div>
+						</div>
+						<button class="account-button" id="clear-local-cache-button" type="button">
+							Clear local cache
+						</button>
+						<button class="account-button hidden" id="export-account-button" type="button">
+							Export account--artist
+						</button>
+						<button class="account-button account-button-danger" id="delete-account-button" type="button">
+							Delete account
+						</button>
+						<button class="account-button" id="logout-button" type="button">Log out</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="cordova.js"></script>
+		<script>
+			window.STARL_API_BASE = 'https://your-server-url-here';
+		</script>
+		<script src="./auth.js"></script>
+		<script src="./js/client/core/common.js"></script>
+		<script src="./js/client/core/update-check.js"></script>
+		<script src="./js/client/core/file-protocol.js"></script>
+		<script src="./js/client/sync/account-state.js"></script>
+		<script src="./js/media-cache.js"></script>
+		<script src="./js/listening-history.js"></script>
+		<script src="./js/client/ui/favorites.js"></script>
+		<script src="./js/client/ui/follows.js"></script>
+		<script src="./js/client/playback/queue.js"></script>
+		<!-- runtime first: declares audio, currentTrackKey, setPlayIconState etc. as globals -->
+		<script src="./js/client/playback/runtime.js"></script>
+		<!-- layout second: declares playerTime, isScrubbing, setTextVar, setLoadingState etc. -->
+		<script src="./js/client/layout.js"></script>
+		<!-- meta after layout: setTrackMeta uses setTextVar from layout -->
+		<script src="./js/client/playback/meta.js"></script>
+		<script src="./js/client/server/player.js"></script>
+		<!-- engine after layout+meta: uses playerTime, setLoadingState, setTrackMeta -->
+		<script src="./js/client/playback/engine.js"></script>
+		<!-- player after engine: declares setPlayerOpen, calls restorePlayerState (engine) -->
+		<script src="./js/client/player.js"></script>
+		<script src="./js/client/playback/queue-player.js"></script>
+		<script src="./js/client/ui/track-context-menu.js"></script>
+		<script src="./js/client/ui/context-menu.js"></script>
+		<script src="./js/client/ui/gestures.js"></script>
+		<script src="./js/client/ui/bottom-sheet.js"></script>
+		<script src="./js/client/ui/playlists.js"></script>
+		<script src="./js/client/ui/inside-playlist.js"></script>
+		<script src="./js/client/library/library-native.js"></script>
+		<script src="./js/client/library/artist-page.js"></script>
+		<script src="./js/client/library/library.js"></script>
+		<script src="./js/client/search/library-search.js"></script>
+		<script src="./js/client/ui/player-context-sheet.js"></script>
+		<script src="./js/client/ui/last-tracks.js"></script>
+		<script src="./js/search.js"></script>
+	</body>
+</html>

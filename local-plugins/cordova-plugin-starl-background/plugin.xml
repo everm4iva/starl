@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-starl-background" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>StarlBackground</name>
+    <description>Android background playback and battery optimization helpers for starl</description>
+    <license>PFF1.0</license>
+    <keywords>cordova,android,battery,background,power</keywords>
+
+    <js-module src="www/BackgroundManager.js" name="BackgroundManager">
+        <clobbers target="StarlBackground" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+        </config-file>
+
+        <feature name="StarlBackground">
+            <param name="android-package" value="com.everm4iva.starl.background.BackgroundManager" />
+            <param name="onload" value="true" />
+        </feature>
+
+        <source-file src="src/android/BackgroundManager.java" target-dir="src/com/everm4iva/starl/background" />
+    </platform>
+</plugin>

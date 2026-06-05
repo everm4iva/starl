@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Starl Login</title>
+		<meta name="description" content="Login with google or discord" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="./styles/root.css" />
+		<link rel="shortcut icon" href="./shc/StarIcon.png" type="image/x-icon" />
+	</head>
+	<body class="login-body">
+		<div class="login-page">
+			<div class="login-card">
+				<img class="login-header-icon" src="./media/img/login/v2.png">
+				<div class="login-title">Starl</div>
+				<div class="login-actions">
+					<button class="login-button login-button--google" data-provider="google">
+						<span class="login-icon login-icon--google"></span>
+						<span>Continue with Google</span>
+					</button>
+					<button class="login-button login-button--discord" data-provider="discord">
+						<span class="login-icon login-icon--discord"></span>
+						<span>Continue with Discord</span>
+					</button>
+				</div>
+				<div class="login-status" id="login-status"></div>
+			</div>
+		</div>
+		<script src="./auth.js"></script>
+		<script src="cordova.js"></script>
+		<script src="./login.js"></script>
+	</body>
+</html>

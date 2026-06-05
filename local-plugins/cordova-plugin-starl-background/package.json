@@ -1,0 +1,17 @@
+{
+  "name": "cordova-plugin-starl-background",
+  "version": "1.0.13",
+  "description": "Android background playback and battery optimization helpers for starl",
+  "author": "everm4iva",
+  "cordova": {
+    "id": "cordova-plugin-starl-background"
+  },
+  "keywords": [
+    "cordova",
+    "android",
+    "battery",
+    "background",
+    "power"
+  ],
+  "license": "PFF1.0"
+}

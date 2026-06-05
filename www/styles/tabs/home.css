@@ -1,0 +1,631 @@
+.tab.home {
+	height: 100vh;
+	width: 100%;
+	padding-left: 3%;
+	padding-right: 2%;
+	padding-top: 5%;
+	background: linear-gradient(to top, transparent, var(--bg-color));
+	overflow-x: hidden;
+	overflow-y: auto;
+	scroll-behavior: smooth;
+	padding-bottom: 50%;
+}
+
+:root {
+	--gap-between-sections: 3%;
+	--gap-between-items: 1%;
+	--container-bg: transparent;
+	--section-title-size: 1.1rem;
+}
+
+/* --------- General stuff --------- */
+
+.sec-phrase {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 1%;
+	width: 100%;
+}
+
+.sec-phrase-icon {
+	width: 25px;
+	height: 25px;
+	background-image: var(--user-profile-pic);
+	background-size: cover;
+	background-position: center;
+	margin-right: 8px;
+	border-radius: 100%;
+}
+
+.sec-phrase-text {
+	font-size: var(--section-title-size);
+	font-family: var(--default-font);
+	font-weight: 400;
+	text-align: left;
+}
+
+.sec-phrase-text,
+.welcome-text::before {
+	font-size: var(--section-title-size);
+	content: 'Welcome back ' var(--user-profile-name) ' ♡';
+	font-weight: 300;
+}
+
+.sec-container {
+	width: 100%;
+	height: 11vh;
+	margin-top: var(--gap-between-items);
+	overflow: hidden;
+	padding: 2%;
+	display: flex;
+	flex-direction: row;
+	background-color: var(--container-bg);
+	align-items: center;
+	justify-content: center;
+	gap: 4%;
+}
+
+/* --------- Welcome header --------- */
+
+.sec-header {
+	margin-top: var(--gap-between-sections);
+	font-size: 1rem;
+	font-weight: 700;
+	width: 100%;
+	font-family: var(--default-font);
+	font-weight: 400;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+}
+
+.sh-shortcut {
+	height: 100%;
+	min-width: 40%;
+	background-color: var(--user-accentcolor-transparent);
+	border-radius: 12px;
+	border-width: 1px;
+	border-color: rgba(255, 255, 255, 0.3);
+	border-style: solid;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.sh-shortcut-icon {
+	width: 100%;
+	height: 40px;
+	background-size: cover;
+	background-position: center;
+	margin-bottom: 8px;
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-position: center;
+	transition:
+		background-image 0.1s ease,
+		height 0.1s ease;
+}
+
+.sh-shortcut-icon.favorites {
+	background-image: url('../../media/common-icons/light/star.svg');
+}
+
+.sh-shortcut-icon.playlists {
+	background-image: url('../../media/common-icons/light/playlist_play.svg');
+}
+
+.sh-shortcut-icon.history {
+	background-image: url('../../media/common-icons/light/history.svg');
+}
+
+.sh-shortcut-text {
+	font-size: 1rem;
+	font-family: var(--default-font);
+	font-weight: 400;
+	color: var(--font-color);
+}
+
+.sh-shortcut:hover {
+	border-color: rgba(255, 255, 255, 0.6);
+	background-color: var(--user-accentcolor);
+}
+
+.sh-shortcut:hover .sh-shortcut-icon {
+	height: 40px;
+}
+
+.sh-shortcut:hover .sh-shortcut-icon.favorites {
+	background-image: url('../../media/common-icons/light/star_fill.svg');
+}
+
+/* --------- Last Tracks --------- */
+
+.sec-LastTracks {
+	width: 100%;
+	margin-top: var(--gap-between-sections);
+}
+
+.sec-LastTracks .sec-container {
+	height: 15vh;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	flex-shrink: 0;
+}
+
+.slt-item {
+	position: relative;
+	height: 100%;
+	min-width: 55%;
+	border-radius: 12px;
+	display: flex;
+	transition: all 0.1s ease;
+	flex-direction: column;
+	align-items: left;
+	justify-content: flex-end;
+	cursor: pointer;
+	overflow: hidden;
+	padding: 4%;
+}
+
+.slt-item-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: 100%;
+	background-position: 50% 35%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.slt-item-gradient {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	background: linear-gradient(to top, black, transparent);
+	opacity: 0.6;
+	transition: opacity 0.1s ease;
+}
+
+.slt-item-time-artist {
+	font-size: 0.8rem;
+	font-family: var(--default-font);
+	font-weight: 200;
+	color: var(--font-color);
+	opacity: 0.7;
+	z-index: 1;
+}
+
+.slt-item-title {
+	font-size: 1.1rem;
+	font-family: var(--default-font);
+	font-weight: 500;
+	color: var(--font-color);
+	z-index: 1;
+}
+
+.slt-item:hover {
+	border-color: rgba(255, 255, 255, 1);
+}
+
+.slt-item:hover .slt-item-bg {
+	filter: brightness(1.1);
+	background-size: 110%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.slt-item:hover .slt-item-gradient {
+	opacity: 0.8;
+	transition: opacity 0.1s ease;
+}
+
+/* - */
+.slt-item-bg.m1 {
+	background-image: url('../../media/dev/LastTracks/nirvana.png');
+}
+
+.slt-item-bg.m2 {
+	background-image: url('../../media/dev/LastTracks/martingarrix.png');
+}
+
+.slt-item-bg.m3 {
+	background-image: url('../../media/dev/LastTracks/lovejoy.png');
+}
+
+.slt-item-bg.m4 {
+	background-image: url('../../media/dev/LastTracks/blackdresses.png');
+}
+
+.slt-item-bg.m5 {
+	background-image: url('../../media/dev/LastTracks/geoxor.png');
+}
+
+/* --------- New Releases --------- */
+
+.sec-newreleases {
+	width: 100%;
+	margin-top: var(--gap-between-sections);
+}
+
+.sec-newreleases .sec-container {
+	height: 15vh;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	flex-shrink: 0;
+}
+
+.snr-item {
+	position: relative;
+	height: 100%;
+	min-width: 42%;
+	border-radius: 12px;
+	display: flex;
+	transition: all 0.1s ease;
+	flex-direction: column;
+	align-items: left;
+	justify-content: flex-end;
+	cursor: pointer;
+	overflow: hidden;
+	padding: 4%;
+}
+
+.snr-item-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: 100%;
+	background-position: 50% 35%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.snr-item-gradient {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	background: linear-gradient(to top, black, transparent);
+	opacity: 0.6;
+	transition: opacity 0.1s ease;
+}
+
+.snr-item-time-artist {
+	font-size: 0.9rem;
+	font-family: var(--default-font);
+	font-weight: 200;
+	color: var(--font-color);
+	opacity: 0.9;
+	z-index: 1;
+}
+
+.snr-item-title {
+	font-size: 1.2rem;
+	font-family: var(--default-font);
+	font-weight: 500;
+	color: var(--font-color);
+	z-index: 1;
+}
+
+.snr-item:hover {
+	border-color: rgba(255, 255, 255, 1);
+}
+
+.snr-item:hover .snr-item-bg {
+	filter: brightness(1.1);
+	background-size: 110%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.snr-item:hover .snr-item-gradient {
+	opacity: 0.8;
+	transition: opacity 0.1s ease;
+}
+
+/* - */
+.snr-item-bg.m1 {
+	background-image: url('../../media/dev/NewTracks/femtanyl.png');
+}
+
+.snr-item-bg.m2 {
+	background-image: url('../../media/dev/NewTracks/julieband.png');
+}
+
+.snr-item-bg.m3 {
+	background-image: url('../../media/dev/NewTracks/fresca.png');
+}
+
+.snr-item-bg.m4 {
+	background-image: url('../../media/dev/NewTracks/onelasttrick.png');
+}
+
+.snr-item-bg.m5 {
+	background-image: url('../../media/dev/NewTracks/robasmywitness.png');
+}
+
+/* --------- Albums --------- */
+
+.sec-album {
+	width: 100%;
+	margin-top: var(--gap-between-sections);
+}
+
+.sec-album .sec-container {
+	height: 20vh;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	flex-shrink: 0;
+}
+
+.love {
+	display: inline-block;
+	width: fit-content;
+	font-weight: 600;
+}
+
+.sa-item {
+	position: relative;
+	height: 100%;
+	min-width: 45%;
+	border-radius: 12px;
+	display: flex;
+	transition: all 0.1s ease;
+	flex-direction: column;
+	align-items: left;
+	justify-content: flex-end;
+	cursor: pointer;
+	overflow: hidden;
+	padding: 4%;
+}
+
+.sa-item.favorite {
+	border-color: var(--user-accentcolor);
+	transition: all 0.1s ease;
+}
+
+.sa-item.favorite .sa-item-favorite {
+	display: block;
+	transition: all 0.1s ease;
+}
+
+.sa-item.favorite:hover .sa-item-gradient {
+	background: linear-gradient(to top, var(--user-accentcolor), transparent);
+
+	transition: all 0.1s ease;
+}
+
+.sa-item-favorite {
+	display: none;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: 25px;
+	height: 25px;
+	background-image: url('../../media/common-icons/light/heart.svg');
+	background-size: cover;
+	background-position: center;
+	opacity: 0.7;
+	transition:
+		background-image 0.1s ease,
+		opacity 0.1s ease;
+	z-index: 2;
+}
+
+.sa-item-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: 100%;
+	background-position: 50% 35%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.sa-item-gradient {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	background: linear-gradient(to top, black, transparent);
+	opacity: 0.6;
+	transition: all 0.1s ease;
+}
+
+.sa-item-time-artist {
+	font-size: 0.9rem;
+	font-family: var(--default-font);
+	font-weight: 200;
+	color: var(--font-color);
+	opacity: 0.9;
+	z-index: 1;
+}
+
+.sa-item-title {
+	font-size: 1.2rem;
+	font-family: var(--default-font);
+	font-weight: 500;
+	color: var(--font-color);
+	z-index: 1;
+}
+
+.sa-item:hover {
+	border-color: rgba(255, 255, 255, 1);
+}
+
+.sa-item:hover .sa-item-bg {
+	filter: brightness(1.1);
+	background-size: 110%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.sa-item:hover .sa-item-gradient {
+	opacity: 0.8;
+	transition: opacity 0.1s ease;
+}
+
+/* - */
+.sa-item-bg.m1 {
+	background-image: url('../../media/dev/Albums/geoxor-moneko.png');
+}
+
+.sa-item-bg.m2 {
+	background-image: url('../../media/dev/Albums/pinkshift.png');
+}
+
+.sa-item-bg.m3 {
+	background-image: url('../../media/dev/Albums/queencult.png');
+}
+
+.sa-item-bg.m4 {
+	background-image: url('../../media/dev/Albums/jorj1357.png');
+}
+
+.sa-item-bg.m5 {
+	background-image: url('../../media/dev/Albums/golemm.png');
+}
+
+.sa-item-bg.m6 {
+	background-image: url('../../media/dev/Albums/geoxor-euphoria.png');
+}
+
+/* --------- Artists --------- */
+
+.sec-artists {
+	width: 100%;
+	margin-top: var(--gap-between-sections);
+}
+
+.sec-artists .sec-container {
+	height: 16vh;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	flex-shrink: 0;
+}
+
+.sart-item {
+	position: relative;
+	height: 8em;
+	min-width: fit-content;
+	display: flex;
+	transition: all 0.1s ease;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 2%;
+	cursor: pointer;
+	color: red;
+}
+
+.sart-item-bg {
+	position: relative;
+	min-width: 6rem;
+	min-height: 6rem;
+	border-radius: 25px;
+	background-size: 100%;
+	background-position: 50% 35%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+.sart-item-title {
+	position: relative;
+	font-size: 1rem;
+	font-family: var(--default-font);
+	font-weight: 200;
+	color: var(--font-color);
+	z-index: 1;
+}
+
+.sart-item:hover {
+	border-color: rgba(255, 255, 255, 1);
+}
+
+.sart-item:hover .sart-item-bg {
+	filter: brightness(1.1);
+	background-size: 110%;
+	transition:
+		background-image 0.1s ease,
+		background-size 0.1s ease;
+}
+
+/* - */
+.sart-item-bg.m1 {
+	background-image: url('../../media/dev/Artists/tiffanyday.png');
+}
+
+.sart-item-bg.m2 {
+	background-image: url('../../media/dev/Artists/dysmn.png');
+}
+
+.sart-item-bg.m3 {
+	background-image: url('../../media/dev/Artists/ivri.png');
+}
+
+.sart-item-bg.m4 {
+	background-image: url('../../media/dev/Artists/fresca.png');
+}
+
+.sart-item-bg.m5 {
+	background-image: url('../../media/dev/Artists/zomb.png');
+}
+
+.sart-item-bg.m6 {
+	background-image: url('../../media/dev/Artists/queencult.png');
+}
+
+/* --------- Media query --------- */
+@media (max-height: 680px) {
+	.sec-artists .sec-container {
+		height: 18vh;
+	}
+
+	.sart-item {
+		height: 8rem;
+	}
+}

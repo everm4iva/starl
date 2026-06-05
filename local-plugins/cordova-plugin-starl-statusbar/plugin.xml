@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-starl-statusbar" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>StarlStatusBar</name>
+    <description>Small plugin to make Android status bar transparent and force light icons (white).</description>
+
+    <js-module src="www/StatusBarManager.js" name="StatusBarManager">
+        <clobbers target="StatusBarManager" />
+    </js-module>
+
+    <platform name="android">
+        <source-file src="src/android/StatusBarManager.java" target-dir="src/com/everm4iva/starl/statusbar" />
+    </platform>
+</plugin>

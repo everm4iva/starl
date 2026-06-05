@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.everm4iva.starl" version="0.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <name>starl</name>
+    <description>
+        art of sound for free
+    </description>
+    <author href="https://everm4iva.github.io">
+        everm4iva
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="starl://*" />
+
+    <!-- Android Icons -->
+    <platform name="android">
+        <icon density="ldpi" src="www/shc/StarIcon.png" />
+        <icon density="mdpi" src="www/shc/StarIcon.png" />
+        <icon density="hdpi" src="www/shc/StarIcon.png" />
+        <icon density="xhdpi" src="www/shc/StarIcon.png" />
+        <icon density="xxhdpi" src="www/shc/StarIcon.png" />
+        <icon density="xxxhdpi" src="www/shc/StarIcon.png" />
+
+        <preference name="SplashScreenDelay" value="0" />
+        <preference name="FadeSplashScreen" value="false" />
+        <preference name="ShowSplashScreen" value="false" />
+        <preference name="android-debuggable" value="false" />
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+        </config-file>
+        <plugin name="cordova-plugin-starl-background" spec="local-plugins/cordova-plugin-starl-background" />
+        <preference name="BackgroundColor" value="#00000000" />
+        <preference name="StatusBarOverlaysWebView" value="true" />
+        <preference name="StatusBarBackgroundColor" value="#00000000" />
+        <preference name="StatusBarStyle" value="lightcontent" />
+        <plugin name="cordova-plugin-statusbar" spec="^2.4.3" />
+        <plugin name="cordova-plugin-starl-statusbar" spec="local-plugins/cordova-plugin-starl-statusbar" />
+    </platform>
+</widget>

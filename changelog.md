@@ -1,3 +1,6 @@
+# indev (day 12) - 2026-06-05
+- Released Version Alpha 0.1.0!
+
 # indev (day 11) - 2026-06-04
 - Some optimizations and bug fixes
 - Documented features and code for the release
