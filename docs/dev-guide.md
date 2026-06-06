@@ -1,11 +1,10 @@
-# 🛠 Developer Guide
+# Developer Guide
 
-*← [Back to README](../README.md)*
+*← [Back to README](https://github.com/everm4iva/starl/blob/main/readme.md)*
 
 ---
 
-<details>
-<summary>Tech stack</summary>
+### Overall Architecture
 
 | Layer | Technology |
 |---|---|
@@ -16,12 +15,9 @@
 | Background playback | Custom local Cordova plugin |
 | Music controls | Custom local Cordova plugin |
 
-> iOS is not planned. No Apple hardware, no Apple development.
+> iOS is not planned. I don't own any apple stuff so no Apple development.
 
-</details>
-
-<details>
-<summary>Project structure</summary>
+## Project structure
 
 ```
 mobile/
@@ -45,20 +41,14 @@ mobile/
 └── package.json
 ```
 
-</details>
-
-<details>
-<summary>Prerequisites</summary>
+## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
 - [Apache Cordova CLI](https://cordova.apache.org/docs/en/latest/guide/cli/) — `npm install -g cordova`
 - [Android Studio](https://developer.android.com/studio) with Android SDK
 - Java 17+
 
-</details>
-
-<details>
-<summary>Setup & running</summary>
+## Setup & running
 
 ```bash
 # Clone the repo
@@ -84,18 +74,12 @@ npm start
 cordova build android --release
 ```
 
-</details>
-
-<details>
-<summary>Local plugins</summary>
+## Local plugins
 
 The three local Cordova plugins (`music-controls`, `background`, `statusbar`) live in `local-plugins/` and are referenced by path — `npm install` picks them up automatically, no extra steps needed.
 
-</details>
+## Backend
 
-<details>
-<summary>Backend</summary>
-
-The backend is a separate project, not yet publicly available. The compiled releases connect to a public server run by the author. When the server is open-sourced, this section will be updated with a link and setup guide.
-
-</details>
+It's planned to release a standalone executable server for you to config and host your own stuff, but for now.. it's not ready.
+So i host a version of the executable server with auth for data protection and basic user handling.
+When the server is open-sourced, this section will be updated with a link and setup guide.
