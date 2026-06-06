@@ -52,7 +52,6 @@ Starl is a **free and open-source music client** — no ads, no algorithms you d
 - Track context menu (add to playlist, view album/artist, etc.)
 - Search with recent history
 - Account sync — your data follows you across devices
-- Google / Discord OAuth login
 
 ---
 
