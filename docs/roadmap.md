@@ -1,8 +1,8 @@
-# 🔭 What's Coming
+# What's Coming
 
-*← [Back to README](../README.md)*
+*← [Back to README](https://github.com/everm4iva/starl/blob/main/readme.md)*
 
-Not promises — genuine goals:
+Not promises - genuine goals:
 
 | Feature | Notes |
 |---|---|
