@@ -3,7 +3,7 @@
 	const REFRESH_TOKEN_KEY = 'starl_refresh_token';
 	const LOGIN_PAGE = 'login.html';
 	const RETURN_URL = 'starl://auth';
-	window.STARL_API_BASE='https://your-server-url-here';
+	window.STARL_API_BASE = 'https://your-server-url-here';
 
 	function getApiBase() {
 		if (typeof window.STARL_API_BASE === 'string' && window.STARL_API_BASE.trim()) {
@@ -125,12 +125,25 @@
 			redirectToLogin();
 			return null;
 		}
-		const ok = await validateToken(token);
-		if (!ok) {
+		// If the token is locally expired or expiring soon, try to refresh silently first
+		if (isTokenExpiredOrExpiringSoon(token, 60 * 1000)) {
+			const refreshed = await tryRefreshToken();
+			if (refreshed) {
+				const newToken = getAccessToken();
+				if (newToken) scheduleTokenRefresh(newToken);
+				return newToken;
+			}
+			// Refresh failed - if offline, keep going with the expired token so
+			// cached content stays accessible. If online, the token is truly dead.
+			if (!navigator.onLine) {
+				return token;
+			}
 			clearAccessToken();
 			redirectToLogin();
 			return null;
 		}
+		// Token looks valid locally; schedule refresh and skip the server round-trip
+		scheduleTokenRefresh(token);
 		return token;
 	}
 
@@ -198,8 +211,8 @@
 		} catch (e) {}
 		setTimeout(() => {
 			finalizeLoginFromUrl(url)
-				.then(ok => console.log('[starl] finalizeLoginFromUrl ok=', ok))
-				.catch(err => console.error('[starl] finalizeLoginFromUrl err=', err));
+				.then((ok) => console.log('[starl] finalizeLoginFromUrl ok=', ok))
+				.catch((err) => console.error('[starl] finalizeLoginFromUrl err=', err));
 		}, 0);
 	};
 
@@ -216,19 +229,21 @@
 		redirectToLogin,
 		finalizeLoginFromUrl,
 		isLoginPage,
+		isTokenExpiredOrExpiringSoon,
+		tryRefreshToken,
+		scheduleTokenRefresh,
 	};
 })();
 
-	// On page load, also check if the current URL contains an access_token (query or hash)
-	(function _starl_deeplink_check_onload() {
-		try {
-			const href = window.location.href || '';
-			if (href.match(/access_token=/i)) {
-				// console.log('[starl] detected access_token in href on load:', href);
-				// attempt to finalize login using the URL
-				window.starlAuth.finalizeLoginFromUrl(href).then(ok => console.log('[starl] finalize from href ok=', ok));
-			}
-		} catch (e) {
-			console.error('[starl] deeplink onload check error', e);
+// On page load, also check if the current URL contains an access_token (query or hash)
+(function _starl_deeplink_check_onload() {
+	try {
+		const href = window.location.href || '';
+		if (href.match(/access_token=/i)) {
+			// console.log('[starl] detected access_token in href on load:', href);
+			window.starlAuth.finalizeLoginFromUrl(href).then((ok) => console.log('[starl] finalize from href ok=', ok));
 		}
-	})();
+	} catch (e) {
+		console.error('[starl] deeplink onload check error', e);
+	}
+})();

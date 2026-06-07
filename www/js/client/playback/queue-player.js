@@ -1,15 +1,25 @@
-/*
-Queue-based player control
--> integrates playback queue with player UI controls (next, previous, shuffle).
--> keeps player in sync with queue state.
--> handles button state updates and playback transitions.
-*/
+/**
+ * ☆=========================================☆
+ * Queue player - player UI controls wired to the queue
+ * Bridges the playback queue (queue.js) with the actual player buttons:
+ * next, previous, and shuffle. Keeps button states in sync with queue state.
+ *
+ * --- What this file does? ---
+ * - Wires skip-next / skip-previous buttons (both maximized and mini player)
+ * - Wires the shuffle button and syncs its active state
+ * - Restores a saved multi-track queue on startup
+ * - Listens to 'starl-queue-updated' to refresh button states automatically
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "keepPlayerState" = skipping does not open or close the player card
+ * ☆=========================================☆
+ */
 
 (function () {
 	let isQueueInitialized = false;
 	let lastKnownShuffleState = false;
 
-	// ----- Helpers -----
+	/* ☆======= API handles =======☆ */
 
 	function getQueueApi() {
 		return window.starlPlaybackQueue || null;
@@ -19,25 +29,22 @@ Queue-based player control
 		return window.starlPlayer || null;
 	}
 
-	// ----- UI element access -----
+	/* ☆======= Button elements =======☆ */
 
 	function getShuffleButton() {
 		return document.querySelector('.mp-btn.icon.shuffle');
 	}
 
-	function getPreviousButton() {
-		return document.querySelector('.mp-btn.icon.skip-previous');
+	// both the maximized player (.mp-btn) and the mini player (.mini-player-btn) have their own skip buttons - wire all of them, not just the maximized set.
+	function getPreviousButtons() {
+		return Array.from(document.querySelectorAll('.mp-btn.icon.skip-previous, .mini-player-btn.icon.skip-previous'));
 	}
 
-	function getNextButton() {
-		return document.querySelector('.mp-btn.icon.skip-next');
+	function getNextButtons() {
+		return Array.from(document.querySelectorAll('.mp-btn.icon.skip-next, .mini-player-btn.icon.skip-next'));
 	}
 
-	function getRepeatButton() {
-		return document.querySelector('.mp-btn.icon.repeat');
-	}
-
-	// ----- Button state management -----
+	/* ☆======= Button state management =======☆ */
 
 	function updateShuffleButtonState() {
 		const queueApi = getQueueApi();
@@ -64,18 +71,11 @@ Queue-based player control
 		const length = queueApi.getQueueLength();
 		const hasMultipleTracks = length > 1;
 
-		const prevBtn = getPreviousButton();
-		const nextBtn = getNextButton();
-
-		if (prevBtn) {
-			prevBtn.classList.toggle('active', hasMultipleTracks);
-		}
-		if (nextBtn) {
-			nextBtn.classList.toggle('active', hasMultipleTracks);
-		}
+		getPreviousButtons().forEach((btn) => btn.classList.toggle('active', hasMultipleTracks));
+		getNextButtons().forEach((btn) => btn.classList.toggle('active', hasMultipleTracks));
 	}
 
-	// ----- Playback control handlers -----
+	/* ☆======= Playback control handlers =======☆ */
 
 	function trackToPlayItem(track) {
 		return {
@@ -97,7 +97,7 @@ Queue-based player control
 		if (!queueApi || typeof queueApi.nextTrack !== 'function') return;
 		const nextTrack = queueApi.nextTrack();
 		if (nextTrack && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
-			window.starlPlayer.playFromSearch(trackToPlayItem(nextTrack));
+			window.starlPlayer.playFromSearch(trackToPlayItem(nextTrack), {keepPlayerState: true});
 		}
 	}
 
@@ -106,7 +106,7 @@ Queue-based player control
 		if (!queueApi || typeof queueApi.previousTrack !== 'function') return;
 		const prevTrack = queueApi.previousTrack();
 		if (prevTrack && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
-			window.starlPlayer.playFromSearch(trackToPlayItem(prevTrack));
+			window.starlPlayer.playFromSearch(trackToPlayItem(prevTrack), {keepPlayerState: true});
 		}
 	}
 
@@ -120,23 +120,20 @@ Queue-based player control
 		updateShuffleButtonState();
 	}
 
-	// ----- Setup -----
+	/* ☆======= Setup + init =======☆ */
 
 	function setupButtonHandlers() {
-		const nextBtn = getNextButton();
-		const prevBtn = getPreviousButton();
+		getNextButtons().forEach((btn) => {
+			btn.removeEventListener('click', handleNextClick);
+			btn.addEventListener('click', handleNextClick);
+		});
+
+		getPreviousButtons().forEach((btn) => {
+			btn.removeEventListener('click', handlePreviousClick);
+			btn.addEventListener('click', handlePreviousClick);
+		});
+
 		const shuffleBtn = getShuffleButton();
-
-		if (nextBtn) {
-			nextBtn.removeEventListener('click', handleNextClick);
-			nextBtn.addEventListener('click', handleNextClick);
-		}
-
-		if (prevBtn) {
-			prevBtn.removeEventListener('click', handlePreviousClick);
-			prevBtn.addEventListener('click', handlePreviousClick);
-		}
-
 		if (shuffleBtn) {
 			shuffleBtn.removeEventListener('click', handleShuffleClick);
 			shuffleBtn.addEventListener('click', handleShuffleClick);
@@ -144,7 +141,7 @@ Queue-based player control
 	}
 
 	function setupQueueListeners() {
-		document.addEventListener('starl-queue-updated', (e) => {
+		window.addEventListener('starl-queue-updated', () => {
 			updateNavigationButtonState();
 			updateShuffleButtonState();
 		});
@@ -162,7 +159,11 @@ Queue-based player control
 
 		const savedState = queueApi.loadQueueState();
 		if (savedState && typeof queueApi.restoreQueueState === 'function') {
-			queueApi.restoreQueueState(savedState);
+			// only restore a real multi-track queue. A single-track entry just means the user played a standalone track, not that there's a queue to resume.
+			const queueTracks = Array.isArray(savedState.queue) ? savedState.queue : [];
+			if (queueTracks.length > 1) {
+				queueApi.restoreQueueState(savedState);
+			}
 		}
 
 		setupButtonHandlers();
@@ -172,8 +173,6 @@ Queue-based player control
 
 		isQueueInitialized = true;
 	}
-
-	// ----- Listen for player initialization -----
 
 	function waitForPlayerReady() {
 		if (!window.starlPlayer) {

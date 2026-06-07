@@ -1,15 +1,23 @@
-/*
-Bottom sheet utility
--> creates and manages a slide-up bottom sheet with backdrop.
--> open(config) builds and shows the sheet; close() slides it away.
--> config: { render(sheetBodyEl), onClose? }
-*/
+/**
+ * ☆=========================================☆
+ * Bottom sheet - slide-up sheet with backdrop
+ * A reusable slide-up panel that appears from the bottom of the screen.
+ * Any part of the app can call open() with a render function to fill it.
+ *
+ * --- What this file does? ---
+ * - open(config): builds and shows the sheet; config.render(bodyEl) fills it
+ * - close(): slides the sheet away and calls config.onClose when done
+ * - Clicking the backdrop also closes the sheet
+ * ☆=========================================☆
+ */
 
 (function () {
 	let backdropEl = null;
 	let sheetEl = null;
 	let onCloseCallback = null;
 	let closeTimer = null;
+
+	/* ☆======= DOM setup =======☆ */
 
 	function ensureDOM() {
 		if (backdropEl) return;
@@ -26,11 +34,13 @@ Bottom sheet utility
 		document.body.appendChild(sheetEl);
 	}
 
+	/* ☆======= Open / close =======☆ */
+
 	function open(config) {
 		ensureDOM();
 		clearTimeout(closeTimer);
 
-		// clear previous content except handle
+		// clear previous content except the handle
 		while (sheetEl.children.length > 1) sheetEl.removeChild(sheetEl.lastChild);
 
 		const body = document.createElement('div');
@@ -42,7 +52,6 @@ Bottom sheet utility
 
 		onCloseCallback = config && typeof config.onClose === 'function' ? config.onClose : null;
 
-		// Trigger transition next frame
 		requestAnimationFrame(() => {
 			backdropEl.classList.add('is-open');
 			sheetEl.classList.add('is-open');
@@ -61,6 +70,8 @@ Bottom sheet utility
 			}
 		}, 350);
 	}
+
+	/* ☆======= Public API =======☆ */
 
 	window.starlBottomSheet = {open, close};
 })();

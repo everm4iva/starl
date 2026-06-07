@@ -1,13 +1,29 @@
-/*
-File placement protocol
--> this module centralizes where generated files should be saved on the client.
--> first use-case is account export, but new targets can be registered later.
-*/
+/**
+ * ☆=========================================☆
+ * File protocol - where saved files land on the device
+ * Central place that decides where generated files get written on the client.
+ * First use-case is the account export, but new "targets" can register later.
+ *
+ * --- What this file does? ---
+ * - Registers save "targets" (each has an id, label and chosen location)
+ * - Lists the folders the device offers (external, documents, internal)
+ * - Remembers the user's chosen folder per target in localStorage
+ * - saveJsonForTarget(): writes JSON via the Cordova file API, or falls back
+ *   to a normal browser download when that API is missing or fails
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "target" = a named kind of file user saves (ex: account-export)
+ * - "location" = a real device folder the target writes into
+ * - "strategy" = how user actually saves: 'cordova-file' or 'browser-download'
+ * ☆=========================================☆
+ */
 
 (function () {
 	const targets = new Map();
 	const PREFERENCES_KEY = 'starl_file_protocol_preferences';
 	const locationPreferences = loadLocationPreferences();
+
+	/* ☆======= Saved folder preferences =======☆ */
 
 	function loadLocationPreferences() {
 		try {
@@ -43,6 +59,8 @@ File placement protocol
 			typeof window.Blob === 'function',
 		);
 	}
+
+	/* ☆======= Device folders / locations =======☆ */
 
 	function getAvailableLocations() {
 		const cfile = window.cordova && window.cordova.file ? window.cordova.file : null;
@@ -98,6 +116,8 @@ File placement protocol
 		}
 		return fallbacks[0] || '';
 	}
+
+	/* ☆======= Targets (named kinds of saved files) =======☆ */
 
 	function registerTarget(config) {
 		const id = normalizeTargetId(config && config.id);
@@ -158,6 +178,8 @@ File placement protocol
 		}
 		return getLocationById(target.location);
 	}
+
+	/* ☆======= Writing files to disk =======☆ */
 
 	function downloadBlob(filename, blob) {
 		const url = URL.createObjectURL(blob);
@@ -236,7 +258,7 @@ File placement protocol
 		try {
 			return await writeBlobToCordovaPath(target, safeFilename, blob);
 		} catch (error) {
-			// Browser-style fallback keeps export working if file APIs fail on a specific device.
+			// browser-style fallback keeps export working if file APIs fail on a specific device.
 			return downloadBlob(safeFilename, blob);
 		}
 	}
@@ -244,6 +266,8 @@ File placement protocol
 	function listTargets() {
 		return Array.from(targets.values()).map((target) => ({...target}));
 	}
+
+	/* ☆======= Built-in targets + public API =======☆ */
 
 	registerTarget({
 		id: 'account-export',

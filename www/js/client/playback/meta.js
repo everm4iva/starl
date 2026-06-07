@@ -1,9 +1,22 @@
-/*
-Playback metadata
--> this file turns track info into nice UI text, artwork, and notification metadata.
--> it also makes album art smarter by upgrading weak image URLs when possible.
--> think of it as the label-maker for the current song.
-*/
+/**
+ * ☆=========================================☆
+ * Meta - track metadata display and artwork handling
+ * Turns raw track info into the UI text, artwork, and notification data you
+ * actually see. Think of it as the label-maker for the current song.
+ *
+ * --- What this file does? ---
+ * - upgradeArtworkUrl(): bumps weak image URLs to the highest available res
+ * - setTrackMeta(): pushes title/artist/album/artwork into CSS vars and the
+ *   native notification, and checks whether the track is locally cached
+ * - Shows a "cached" progress bar overlay when the track is downloaded
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - CSS vars drive most of the player UI text (via content: var(--player-song-title))
+ * - "cached overlay" = the white bar on the seek slider showing how much is downloaded
+ * ☆=========================================☆
+ */
+
+/* ☆======= URL helpers =======☆ */
 
 function deriveImageAssetKey(url) {
 	try {
@@ -38,6 +51,8 @@ function upgradeArtworkUrl(url) {
 	return upgraded;
 }
 
+/* ☆======= Cached-track overlay =======☆ */
+
 function setTrackMeta(meta) {
 	setTextVar('--player-song-title', meta.title || 'Untitled');
 	setTextVar('--player-song-artist', meta.artist || 'Unknown artist');
@@ -57,7 +72,7 @@ function setTrackMeta(meta) {
 	}
 	setTimeVars(0, meta.duration || 0);
 
-	// Update cached-time overlay if the current track is cached locally
+	// shows the cached-time bar on the seek slider (fills when track is downloaded)
 	(async () => {
 		const applyCachedOverlay = (cachedPercent) => {
 			document.documentElement.style.setProperty('--player-time-cached', String(cachedPercent) + '%');
@@ -73,7 +88,7 @@ function setTrackMeta(meta) {
 				const cache = getMediaCache();
 				let cachedPercent = 0;
 				if (cache) {
-					// Try several candidate keys from meta first, then fallback to globals and stored player state.
+					// try several candidate keys from meta first, then fallback to globals and stored player state.
 					const candidates = [];
 					if (meta) {
 						if (meta.trackKey) candidates.push(String(meta.trackKey).trim());
@@ -110,9 +125,7 @@ function setTrackMeta(meta) {
 									break;
 								}
 							}
-						} catch (err) {
-							// ignore lookup errors
-						}
+						} catch (err) {}
 					}
 				}
 				return cachedPercent;
@@ -124,13 +137,15 @@ function setTrackMeta(meta) {
 		try {
 			const cachedPercent = await computeCachedPercent();
 			applyCachedOverlay(cachedPercent);
-			// Re-check shortly after, because cache writes can happen asynchronously right after metadata update.
+			// re-check shortly after - cache writes happen async right after metadata update
 			setTimeout(async () => {
 				const delayedPercent = await computeCachedPercent();
 				applyCachedOverlay(delayedPercent);
 			}, 700);
 		} catch (e) {}
 	})();
+
+	/* ☆======= Native notification + media session =======☆ */
 
 	lastTrackMeta = meta;
 	createOrUpdateNativeNotification(meta);
@@ -158,6 +173,8 @@ function setTrackMeta(meta) {
 		updateMediaSessionPlaybackState();
 		updateMediaSessionPositionState(true);
 	}
+
+	/* ☆======= Album label + favorites star =======☆ */
 
 	try {
 		const mpAlbumEl = document.querySelector('.mp-album');

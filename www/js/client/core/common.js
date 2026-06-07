@@ -1,17 +1,26 @@
-
-/*
-Client core helpers
--> this is the small shared toolbox for the whole app.
--> it keeps the common keys, shared links, and base API helpers in one calm place.
--> when another file needs the token or the API base, it asks this module first.
-*/
-
+/**
+ * ☆=========================================☆
+ * Common - shared core toolbox for the whole app
+ * The small shared toolbox every other file leans on. Keeps the storage keys,
+ * the API base URL, and the access token in one calm place.
+ * --- What this file does? ---
+ * - Holds the localStorage key names (token, player state, repeat state)
+ * - getApiBase(): tells you which server URL to talk to
+ * - getAccessToken(): hands back the saved login token
+ * --- Dictionary / Terms / Extra details ---
+ * - "API base" = the root server address all requests are sent to
+ * - It asks window.starlAuth first, then falls back to a stored value
+ * ☆=========================================☆
+ */
 (function () {
 	const shared = window.starlShared || {};
 
-	shared.links = {
-		apiBaseFallback: window.STARL_API_BASE,
-	};
+	Object.defineProperty(shared, 'links', {
+		get() {
+			return {apiBaseFallback: window.STARL_API_BASE};
+		},
+		configurable: true,
+	});
 
     // don't change, this is default value
 	shared.keys = {

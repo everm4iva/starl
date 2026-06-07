@@ -1,7 +1,7 @@
 {
   "name": "everm4iva.starl",
   "displayName": "starl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "art of sound for free",
   "main": "index.js",
   "scripts": {
@@ -14,13 +14,13 @@
   "devDependencies": {
     "cordova-android": "^15.0.0",
     "cordova-browser": "^7.0.0",
-    "cordova-ios": "^8.0.1",
     "cordova-plugin-android-permissions": "^1.1.5",
-    "cordova-plugin-customurlscheme": "^5.0.2"
+    "cordova-plugin-customurlscheme": "^5.0.2",
+    "cordova-plugin-starl-music-controls": "file:local-plugins/cordova-plugin-starl-music-controls",
+    "cordova-plugin-starl-splash": "file:local-plugins/cordova-plugin-starl-splash"
   },
   "cordova": {
     "platforms": [
-      "ios",
       "android"
     ],
     "plugins": {
@@ -32,14 +32,16 @@
         "ANDROID_PATHPREFIX": "/"
       },
       "cordova-plugin-android-permissions": {},
-      "cordova-plugin-starl-music-controls": {},
       "cordova-plugin-starl-background": {},
-      "cordova-plugin-statusbar": {}
+      "cordova-plugin-statusbar": {},
+      "cordova-plugin-starl-statusbar": {},
+      "cordova-plugin-starl-splash": {},
+      "cordova-plugin-starl-music-controls": {}
     }
   },
   "dependencies": {
-    "cordova-plugin-starl-music-controls": "file:local-plugins/cordova-plugin-starl-music-controls",
-      "cordova-plugin-starl-statusbar": "file:local-plugins/cordova-plugin-starl-statusbar",
-      "cordova-plugin-starl-background": "file:local-plugins/cordova-plugin-starl-background"
+    "cordova-plugin-starl-background": "file:local-plugins/cordova-plugin-starl-background",
+    "cordova-plugin-starl-statusbar": "file:local-plugins/cordova-plugin-starl-statusbar",
+    "cordova-plugin-statusbar": "^4.0.0"
   }
 }

@@ -1,9 +1,15 @@
-/*
-Last tracks home preview
--> this file keeps the homepage history row in sync with the listening history store.
--> it shows the five newest listens and a shortcut into the full history tab.
--> when history changes, this view rerenders from the same source.
-*/
+/**
+ * ☆=========================================☆
+ * Last tracks - "Recently played" home row
+ * Keeps the homepage history row in sync with the listening history store.
+ * Shows the five newest listens and a shortcut into the full history overlay.
+ *
+ * --- What this file does? ---
+ * - render(): builds the track card elements and inserts them into the home row
+ * - Re-renders automatically whenever 'starl-history-updated' fires
+ * - Tapping a card plays the track; tapping the "see all" card opens History
+ * ☆=========================================☆
+ */
 
 (function () {
 	const sectionSelector = '.sec-LastTracks';
@@ -72,9 +78,10 @@ Last tracks home preview
 		}
 		if (window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
 			window.starlPlayer.playFromSearch({
-				url: item.sourceUrl || item.streamUrl || '',
+				url: item.sourceUrl || '',
+				sourceUrl: item.sourceUrl || '',
 				trackKey: item.trackKey || item.sourceUrl || item.streamUrl,
-				streamUrl: item.streamUrl || item.sourceUrl || '',
+				streamUrl: item.streamUrl || '',
 				title: item.title,
 				artist: item.artist,
 				album: item.album,
@@ -98,11 +105,16 @@ Last tracks home preview
 			const mediaCache = getMediaCache();
 			if (mediaCache && typeof mediaCache.setProgressiveImage === 'function') {
 				mediaCache
-					.setProgressiveImage(bg, item.imageUrl, (resolvedUrl) => {
-						if (resolvedUrl) {
-							bg.style.backgroundImage = 'url("' + resolvedUrl.replace(/"/g, '%22') + '")';
-						}
-					})
+					.setProgressiveImage(
+						bg,
+						item.imageUrl,
+						(resolvedUrl) => {
+							if (resolvedUrl) {
+								bg.style.backgroundImage = 'url("' + resolvedUrl.replace(/"/g, '%22') + '")';
+							}
+						},
+						{variant: 'low'},
+					)
 					.catch(() => {});
 			} else {
 				bg.style.backgroundImage = 'url("' + item.imageUrl.replace(/"/g, '%22') + '")';

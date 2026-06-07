@@ -1,9 +1,21 @@
-/*
-Playback queue manager
--> owns the current playback queue, track ordering, shuffle state, and navigation.
--> handles next/previous track logic with shuffle support.
--> tracks the current index and maintains queue state.
-*/
+/**
+ * ☆=========================================☆
+ * Queue - playback queue manager
+ * Owns the current track list, position, shuffle state, and navigation.
+ * Nothing outside this file should mutate queue order directly.
+ *
+ * --- What this file does? ---
+ * - setQueue(): replaces the queue with a new list and start index
+ * - nextTrack() / previousTrack() / goToTrack(): navigate within the queue
+ * - enableShuffle() / disableShuffle() / toggleShuffle(): Fisher-Yates shuffle
+ *   that remembers the original order so un-shuffling restores it
+ * - Saves and restores queue state in localStorage
+ * - Fires 'starl-queue-updated' whenever the queue or position changes
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "trackKey" = unique ID for a track (usually its source URL)
+ * ☆=========================================☆
+ */
 
 (function () {
 	const QUEUE_STATE_KEY = 'starl_playback_queue';
@@ -15,7 +27,7 @@ Playback queue manager
 	let originalQueue = [];
 	let shuffledIndices = [];
 
-	// ----- Queue state -----
+	/* ☆======= Queue state persistence =======☆ */
 
 	function saveQueueState() {
 		try {
@@ -56,7 +68,7 @@ Playback queue manager
 		shuffledIndices = Array.isArray(state.shuffledIndices) ? state.shuffledIndices.slice() : [];
 	}
 
-	// ----- Queue management -----
+	/* ☆======= Queue management =======☆ */
 
 	function setQueue(tracks, startIndex = 0) {
 		if (!Array.isArray(tracks)) {
@@ -96,7 +108,7 @@ Playback queue manager
 		return currentQueue.length;
 	}
 
-	// ----- Navigation -----
+	/* ☆======= Navigation =======☆ */
 
 	function nextTrack() {
 		if (currentQueue.length === 0) {
@@ -141,14 +153,14 @@ Playback queue manager
 		return getCurrentTrack();
 	}
 
-	// ----- Shuffle -----
+	/* ☆======= Shuffle =======☆ */
 
 	function generateShuffleIndices() {
 		const indices = [];
 		for (let i = 0; i < currentQueue.length; i++) {
 			indices.push(i);
 		}
-
+		// "fisher-Yates" shuffle
 		for (let i = indices.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[indices[i], indices[j]] = [indices[j], indices[i]];
@@ -220,7 +232,24 @@ Playback queue manager
 		return shuffleEnabled;
 	}
 
-	// ----- Events -----
+	/* ☆======= Queue mutations =======☆ */
+
+	function addToEnd(track) {
+		if (!track) return;
+		currentQueue.push(track);
+		saveQueueState();
+		dispatchUpdate();
+	}
+
+	function insertAfterCurrent(track) {
+		if (!track) return;
+		const insertAt = Math.min(currentIndex + 1, currentQueue.length);
+		currentQueue.splice(insertAt, 0, track);
+		saveQueueState();
+		dispatchUpdate();
+	}
+
+	/* ☆======= Events =======☆ */
 
 	function dispatchUpdate() {
 		try {
@@ -239,24 +268,7 @@ Playback queue manager
 		}
 	}
 
-	// ----- Queue mutations -----
-
-	function addToEnd(track) {
-		if (!track) return;
-		currentQueue.push(track);
-		saveQueueState();
-		dispatchUpdate();
-	}
-
-	function insertAfterCurrent(track) {
-		if (!track) return;
-		const insertAt = Math.min(currentIndex + 1, currentQueue.length);
-		currentQueue.splice(insertAt, 0, track);
-		saveQueueState();
-		dispatchUpdate();
-	}
-
-	// ----- Public API -----
+	/* ☆======= Public API =======☆ */
 
 	window.starlPlaybackQueue = {
 		setQueue,

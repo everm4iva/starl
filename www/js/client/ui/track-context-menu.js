@@ -1,18 +1,38 @@
-/*
-Track context menu
--> slide-up bottom sheet for track actions.
--> triggered by: long-hover (2s) on any bound element, right-click, or direct openForTrack() call.
--> header shows track cover + title + artist.
--> actions: favorite, view artist, view album, add to queue, play next, add to playlist, remove, download.
-*/
+/**
+ * ☆=========================================☆
+ * Track context menu - slide-up bottom sheet for track actions
+ * A rich bottom sheet that lets the user act on any track. Can be triggered by
+ * a long hover, right-click, or a direct call to openForTrack().
+ *
+ * --- What this file does? ---
+ * - openForTrack(track, opts): opens the sheet for a specific track
+ * - bindTarget(element, trackGetter): wires long-hover + right-click to an element
+ * - Header shows track cover, title, and artist
+ * - Action buttons: favorite, view artist/album, add to queue, play next,
+ *   add to playlist, remove from context, download
+ * - Statistics panel lives in track-context-stats.js (loaded after this)
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - Long hover = 2 seconds of sustained hover over a bound element
+ * - "source" in opts tells the sheet where it was triggered from (ex: 'player')
+ * ☆=========================================☆
+ */
 
 (function () {
 	const LONG_HOVER_DELAY_MS = 2000;
 	const TARGETS = new WeakMap();
 
 	let openTimerId = null;
+	let activePlayerListener = null;
 
-	// ----- Normalization -----
+	function clearPlayerListener() {
+		if (activePlayerListener) {
+			window.removeEventListener('starl-playback-changed', activePlayerListener);
+			activePlayerListener = null;
+		}
+	}
+
+	/* ☆======= Normalization =======☆ */
 
 	function normalizeTrack(track) {
 		if (!track || typeof track !== 'object') return null;
@@ -33,26 +53,31 @@ Track context menu
 			streamUrl,
 			trackKey,
 			duration: Number(track.duration || 0) || 0,
+			artistChannelId: String(track.artistChannelId || '').trim(),
+			albumId: String(track.albumId || '').trim(),
 		};
 	}
 
-	// ----- Cover image helper -----
+	/* ☆======= Cover image helper =======☆ */
 
 	function setImage(el, imageUrl) {
 		if (!el || !imageUrl) return;
 		const cache = window.starlMediaCache;
 		if (cache && typeof cache.setImageEl === 'function') {
-			cache.setImageEl(el, imageUrl);
+			cache.setImageEl(el, imageUrl, {variant: 'low'});
 		} else if (cache && typeof cache.resolveImageUrl === 'function') {
-			cache.resolveImageUrl(imageUrl).then((url) => {
-				if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
-			}).catch(() => {});
+			cache
+				.resolveImageUrl(imageUrl, 'low')
+				.then((url) => {
+					if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+				})
+				.catch(() => {});
 		} else {
 			el.style.backgroundImage = 'url("' + imageUrl.replace(/"/g, '%22') + '")';
 		}
 	}
 
-	// ----- Removal action -----
+	/* ☆======= Removal action =======☆ */
 
 	function getRemovalAction(options, track) {
 		const source = String((options && options.source) || '').trim();
@@ -76,9 +101,7 @@ Track context menu
 		return null;
 	}
 
-	// ----- Build and open sheet -----
-
-	// ----- Toast helper -----
+	/* ☆======= Toast helper =======☆ */
 
 	function toast(message) {
 		if (typeof showToast === 'function') {
@@ -89,7 +112,6 @@ Track context menu
 			window.starlLayout.showToast(message);
 			return;
 		}
-		// Fallback: create a simple toast
 		const el = document.createElement('div');
 		el.textContent = message;
 		el.style.cssText =
@@ -101,111 +123,23 @@ Track context menu
 		}, 1800);
 	}
 
-	// ----- Switch to library tab -----
+	/* ☆======= Library tab helper =======☆ */
 
 	function goToLibrary() {
 		const btn = document.querySelector('.tabs-btn[data-tab="library"]');
 		if (btn) btn.click();
 	}
 
-	// ----- Queue section (shown when source === 'player') -----
+	/* ☆=== Queue section (rendered by track-context-queue.js) ===☆ */
 
 	function buildQueueSection(body, bs) {
-		const queueApi = window.starlPlaybackQueue;
-		if (!queueApi || typeof queueApi.getQueue !== 'function') return;
-		const queue = queueApi.getQueue();
-		if (!queue || !queue.length) return;
-		const currentIdx = typeof queueApi.getCurrentIndex === 'function' ? queueApi.getCurrentIndex() : -1;
-
-		const section = document.createElement('div');
-		section.className = 'bsc-queue-section';
-
-		const label = document.createElement('div');
-		label.className = 'bsc-queue-label';
-		label.textContent = 'Queue · ' + queue.length + ' tracks';
-		section.appendChild(label);
-
-		const list = document.createElement('div');
-		list.className = 'bsc-queue-list';
-
-		queue.forEach((item, idx) => {
-			const row = document.createElement('div');
-			row.className = 'bsc-queue-row' + (idx === currentIdx ? ' current' : '');
-
-			const cover = document.createElement('div');
-			cover.className = 'bsc-queue-cover';
-			const imgUrl = item.imageUrl || item.thumbnail || '';
-			if (imgUrl) {
-				const cache = window.starlMediaCache;
-				if (cache && typeof cache.setImageEl === 'function') {
-					cache.setImageEl(cover, imgUrl);
-				} else {
-					cover.style.backgroundImage = 'url("' + imgUrl.replace(/"/g, '%22') + '")';
-				}
-			}
-
-			const info = document.createElement('div');
-			info.className = 'bsc-queue-info';
-
-			const title = document.createElement('div');
-			title.className = 'bsc-queue-title';
-			title.textContent = item.title || 'Untitled';
-
-			const sub = document.createElement('div');
-			sub.className = 'bsc-queue-sub';
-			sub.textContent = item.artist || '';
-
-			info.appendChild(title);
-			info.appendChild(sub);
-			row.appendChild(cover);
-			row.appendChild(info);
-
-			if (idx === currentIdx) {
-				const indicator = document.createElement('div');
-				indicator.className = 'bsc-queue-playing';
-				row.appendChild(indicator);
-			}
-
-			row.addEventListener('click', () => {
-				bs.close();
-				setTimeout(() => {
-					if (queueApi && typeof queueApi.goToTrack === 'function') {
-						const target = queueApi.goToTrack(idx);
-						if (target && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
-							window.starlPlayer.playFromSearch({
-								trackKey: target.trackKey || '',
-								url: target.sourceUrl || target.streamUrl || target.trackKey || '',
-								sourceUrl: target.sourceUrl || '',
-								streamUrl: target.streamUrl || '',
-								title: target.title || '',
-								artist: target.artist || '',
-								album: target.album || '',
-								thumbnail: target.imageUrl || target.thumbnail || '',
-								imageUrl: target.imageUrl || target.thumbnail || '',
-								duration: target.duration || 0,
-							});
-						}
-					}
-				}, 50);
-			});
-
-			list.appendChild(row);
-		});
-
-		// Scroll current track into view after render
-		setTimeout(() => {
-			const cur = list.querySelector('.bsc-queue-row.current');
-			if (cur) cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
-		}, 80);
-
-		section.appendChild(list);
-
-		const divider = document.createElement('div');
-		divider.className = 'bsc-separator';
-		section.appendChild(divider);
-
-		body.appendChild(section);
+		// delegate to track-context-queue.js
+		if (window.starlTrackContextQueue && typeof window.starlTrackContextQueue.buildQueueSection === 'function') {
+			window.starlTrackContextQueue.buildQueueSection(body, bs);
+		}
 	}
+
+	/* ☆======= Build and open sheet =======☆ */
 
 	function openForTrack(track, options) {
 		const t = normalizeTrack(track);
@@ -214,15 +148,17 @@ Track context menu
 		const bs = window.starlBottomSheet;
 		if (!bs) return;
 
+		clearPlayerListener();
+
 		const favApi = window.starlFavorites;
 		const isFav = Boolean(favApi && typeof favApi.isFavorited === 'function' && favApi.isFavorited(t.trackKey));
 
 		bs.open({
+			onClose: clearPlayerListener,
 			render(body) {
-				// ----- Queue (player source only) -----
 				if (opts.source === 'player') buildQueueSection(body, bs);
 
-				// ----- Header -----
+				// header
 				const header = document.createElement('div');
 				header.className = 'bsc-track-header';
 				const cover = document.createElement('div');
@@ -242,7 +178,6 @@ Track context menu
 				header.appendChild(info);
 				body.appendChild(header);
 
-				// ----- Actions helper -----
 				function action(label, iconClass, handler, danger) {
 					const row = document.createElement('div');
 					row.className = 'bsc-action' + (danger ? ' danger' : '');
@@ -265,7 +200,6 @@ Track context menu
 					body.appendChild(d);
 				}
 
-				// Favorite — correct icon per state
 				const favIcon = isFav ? 'bsc-icon-star-fill' : 'bsc-icon-star';
 				const favLabel = isFav ? 'Remove from favorites' : 'Add to favorites';
 				action(favLabel, favIcon, () => {
@@ -274,7 +208,6 @@ Track context menu
 
 				sep();
 
-				// Add to queue
 				action('Add to queue', 'bsc-icon-queue', () => {
 					const q = window.starlPlaybackQueue;
 					if (q && typeof q.addToEnd === 'function') {
@@ -283,7 +216,6 @@ Track context menu
 					}
 				});
 
-				// Play next
 				action('Play next', 'bsc-icon-next', () => {
 					const q = window.starlPlaybackQueue;
 					if (q && typeof q.insertAfterCurrent === 'function') {
@@ -294,14 +226,12 @@ Track context menu
 
 				sep();
 
-				// Add to playlist
 				action('Add to playlist', 'bsc-icon-playlist', () => {
 					if (window.starlPlaylists && typeof window.starlPlaylists.openAddToPlaylistModal === 'function') {
 						window.starlPlaylists.openAddToPlaylistModal(t);
 					}
 				});
 
-				// Create playlist with this — use bottom sheet directly
 				action('Create playlist with this', 'bsc-icon-playlist-add', () => {
 					const bsInner = window.starlBottomSheet;
 					if (!bsInner) return;
@@ -345,57 +275,88 @@ Track context menu
 					function create() {
 						const name = inputEl && inputEl.value.trim();
 						if (!name) return;
-						if (window.starlPlaylists)
-							window.starlPlaylists.createPlaylist(name, t, {openAfterCreate: true});
+						if (window.starlPlaylists) window.starlPlaylists.createPlaylist(name, t, {openAfterCreate: true});
 						bsInner.close();
 					}
 				});
 
 				sep();
 
-				// View artist
 				if (t.artist) {
-					action('View artist: ' + t.artist, 'bsc-icon-artist', () => {
+					action('View artist: ' + t.artist, 'bsc-icon-artist', async () => {
 						if (!window.starlArtistPage) return;
 						const native = window.starlLibraryNative;
 						const artists = native ? native.getArtistList() : [];
 						const exact = artists.find((a) => a.name.toLowerCase() === t.artist.toLowerCase());
-						const fallback = {name: t.artist, imageUrl: t.imageUrl, tracks: [t]};
-						window.starlArtistPage.openArtist(exact || fallback);
+						let channelId = (exact && exact.channelId) || t.artistChannelId || '';
+
+						if (!channelId) {
+							try {
+								const base = typeof getApiBase === 'function' ? getApiBase() : '';
+								const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
+								if (base && token) {
+									const res = await fetch(base + '/search', {
+										method: 'POST',
+										headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token},
+										body: JSON.stringify({query: t.artist, kind: 'channels', limit: 1}),
+									});
+									if (res.ok) {
+										const data = await res.json();
+										const first = data && data.items && data.items[0];
+										if (first && first.id) channelId = first.id;
+									}
+								}
+							} catch (_) {}
+						}
+
+						const artistObj = exact
+							? {...exact, channelId}
+							: {name: t.artist, imageUrl: t.imageUrl, tracks: [t], channelId};
+						window.starlArtistPage.openArtist(artistObj);
 					});
 				}
 
-				// View album (suppressed when inside an album view or search tab)
-				if (t.album && opts.source !== 'artist-album' && opts.source !== 'search') {
+				if (
+					t.album &&
+					opts.source !== 'artist-album' &&
+					opts.source !== 'search' &&
+					opts.source !== 'playlist'
+				) {
 					action('View album: ' + t.album, 'bsc-icon-album', () => {
+						if (!window.starlArtistPage) return;
+						if (t.albumId && typeof window.starlArtistPage.openServerAlbum === 'function') {
+							window.starlArtistPage.openServerAlbum({
+								id: t.albumId,
+								title: t.album,
+								thumbnail: t.imageUrl,
+								artist: t.artist,
+							});
+							return;
+						}
 						const native = window.starlLibraryNative;
 						const albums = native ? native.getAlbumList() : [];
 						const found = albums.find((a) => a.name === t.album);
-						if (window.starlArtistPage) {
-							window.starlArtistPage.openLocalAlbum(
-								found || {name: t.album, artist: t.artist, imageUrl: t.imageUrl, tracks: [t]}
-							);
-						}
+						window.starlArtistPage.openLocalAlbum(
+							found || {name: t.album, artist: t.artist, imageUrl: t.imageUrl, tracks: [t]},
+						);
 					});
 				}
 
 				sep();
 
-				// Stats
+				// statistics - delegate to track-context-stats.js if loaded
 				action('Statistics', 'bsc-icon-stats', () => {
-					const mins = Math.floor((t.duration || 0) / 60);
-					const secs = String(Math.floor((t.duration || 0) % 60)).padStart(2, '0');
-					alert('Duration: ' + mins + ':' + secs + '\nKey: ' + t.trackKey.slice(0, 80));
+					if (window.starlTrackContextStats && typeof window.starlTrackContextStats.open === 'function') {
+						window.starlTrackContextStats.open(t);
+					}
 				});
 
-				// Removal
 				const removal = getRemovalAction(opts, t);
 				if (removal) {
 					sep();
 					action(removal.label, 'bsc-icon-remove', removal.handler, true);
 				}
 
-				// Download placeholder
 				sep();
 				const dlRow = document.createElement('div');
 				dlRow.className = 'bsc-action';
@@ -410,9 +371,23 @@ Track context menu
 				body.appendChild(dlRow);
 			},
 		});
+
+		if (opts.source === 'player') {
+			activePlayerListener = (e) => {
+				const newKey = e && e.detail && e.detail.trackKey;
+				if (!newKey || newKey === t.trackKey) return;
+				const queueApi = window.starlPlaybackQueue;
+				const newTrack =
+					queueApi && typeof queueApi.getCurrentTrack === 'function' ? queueApi.getCurrentTrack() : null;
+				if (!newTrack) return;
+				clearPlayerListener();
+				openForTrack(newTrack, opts);
+			};
+			window.addEventListener('starl-playback-changed', activePlayerListener);
+		}
 	}
 
-	// ----- Timers -----
+	/* ☆======= Bind target =======☆ */
 
 	function clearTimers() {
 		if (openTimerId) {
@@ -430,16 +405,12 @@ Track context menu
 		}, LONG_HOVER_DELAY_MS);
 	}
 
-	// ----- Bind target -----
-
 	function bindTarget(target, getTrack, options) {
 		if (!target || typeof getTrack !== 'function' || TARGETS.has(target)) return;
 		const opts = options && typeof options === 'object' ? options : {};
 		const state = {target, getTrack, options: opts};
 		TARGETS.set(target, state);
 
-		// directClick: open immediately on click (for dedicated icon buttons)
-		// Without it, only long-hover / right-click opens the menu (for whole rows)
 		if (opts.directClick) {
 			target.addEventListener('click', (e) => {
 				e.stopPropagation();
@@ -459,7 +430,7 @@ Track context menu
 		});
 	}
 
-	// ----- Public API -----
+	/* ☆======= Public API =======☆ */
 
 	window.starlTrackContextMenu = {
 		bindTarget,

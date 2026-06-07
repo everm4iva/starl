@@ -520,7 +520,7 @@ public class MusicControls extends CordovaPlugin {
 
 		NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Playback", NotificationManager.IMPORTANCE_LOW);
 		channel.setDescription("Media playback controls");
-		// Media notifications should be silent.
+		// media notifications should be silent.
 		try {
 			channel.setSound(null, null);
 		} catch (Exception ignored) {}

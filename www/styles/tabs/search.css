@@ -287,3 +287,25 @@
 .sr-more-btn:active {
 	opacity: 1;
 }
+
+/* ---- Load more spinner ---- */
+.sr-load-more-spinner {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding: 16px 0;
+}
+
+.sr-load-more-spinner::after {
+	content: '';
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	border: 2px solid rgba(255, 255, 255, 0.15);
+	border-top-color: rgba(255, 255, 255, 0.6);
+	animation: sr-spin 0.7s linear infinite;
+}
+
+@keyframes sr-spin {
+	to { transform: rotate(360deg); }
+}

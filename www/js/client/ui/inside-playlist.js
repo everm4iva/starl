@@ -1,10 +1,20 @@
-/*
-Inside-playlist overlay
--> universal overlay for any playlist context (history, favorites, all music, album, created playlist).
--> open(context) populates and shows the overlay; close() hides it.
--> handles play, shuffle, reorder, settings, and context menu binding per track.
--> swipe right on header to go back.
-*/
+/**
+ * ☆=========================================☆
+ * Inside playlist - universal track list overlay
+ * A full-screen overlay that shows any "playlist-like" context: history,
+ * favorites, all music, an album, or a user-created playlist.
+ *
+ * --- What this file does? ---
+ * - open(context): populates the overlay header and track list for a given context
+ * - close(): hides the overlay and fires 'starl-inside-playlist-closed'
+ * - Handles play, shuffle, reorder, settings, and per-track context menus
+ * - Swipe right on the header = close (wired via starlGestures)
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "context" = { type, id, title, tracks, ... } - describes what's being shown
+ * - "reorder mode" = drag-and-drop track reordering within a user playlist
+ * ☆=========================================☆
+ */
 
 (function () {
 	let currentContext = null;
@@ -80,12 +90,13 @@ Inside-playlist overlay
 		return imageUrl;
 	}
 
-	function setImageAsync(el, imageUrl) {
+	function setImageAsync(el, imageUrl, opts) {
 		if (!el || !imageUrl) return;
 		const cache = window.starlMediaCache;
+		const variant = opts && opts.variant === 'low' ? 'low' : undefined;
 		if (cache && typeof cache.resolveImageUrl === 'function') {
 			cache
-				.resolveImageUrl(imageUrl)
+				.resolveImageUrl(imageUrl, variant)
 				.then((url) => {
 					if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
 				})
@@ -104,14 +115,14 @@ Inside-playlist overlay
 	function populateHeader(context) {
 		const tracks = context.tracks || [];
 
-		// Background blur: use first track image
+		// background blur: use first track image
 		if (headerBgEl) {
 			headerBgEl.style.backgroundImage = '';
 			const firstWithImage = tracks.find((t) => t && t.imageUrl);
 			if (firstWithImage) setImageAsync(headerBgEl, firstWithImage.imageUrl);
 		}
 
-		// Cover grid: up to 4 images in a 2x2 grid
+		// cover grid: up to 4 images in a 2x2 grid
 		if (coverEl) {
 			coverEl.innerHTML = '';
 			const coverTracks = tracks.slice(0, 4);
@@ -127,7 +138,7 @@ Inside-playlist overlay
 			}
 		}
 
-		// Title and details
+		// title and details
 		if (titleEl) titleEl.textContent = context.title || '';
 		if (detailsEl) {
 			const count = tracks.length;
@@ -135,7 +146,7 @@ Inside-playlist overlay
 			detailsEl.textContent = count + ' songs • ' + formatTotalDuration(total);
 		}
 
-		// Show type-specific icon
+		// show type-specific icon
 		if (iconEl) {
 			const iconMap = {
 				playlist: '../../media/common-icons/light/playlist_play.svg',
@@ -151,7 +162,7 @@ Inside-playlist overlay
 			iconEl.style.backgroundImage = 'url("' + iconUrl + '")';
 		}
 
-		// Show/hide more button based on whether settings are available
+		// show/hide more button based on whether settings are available
 		if (moreBtn) {
 			moreBtn.style.display = context.canEdit ? '' : 'none';
 		}
@@ -182,7 +193,7 @@ Inside-playlist overlay
 		covers.className = 'item-covers';
 		const img = document.createElement('div');
 		img.className = 'img1';
-		if (track.imageUrl) setImageAsync(img, track.imageUrl);
+		if (track.imageUrl) setImageAsync(img, track.imageUrl, {variant: 'low'});
 		covers.appendChild(img);
 
 		const details = document.createElement('div');

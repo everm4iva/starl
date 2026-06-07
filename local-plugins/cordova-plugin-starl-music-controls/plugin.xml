@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-starl-music-controls" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- music controls plugin: powers the Android lock-screen / notification player.
+     works by running a foreground MediaPlaybackService that keeps audio alive
+     even when the app is backgrounded or the screen is off. -->
+
+<plugin id="cordova-plugin-starl-music-controls" version="1.2.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>StarlMusicControls</name>
     <description>First-party media notification for starl (Android)</description>
     <license>PFF1.0</license>
@@ -15,6 +19,10 @@
         <config-file target="AndroidManifest.xml" parent="/manifest">
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+            <!-- needed for MediaPlayer.setWakeMode + WifiLock so playback survives
+                 screen-off / Doze / battery saver while streaming in the background. -->
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
         </config-file>
 
         <config-file target="res/xml/config.xml" parent="/*">
@@ -42,12 +50,12 @@
                 android:foregroundServiceType="mediaPlayback" />
         </config-file>
 
-        <resource-file src="res/drawable/ic_stat_starl.xml" target="res/drawable/ic_stat_starl.xml" />
+        <!-- notification small icon: the monochrome vector lives in drawable/ and is
+             what MusicControls.getSmallIconResId() resolves first. Do NOT also place an
+             "ic_stat_starl" into res/mipmap as both a .xml and a .png - two resources
+             with the same name in one resource type make the resource merger fail with
+             "duplicate resources". -->
         <resource-file src="res/drawable/ic_stat_starl.xml" target="app/src/main/res/drawable/ic_stat_starl.xml" />
-        <resource-file src="res/drawable/ic_stat_starl.xml" target="res/mipmap/ic_stat_starl.xml" />
-        <resource-file src="res/drawable/ic_stat_starl.xml" target="app/src/main/res/mipmap/ic_stat_starl.xml" />
-        <resource-file src="img/StatusIcon.png" target="res/mipmap/ic_stat_starl.png" />
-        <resource-file src="img/StatusIcon.png" target="app/src/main/res/mipmap/ic_stat_starl.png" />
 
         <source-file src="src/android/MusicControls.java" target-dir="src/com/everm4iva/starl/musiccontrols" />
         <source-file src="src/android/MusicControlsReceiver.java" target-dir="src/com/everm4iva/starl/musiccontrols" />

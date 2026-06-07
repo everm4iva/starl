@@ -10,7 +10,7 @@
 |---|---|
 | App framework | [Apache Cordova](https://cordova.apache.org/) |
 | Target platforms | Android (primary), Browser (planned) |
-| UI | Vanilla JS + CSS — no framework |
+| UI | Vanilla JS + CSS - no framework |
 | Auth | OAuth 2.0 (Google / Discord) via custom URL scheme |
 | Background playback | Custom local Cordova plugin |
 | Music controls | Custom local Cordova plugin |

@@ -1,17 +1,27 @@
-/*
-Library main controller
--> manages the library tab view state (overview vs overlay).
--> binds click handlers on all tiles, pills, and playlist cards.
--> handles library search input and renders results.
--> renders the My Playlists section with tile/list view toggle.
-*/
+/**
+ * ☆=========================================☆
+ * Library - library tab controller
+ * Manages the library tab: tiles (Artists/Albums), pills (All/History/Starred),
+ * My Playlists list, view-mode toggle, and the inline library search bar.
+ *
+ * --- What this file does? ---
+ * - Wires the Artists/Albums tiles to open the artist-page overlay
+ * - Wires All Music / History / Starred pills to open inside-playlist
+ * - Renders "My Playlists" in tile or list view (persists choice in localStorage)
+ * - Handles the library search input and renders results inline
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "overview" = the main library view (tiles + playlists list)
+ * - "overlay" = the inside-playlist or artist-page panel that slides over the tab
+ * ☆=========================================☆
+ */
 
 (function () {
 	let viewMode = 'list';
 	let searchActive = false;
 	let searchDebounce = null;
 
-	// ----- Elements -----
+	/* ☆======= Element refs =======☆ */
 
 	let playlistsListEl = null;
 	let playlistsHeaderTextEl = null;
@@ -40,7 +50,7 @@ Library main controller
 		bindLibraryTabButton();
 		renderPlaylists();
 
-		// Re-render playlists whenever library tab becomes active
+		// re-render playlists whenever library tab becomes active
 		window.addEventListener('starl-library-focused', renderPlaylists);
 
 		if (window.starlLibraryNative) {
@@ -184,9 +194,12 @@ Library main controller
 		if (!imageUrl) return;
 		const cache = window.starlMediaCache;
 		if (cache && typeof cache.resolveImageUrl === 'function') {
-			cache.resolveImageUrl(imageUrl).then((url) => {
-				if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
-			}).catch(() => {});
+			cache
+				.resolveImageUrl(imageUrl, 'low')
+				.then((url) => {
+					if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+				})
+				.catch(() => {});
 		} else {
 			el.style.backgroundImage = 'url("' + imageUrl.replace(/"/g, '%22') + '")';
 		}
@@ -313,7 +326,7 @@ Library main controller
 	function showSearchResults(results) {
 		if (!searchResultsEl) return;
 		lastSearchResults = results;
-		// Position overlay to start below the search bar so the input stays visible
+		// position overlay to start below the search bar so the input stays visible
 		const searchBarEl = document.querySelector('.library.search-container');
 		if (searchBarEl) {
 			const rect = searchBarEl.getBoundingClientRect();
@@ -322,7 +335,7 @@ Library main controller
 		searchResultsEl.classList.remove('hidden');
 		searchResultsEl.innerHTML = '';
 
-		// Header with close button
+		// header with close button
 		const header = document.createElement('div');
 		header.className = 'lsr-header';
 		const closeBtn = document.createElement('div');
@@ -339,7 +352,7 @@ Library main controller
 		header.appendChild(title);
 		searchResultsEl.appendChild(header);
 
-		// Filter pills
+		// filter pills
 		const pills = document.createElement('div');
 		pills.className = 'lsr-pills';
 		['all', 'music', 'artists', 'albums'].forEach((f) => {
@@ -418,7 +431,7 @@ Library main controller
 	window.addEventListener('starl-history-updated', () => {});
 	window.addEventListener('starl-favorites-updated', () => {});
 
-	// When home "see more" or other modules navigate to library history,
+	// when home "see more" or other modules navigate to library history,
 	// close any open overlay first then open the History collection.
 	window.addEventListener('starl-library-open-history', () => {
 		closeAllOverlays();

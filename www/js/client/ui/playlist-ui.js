@@ -1,10 +1,19 @@
-/*
-Playlist UI and layout manager
--> renders playlists in tiles or list view modes.
--> creates playlist cover grids (2x2 adapts to fewer tracks).
--> handles view mode switching and reorder mode toggle.
--> provides drag-drop reordering helpers.
-*/
+/**
+ * ☆=========================================☆
+ * Playlist UI - view mode, cover grids, drag-drop reorder
+ * Handles how playlists look (tile or list) and how track lists can be reordered.
+ *
+ * --- What this file does? ---
+ * - renderPlaylistCard(): builds one playlist card in tile or list form
+ * - generatePlaylistCover(): draws the 2x2 (or smaller) artwork grid on a playlist
+ * - toggleViewMode(): switches between 'tiles' and 'list', persists the choice
+ * - enterReorderMode() / exitReorderMode(): enables drag-drop within a track list
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "cover grid" = up to 4 track images arranged in a square mosaic
+ * - View mode is saved to localStorage and restored on next load
+ * ☆=========================================☆
+ */
 
 (function () {
 	const VIEWMODE_KEY = 'starl_playlist_viewmode';

@@ -8,7 +8,7 @@
 
 *An open music client for Android ♡*
 
-[![version](https://img.shields.io/badge/version-0.1.0--alpha-blueviolet?style=flat-square)](https://github.com/everm4iva/starl/releases)
+[![version](https://img.shields.io/badge/version-0.1.1--alpha-blueviolet?style=flat-square)](https://github.com/everm4iva/starl/releases)
 [![platform](https://img.shields.io/badge/platform-Android-green?style=flat-square&logo=android)](https://github.com/everm4iva/starl)
 [![license](https://img.shields.io/badge/license-PFF-lightgrey?style=flat-square)](./LICENSE)
 [![status](https://img.shields.io/badge/status-open%20alpha-orange?style=flat-square)]()
@@ -40,30 +40,30 @@ Starl is a **free and open-source music client** — no ads, no algorithms you d
 
 ---
 
-## Features (v0.1.0)
+## Features (v0.1.1)
 
 - Full music player with queue management
 - Shuffle, repeat, skip
-- Persistent background playback
+- Background playback
 - Native music notification with playback controls
-- Song and image caching — cached songs play offline automatically
+- Song and image caching - cached songs play offline automatically
 - Library with playlists, favorites, and listening history
 - Artist and album pages
 - Track context menu (add to playlist, view album/artist, etc.)
 - Search with recent history
-- Account sync — your data follows you across devices
+- Account sync - your data follows you across devices
 
 ---
 
 ## Contributing
 
-Open an issue before sending a PR — just to align on the direction first. No formal process yet.
+Open an issue before sending a PR - just to align on the direction first. No formal process yet.
 
 ---
 
 ## License
 
-[PFF — Pure Freedom Forever](./LICENSE)
+[PFF - Pure Freedom Forever](./LICENSE)
 
 ---
 

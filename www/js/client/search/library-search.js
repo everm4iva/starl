@@ -1,14 +1,26 @@
-/*
-Library global search
--> searches across history, favorites, playlists, artists, and albums.
--> matches track titles, artist names, album names, and playlist titles.
--> provides result filtering and aggregation.
-*/
+/**
+ * ☆=========================================☆
+ * Library search - global search across your local library
+ * Searches history, favorites, playlists, artists, and albums all at once.
+ * Results are deduplicated and capped per type.
+ *
+ * --- What this file does? ---
+ * - searchTracks(): finds tracks by title, artist, or album name
+ * - searchArtists(): groups matching tracks by artist name
+ * - searchAlbums(): groups matching tracks by album name
+ * - searchPlaylists(): finds playlists whose title matches the query
+ * - createSearchResultItem(): builds a DOM element for a single result
+ * - search(): runs all four searches and returns them as a combined object
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "source" on a result tells you where it came from: 'history', 'favorites', 'playlist:X'
+ * ☆=========================================☆
+ */
 
 (function () {
 	const MAX_RESULTS_PER_TYPE = 20;
 
-	// ----- Search API providers -----
+	/* ☆======= Data source accessors =======☆ */
 
 	function getHistory() {
 		if (window.starlListeningHistory && typeof window.starlListeningHistory.getHistory === 'function') {
@@ -38,7 +50,7 @@ Library global search
 		return [];
 	}
 
-	// ----- Search logic -----
+	/* ☆======= Search logic =======☆ */
 
 	function normalizeQuery(query) {
 		return String(query || '')
@@ -233,7 +245,7 @@ Library global search
 		};
 	}
 
-	// ----- Result rendering helpers -----
+	/* ☆======= Result rendering =======☆ */
 
 	function createSearchResultItem(result) {
 		const div = document.createElement('div');
@@ -337,7 +349,7 @@ Library global search
 		return div;
 	}
 
-	// ----- Public API -----
+	/* ☆======= Public API =======☆ */
 
 	window.starlLibrarySearch = {
 		search,

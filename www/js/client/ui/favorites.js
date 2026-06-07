@@ -1,4 +1,21 @@
-// Favorites manager, player-star wiring, and synced storage helpers.
+/**
+ * ☆=========================================☆
+ * Favorites - starred tracks manager
+ * Stores the user's starred tracks in account state, keeps the player's star
+ * icon in sync, and flushes changes to the server in the background.
+ *
+ * --- What this file does? ---
+ * - add() / remove() / isFavorite(): manage the favorites list
+ * - listEntries(): returns all favorites as an array
+ * - refreshPlayerStar(): updates the star icon on the player card
+ * - Fires 'starl-favorites-updated' on every change
+ * - Debounces server writes so rapid starring doesn't hammer the API
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - Favorites are stored under the 'favorites' section of account state
+ * - Falls back to a localStorage key if account state isn't ready yet
+ * ☆=========================================☆
+ */
 (function () {
 	const FAVORITES_SECTION = 'favorites';
 	const FALLBACK_KEY = 'starl_favorites';
@@ -243,7 +260,7 @@
 		return window.lastTrackMeta || {};
 	}
 
-	// Player star wiring: reflects favorite state for the actual current track and toggles on click.
+	// player star wiring: reflects favorite state for the actual current track and toggles on click.
 	function setupPlayerStar() {
 		const starSelector = '.mp-track-actions .img-button.icon.star';
 

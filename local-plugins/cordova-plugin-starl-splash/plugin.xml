@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-starl-splash" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>StarlSplash</name>
+    <description>Puts the starl app icon on the Android 12+ splash screen</description>
+
+    <js-module src="www/StarlSplash.js" name="StarlSplash">
+        <clobbers target="StarlSplash" />
+    </js-module>
+
+    <hook type="after_prepare" src="scripts/fixSplashTheme.js" />
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="StarlSplash">
+                <param name="android-package" value="com.everm4iva.starl.splash.StarlSplash" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/StarlSplash.java" target-dir="src/com/everm4iva/starl/splash" />
+
+        <resource-file src="src/android/res/drawable/ic_starl_splashscreen.xml" target="res/drawable/ic_starl_splashscreen.xml" />
+
+        <config-file target="res/values/cdv_themes.xml" parent="/resources/style[@name='Theme.App.SplashScreen']">
+            <item name="windowSplashScreenAnimatedIcon">@drawable/ic_starl_splashscreen</item>
+        </config-file>
+    </platform>
+</plugin>

@@ -1,3 +1,24 @@
+/**
+ * ☆=========================================☆
+ * Server player - server API calls and user profile
+ * Handles all direct server communication for playback: requesting track downloads,
+ * fetching the logged-in user's profile, and loading server-side cache status.
+ *
+ * --- What this file does? ---
+ * - requestTrackDownload(): asks the server to prepare a track for streaming
+ * - fetchUserProvider(): fetches /auth/me and writes profile CSS vars
+ * - loadCacheStatus(): fetches /cache/status and shows it in the account panel
+ * - Restores cached user profile at startup so the UI doesn't flash empty
+ * - toAbsoluteUrl(): normalises relative server paths to full URLs
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "user provider" = login method (e.g. 'google') returned by the server
+ * - Profile CSS vars: --user-profile-name, --user-profile-pic (used in account tab)
+ * ☆=========================================☆
+ */
+
+/* ☆======= Profile cache =======☆ */
+
 let _starl_user_provider = null;
 const PROFILE_CACHE_KEY = 'starl_user_profile';
 
@@ -51,11 +72,11 @@ function applyProfileToCss(profile) {
 	}
 }
 
-// Restore cached user profile early (if present). If media cache script
+// restore cached user profile early (if present). If media cache script
 // hasn't loaded yet, retry a few times before giving up.
 (function restoreCachedProfile(retries) {
 	retries = typeof retries === 'number' ? retries : 6; // ~6 * 200ms = 1.2s
-	// Always try localStorage first as a fast and resilient fallback.
+	// always try localStorage first as a fast and resilient fallback.
 	try {
 		const ls = readCachedProfileFromLocalStorage();
 		if (ls) {
@@ -81,6 +102,8 @@ function applyProfileToCss(profile) {
 		setTimeout(() => restoreCachedProfile(retries - 1), 200);
 	}
 })();
+
+/* ☆======= Server API calls =======☆ */
 
 function toAbsoluteUrl(base, path) {
 	if (!path) {
@@ -124,9 +147,16 @@ async function requestTrackDownload(sourceUrl, token) {
 
 async function fetchUserProvider() {
 	try {
-		const token = getAccessToken();
+		let token = getAccessToken();
 		if (!token) return null;
-		const res = await fetch(getApiBase() + '/auth/me', {headers: {'Authorization': 'Bearer ' + token}});
+		let res = await fetch(getApiBase() + '/auth/me', {headers: {'Authorization': 'Bearer ' + token}});
+		if (res.status === 401) {
+			const auth = window.starlAuth;
+			const refreshed = auth && typeof auth.tryRefreshToken === 'function' && (await auth.tryRefreshToken());
+			if (!refreshed) return null;
+			token = getAccessToken();
+			res = await fetch(getApiBase() + '/auth/me', {headers: {'Authorization': 'Bearer ' + token}});
+		}
 		if (!res.ok) {
 			if (res.status >= 500) {
 				notifyServerFailure();
@@ -172,16 +202,16 @@ async function fetchUserProvider() {
 					};
 					let clean = decodeHtml(pic);
 					clean = clean.replace(/['\"]/g, '');
-					// Use server-side image cache/proxy to avoid client-side 429s from providers like Google
+					// use server-side image cache/proxy to avoid client-side 429s from providers like Google
 					const proxy = getApiBase() + '/cache/image?url=' + encodeURIComponent(clean) + '&res=low';
 					root.setProperty('--user-profile-pic', 'url("' + proxy + '")');
 					profilePicUrl = proxy;
 
-					// persist cached profile for offline UI
+					// persist cached profile for offline UI - pass the raw URL so media-cache handles its own proxying and avoids double-wrapping
 					try {
 						const cache = window.starlMediaCache;
 						if (cache && typeof cache.setUserProfile === 'function') {
-							cache.setUserProfile({name: displayName, picture: proxy}).catch(() => {});
+							cache.setUserProfile({name: displayName, picture: clean}).catch(() => {});
 						}
 					} catch (e) {}
 				}
@@ -246,7 +276,7 @@ async function loadCacheStatus() {
 				const li = Number(local.image_count) || 0;
 				const lbimg = ((Number(local.image_bytes) || 0) / (1024 * 1024)).toFixed(1);
 				panel.textContent +=
-					' — local: ' + la + ' tracks, ' + li + ' images (' + lb + ' MB audio, ' + lbimg + ' MB images).';
+					' - local: ' + la + ' tracks, ' + li + ' images (' + lb + ' MB audio, ' + lbimg + ' MB images).';
 			}
 		} catch (err) {
 			// ignore local cache errors

@@ -1,9 +1,19 @@
-/*
-Gesture handlers
--> swipe-based navigation for playlist headers.
--> touch event detection for left/right swipes to go back to library.
--> provides gesture state tracking and handlers.
-*/
+/**
+ * ☆=========================================☆
+ * Gestures - swipe detection helpers
+ * Shared touch gesture detection used by playlist headers and other UI elements.
+ * Detects left/right swipes and calls the appropriate callback.
+ *
+ * --- What this file does? ---
+ * - setupPlaylistHeaderSwipe(): wires a right-swipe on a header to go back
+ * - setupSwipeElement(): wires both left and right swipe handlers on any element
+ * - isValidSwipe(): checks distance and speed to confirm it's a real swipe
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - A swipe is valid if it's >50px and completes within 500ms
+ * - Vertical movement >30px cancels the swipe (user is scrolling)
+ * ☆=========================================☆
+ */
 
 (function () {
 	const SWIPE_THRESHOLD_PX = 50;
@@ -14,7 +24,7 @@ Gesture handlers
 	let touchStartTime = 0;
 	let activeSwipeElement = null;
 
-	// ----- Swipe detection -----
+	/* ☆======= Swipe detection =======☆ */
 
 	function getSwipeDistance(startX, endX) {
 		return Math.abs(endX - startX);
@@ -41,7 +51,7 @@ Gesture handlers
 		return 'none';
 	}
 
-	// ----- Touch event handlers -----
+	/* ☆======= Touch event handlers =======☆ */
 
 	function handleTouchStart(e, element) {
 		touchStartX = e.touches[0].clientX;
@@ -75,7 +85,7 @@ Gesture handlers
 		activeSwipeElement = null;
 	}
 
-	// ----- Setup helpers -----
+	/* ☆======= Setup helpers =======☆ */
 
 	function setupPlaylistHeaderSwipe(headerElement, backCallback) {
 		if (!headerElement) {
@@ -116,7 +126,7 @@ Gesture handlers
 		});
 	}
 
-	// ----- Public API -----
+	/* ☆======= Public API =======☆ */
 
 	window.starlGestures = {setupPlaylistHeaderSwipe, setupSwipeElement, getSwipeDirection, isValidSwipe};
 })();

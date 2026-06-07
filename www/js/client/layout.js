@@ -1,11 +1,26 @@
-/*
-Client layout and tabs
--> this file keeps the visible shell of the app in sync with the player.
--> it updates time labels, loading state, tab switching, and the logout flow.
--> simple rule: when the player changes, the layout follows.
-*/
+/**
+ * ☆=========================================☆
+ * Layout - app shell, tabs, time display, account actions
+ * Keeps the visible shell in sync with the player and the logged-in user.
+ * Simple rule: when the player or auth state changes, the layout follows.
+ *
+ * --- What this file does? ---
+ * - Tab navigation: switches between Home / Search / Library / Account panels
+ * - Time display: formats and updates the player's elapsed/total time vars
+ * - Loading state: shows/hides the loading indicator and mini-player overlay
+ * - setTextVar() / setBgVar(): writes CSS custom properties used by the UI
+ * - Update banner: shows "update available" when the server version is newer
+ * - Account panel: export, delete account, clear cache, logout
+ * - showToast(): global toast for success/error messages
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - CSS vars drive text content (content: var(--player-song-title) in CSS)
+ * - setBgVar() progressively loads artwork via the media cache
+ * ☆=========================================☆
+ */
 
-// ----- Progress & time -----
+/* ☆======= Element refs + auth =======☆ */
+
 const playerTime = document.getElementById('player-time');
 const sliderProgress = document.getElementById('slider-progress');
 const rootStyle = document.documentElement.style;
@@ -91,7 +106,7 @@ function clearAllLocalAccountData() {
 	try {
 		localStorage.removeItem('starl_account_state');
 	} catch (error) {}
-	// Also clear any cached update state so user can re-check after manual clear
+	// also clear any cached update state so user can re-check after manual clear
 	try {
 		if (window.starlUpdateCheck && typeof window.starlUpdateCheck.clearCache === 'function') {
 			window.starlUpdateCheck.clearCache();
@@ -99,7 +114,7 @@ function clearAllLocalAccountData() {
 	} catch (error) {}
 }
 
-// ----- Update banner -----
+/* ☆======= Update banner =======☆ */
 
 (function initUpdateBanner() {
 	const banner = document.getElementById('update-banner');
@@ -109,8 +124,12 @@ function clearAllLocalAccountData() {
 	if (!banner) return;
 
 	function showBanner(info) {
-		if (bannerTitle) bannerTitle.textContent = 'Update available — v' + (info.serverVersion || '');
-		if (bannerSub) bannerSub.textContent = 'You are on v' + (info.clientVersion || '') + '. Music still plays, but new content is blocked until updated.';
+		if (bannerTitle) bannerTitle.textContent = 'Update available - v' + (info.serverVersion || '');
+		if (bannerSub)
+			bannerSub.textContent =
+				'You are on v' +
+				(info.clientVersion || '') +
+				'. Music still plays, but new content is blocked until updated.';
 		banner.classList.remove('hidden');
 	}
 
@@ -138,7 +157,7 @@ function clearAllLocalAccountData() {
 				showToast('No download link available.', 'danger');
 				return;
 			}
-			// Open download link — works on Android via Cordova InAppBrowser or plain window.open
+			// open download link - works on Android via Cordova InAppBrowser or plain window.open
 			try {
 				if (window.cordova && window.cordova.InAppBrowser) {
 					window.cordova.InAppBrowser.open(url, '_system');
@@ -151,6 +170,8 @@ function clearAllLocalAccountData() {
 		});
 	}
 })();
+
+/* ☆======= Account panel actions =======☆ */
 
 async function exportAccountData() {
 	const token = getAccessToken();
@@ -225,7 +246,7 @@ function renderExportLocationSettings() {
 		return;
 	}
 
-	// If Cordova is present but the File plugin isn't available, surface a helpful hint
+	// if Cordova is present but the File plugin isn't available, pop up a helpful hint
 	// so users know why native directories aren't listed.
 	if (typeof window !== 'undefined' && window.cordova && !(window.cordova && window.cordova.file)) {
 		if (exportLocationHint) {
@@ -337,154 +358,5 @@ if (deleteAccountButton) {
 	deleteAccountButton.addEventListener('click', deleteAccount);
 }
 
-let isScrubbing = false;
-
-function escapeCssString(value) {
-	return String(value ?? '')
-		.replace(/\\/g, '\\\\')
-		.replace(/'/g, "\\'");
-}
-
-function setTextVar(name, value) {
-	rootStyle.setProperty(name, "'" + escapeCssString(value) + "'");
-}
-
-function setLoadingState(isLoading) {
-	if (loadingIndicator) {
-		// Only show loading indicator when mini player is visible
-		const show = Boolean(isLoading) && miniPlayer && !miniPlayer.classList.contains('hidden');
-		loadingIndicator.classList.toggle('hidden', !show);
-	}
-	if (bottomNav) {
-		bottomNav.classList.toggle('is-loading', Boolean(isLoading));
-	}
-}
-
-function setBgVar(url) {
-	if (url) {
-		const cache = getMediaCache();
-		if (cache && typeof cache.setProgressiveImage === 'function') {
-			cache.setProgressiveImage('player-bg', url, (resolvedUrl) => {
-				rootStyle.setProperty('--player-bg', 'url("' + prepareArtworkUrl(resolvedUrl) + '")');
-			});
-			return;
-		}
-		rootStyle.setProperty('--player-bg', 'url("' + prepareArtworkUrl(url) + '")');
-	}
-}
-
-function getMediaCache() {
-	return window.starlMediaCache || null;
-}
-
-function prepareArtworkUrl(url) {
-	const rawUrl = String(url || '');
-	if (!rawUrl) {
-		return '';
-	}
-	const apiBase = getApiBase();
-	const normalizedUrl = rawUrl.startsWith('/image/') ? apiBase + rawUrl : rawUrl;
-	if (normalizedUrl.startsWith(apiBase + '/image/')) {
-		const token = getAccessToken();
-		if (token && !normalizedUrl.includes('token=')) {
-			return normalizedUrl + (normalizedUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
-		}
-	}
-	return normalizedUrl;
-}
-
-function formatDuration(totalSeconds) {
-	const seconds = Number(totalSeconds);
-	if (!Number.isFinite(seconds) || seconds <= 0) {
-		return '0:00';
-	}
-	const hrs = Math.floor(seconds / 3600);
-	const mins = Math.floor((seconds % 3600) / 60);
-	const secs = Math.floor(seconds % 60);
-	if (hrs > 0) {
-		return hrs + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-	}
-	return mins + ':' + String(secs).padStart(2, '0');
-}
-
-function setTimeVars(currentSeconds, totalSeconds) {
-	const total = Number(totalSeconds) || 0;
-	const current = Number(currentSeconds) || 0;
-	setTextVar('--player-time-elapsed', formatDuration(current));
-	setTextVar('--player-time-total', formatDuration(total));
-	let progress = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
-	if (total > 0 && current >= total - 0.25) {
-		progress = 100;
-	}
-	rootStyle.setProperty('--player-time-progress', progress.toFixed(2) + '%');
-	if (bottomTimeElapsed) {
-		bottomTimeElapsed.style.width = progress.toFixed(2) + '%';
-	}
-}
-
-function updateSliderProgress() {
-	if (!playerTime || !sliderProgress) {
-		return;
-	}
-	const min = Number(playerTime.min) || 0;
-	const max = Number(playerTime.max) || 0;
-	const value = Number(playerTime.value) || 0;
-	const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
-	sliderProgress.style.width = percent + '%';
-}
-
-if (playerTime) {
-	playerTime.addEventListener('input', () => {
-		isScrubbing = true;
-		updateSliderProgress();
-	});
-	playerTime.addEventListener('change', () => {
-		isScrubbing = false;
-	});
-	playerTime.addEventListener('pointerdown', () => {
-		isScrubbing = true;
-	});
-	playerTime.addEventListener('pointerup', () => {
-		isScrubbing = false;
-	});
-}
-
-updateSliderProgress();
-
-// ----- Tabs -----
-const tabButtons = Array.from(document.querySelectorAll('.tabs-btn[data-tab]'));
-const tabPanels = Array.from(document.querySelectorAll('.tab[data-tab]'));
-
-function getTabNameFromButton(button) {
-	return button.dataset.tab;
-}
-
-function setActiveTab(tabName) {
-	tabPanels.forEach((panel) => {
-		const isActive = panel.dataset.tab === tabName;
-		panel.classList.toggle('is-hidden', !isActive);
-	});
-
-	tabButtons.forEach((button) => {
-		const icon = button.querySelector('.tabs-btn-icon');
-		const isActive = button.dataset.tab === tabName;
-		if (icon) {
-			icon.classList.toggle('active', isActive);
-		}
-	});
-}
-
-function initTabNavigation() {
-	if (tabButtons.length === 0 || tabPanels.length === 0) {
-		return;
-	}
-
-	tabButtons.forEach((button) => {
-		button.addEventListener('click', () => {
-			setActiveTab(getTabNameFromButton(button));
-		});
-	});
-}
-
-initTabNavigation();
-renderExportLocationSettings();
+// CSS helpers, time display, scrubbing, tabs, and starlLayout init
+// are in layout-tabs.js (loaded immediately after this file)

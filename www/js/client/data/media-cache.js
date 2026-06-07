@@ -1,8 +1,23 @@
-/*
-Media cache
--> this file stores songs and images in IndexedDB so the app can keep working offline.
--> it can return a cached blob URL, or fall back to the network when nothing is saved yet.
-*/
+/**
+ * ☆=========================================☆
+ * Media cache - offline audio and image storage (IndexedDB)
+ * Stores downloaded songs and artwork in IndexedDB so the app keeps working
+ * without a connection. Returns blob URLs for cached tracks/images.
+ *
+ * --- What this file does? ---
+ * - cacheTrack(entry) / getTrackUrl(key): store and retrieve cached audio
+ * - cacheImage(url) / getImageUrl(url) / resolveImageUrl(url): image cache
+ * - setProgressiveImage(): loads a cached version immediately, upgrades to full later
+ * - setUserProfile() / getUserProfile(): caches the logged-in user's avatar/name
+ * - clearCache(): wipes all tracks and images from IndexedDB
+ * - getCacheStats(): returns counts and byte sizes of cached items
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "blob URL" = a temporary browser URL pointing to in-memory binary data
+ * - "trackKey" = the unique key used to look up a cached track (usually source URL)
+ * - Images are stored at 'low' or 'full' resolution; resolveImageUrl picks the best
+ * ☆=========================================☆
+ */
 
 (function () {
 	const DB_NAME = 'starl-media-cache';
@@ -152,7 +167,31 @@ Media cache
 		}
 		const normalizedVariant = normalizeImageVariant(variant);
 		const apiBase = getApiBase();
-		const normalizedUrl = rawUrl.startsWith('/image/') ? apiBase + rawUrl : rawUrl;
+
+		// unwrap already-proxied URLs to avoid double-wrapping.
+		let unwrapped = rawUrl.startsWith('/image/') ? apiBase + rawUrl : rawUrl;
+		for (let i = 0; i < 3; i++) {
+			try {
+				const p = new URL(unwrapped, apiBase + '/');
+				if (p.pathname === '/cache/image' || p.pathname === '/imgres/') {
+					const inner = p.searchParams.get('url');
+					if (inner) {
+						// strip any res/token params that got baked into the inner URL
+						try {
+							const innerParsed = new URL(decodeURIComponent(inner));
+							innerParsed.searchParams.delete('res');
+							innerParsed.searchParams.delete('token');
+							unwrapped = innerParsed.toString();
+						} catch (_) {
+							unwrapped = decodeURIComponent(inner);
+						}
+						continue;
+					}
+				}
+			} catch (_) {}
+			break;
+		}
+		const normalizedUrl = unwrapped;
 		const token = getAccessToken();
 
 		if (normalizedUrl.startsWith(apiBase + '/imgres/')) {
@@ -255,8 +294,12 @@ Media cache
 		});
 	}
 
-	function setProgressiveImage(targetKey, imageUrl, applyUrl) {
-		// Try to use a locally cached blob first (works offline)
+	function setProgressiveImage(targetKey, imageUrl, applyUrl, opts) {
+		// opts.variant === 'low' (or opts.upgrade === false) keeps the low-res variant and skips the high-res upgrade. Small list-row thumbnails don't need the ~1280px maxres image
+		// downloading and decoding it per row is a major source of scroll jank - so callers rendering small covers should pass {variant: 'low'}. Headers / full-screen art omit it and stay cute
+		opts = opts || {};
+		const lowOnly = opts.variant === 'low' || opts.upgrade === false;
+		// try to use a locally cached blob first (works offline)
 		return (async () => {
 			try {
 				const cached = await getImageUrl(imageUrl);
@@ -280,7 +323,7 @@ Media cache
 				applyUrl('');
 			}
 
-			if (!highUrl || highUrl === initialUrl) {
+			if (lowOnly || !highUrl || highUrl === initialUrl) {
 				return initialUrl || '';
 			}
 
@@ -311,8 +354,7 @@ Media cache
 		if (!blob) {
 			return '';
 		}
-		// Reuse existing object URL for the same key — revoking and recreating it
-		// breaks any element that already has the URL set as its src/backgroundImage.
+		// reuse existing object URL for the same key - revoking and recreating it breaks any element that already has the URL set as its src/backgroundImage.
 		// clearCache() clears the map, so after a cache wipe a fresh URL is created.
 		if (objectUrlByKey.has(key)) {
 			return objectUrlByKey.get(key);
@@ -351,12 +393,12 @@ Media cache
 		return withStore(KV_STORE, 'readwrite', (store) => requestToPromise(store.delete(key)));
 	}
 
-	// Convenience helpers for storing user profile (name + picture)
+	// helper for storing user profile (name + picture)
 	async function getUserProfile() {
 		try {
 			const rec = await getKVRecord('user_profile');
 			const name = rec && rec.value && rec.value.name ? rec.value.name : '';
-			// Try to return a locally stored blob URL for the profile picture if available
+			// try to return a locally stored blob URL for the profile picture if available
 			try {
 				const blobUrl = await getImageUrl('user_profile_picture');
 				return {
@@ -376,7 +418,7 @@ Media cache
 			if (!profile || typeof profile !== 'object') return null;
 			const name = String(profile.name || '');
 			const pictureRaw = normalizeUrl(profile.picture || '');
-			// Persist name and picture URL in KV as fallback; prefer blob storage for offline rendering.
+			// persist name and picture URL in KV as fallback; prefer blob storage for offline rendering.
 			await setKVRecord('user_profile', {name, picture: pictureRaw});
 
 			if (pictureRaw) {
@@ -396,7 +438,7 @@ Media cache
 						imageRecordByKey.set('user_profile_picture', record);
 					}
 				} catch (e) {
-					// ignore fetch/store failure — don't block storing name
+					// ignore fetch/store failure - don't block storing name
 				}
 			}
 
@@ -437,9 +479,28 @@ Media cache
 			return existing;
 		}
 
-		const response = await fetch(attachToken(streamUrl, token));
-		if (!response.ok) {
+		// retry with backoff - the server-side /stream/ file may still be 404 while
+		// the proxy is writing it. poll patiently (up to ~2.5 min) because a long
+		// track isn't fully written server-side until it has finished streaming once.
+		let response;
+		const delays = [0, 3000, 5000, 8000, 12000, 20000, 30000, 45000, 45000];
+		for (let attempt = 0; attempt < delays.length; attempt++) {
+			if (delays[attempt] > 0) {
+				await new Promise((r) => setTimeout(r, delays[attempt]));
+			}
+			try {
+				response = await fetch(attachToken(streamUrl, token));
+			} catch (err) {
+				// network blip (ex: went offline mid-cache) - give up quietly.
+				console.warn('[media-cache] track fetch network error for', trackKey, err);
+				return null;
+			}
+			if (response.ok) break;
+			if (response.status === 404 && attempt < delays.length - 1) continue;
 			throw new Error('Track cache fetch failed: ' + response.status);
+		}
+		if (!response || !response.ok) {
+			throw new Error('Track cache fetch failed after retries (server file never became ready)');
 		}
 		const blob = await response.blob();
 		const record = {
@@ -462,6 +523,12 @@ Media cache
 				store.put({...record, trackKey: aliasKey, aliasOf: trackKey}),
 			);
 		}
+		console.info(
+			'[media-cache] cached track',
+			trackKey,
+			'(' + (Number(blob.size) || 0) + ' bytes); aliases:',
+			aliases,
+		);
 		return record;
 	}
 
@@ -531,12 +598,14 @@ Media cache
 		return '';
 	}
 
-	async function resolveImageUrl(imageUrl) {
+	async function resolveImageUrl(imageUrl, variant) {
 		imageUrl = normalizeUrl(imageUrl);
 		if (!imageUrl) {
 			return '';
 		}
-		const fetchUrl = getProxiedImageUrl(imageUrl, 'high');
+		// small list-row callers can pass 'low' to avoid pulling the ~1280px
+		// maxres image into a tiny thumbnail (cuts bandwidth + decode jank).
+		const fetchUrl = getProxiedImageUrl(imageUrl, variant === 'low' ? 'low' : 'high');
 
 		const cachedUrl = await getImageUrl(imageUrl);
 		if (cachedUrl) {
@@ -618,13 +687,54 @@ Media cache
 		});
 	}
 
-	// Sets a DOM element's background-image progressively: low-res first, then high-res
-	function setImageEl(el, imageUrl) {
+	// sets a DOM element's background-image progressively: low-res first, then high-res
+	function setImageEl(el, imageUrl, opts) {
 		if (!el || !imageUrl) return;
 		const key = imageUrl + '|' + (el.dataset.imgKey || (el.dataset.imgKey = Math.random().toString(36).slice(2)));
-		setProgressiveImage(key, imageUrl, (url) => {
-			if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
-		});
+		setProgressiveImage(
+			key,
+			imageUrl,
+			(url) => {
+				if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+			},
+			opts,
+		);
+	}
+
+	function revokeTrackUrl(trackKey) {
+		const key = normalizeTrackKey(trackKey);
+		if (!key) return;
+		const existing = objectUrlByKey.get(key);
+		if (existing) {
+			try {
+				URL.revokeObjectURL(existing);
+			} catch (e) {}
+			objectUrlByKey.delete(key);
+		}
+	}
+
+	async function removeTrack(trackKey) {
+		const key = normalizeTrackKey(trackKey);
+		if (!key) return false;
+		revokeTrackUrl(key);
+		// also revoke any aliased object URLs that share the same blob
+		const rec = await getTrackRecord(key).catch(() => null);
+		const aliases = [];
+		if (rec) {
+			if (rec.sourceUrl) aliases.push(normalizeTrackKey(rec.sourceUrl));
+			if (rec.streamUrl) aliases.push(normalizeTrackKey(rec.streamUrl));
+		}
+		for (const alias of aliases) {
+			if (alias && alias !== key) revokeTrackUrl(alias);
+		}
+		// delete main record and all aliases from IndexedDB
+		const keysToDelete = [key, ...aliases].filter(Boolean);
+		for (const k of keysToDelete) {
+			try {
+				await withStore(TRACK_STORE, 'readwrite', (store) => store.delete(k));
+			} catch (_) {}
+		}
+		return true;
 	}
 
 	window.starlMediaCache = {
@@ -632,6 +742,8 @@ Media cache
 		cacheImage,
 		getTrackRecord,
 		getTrackUrl,
+		revokeTrackUrl,
+		removeTrack,
 		getImageUrl,
 		getImageVariantUrl,
 		setProgressiveImage,

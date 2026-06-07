@@ -1,9 +1,16 @@
-/*
-Playlist settings manager
--> handles playlist name editing and cover selection.
--> creates and manages the settings modal dialog.
--> persists changes to the playlist.
-*/
+/**
+ * ☆=========================================☆
+ * Playlist settings - name edit and cover selection modal
+ * The settings modal for a user-created playlist: rename it and pick which
+ * track covers appear on the playlist thumbnail.
+ *
+ * --- What this file does? ---
+ * - openSettingsModal(playlistId): creates and shows the modal
+ * - closeSettingsModal(): hides the modal
+ * - Saves name changes and cover track selections back to the playlist
+ * - Fires 'starl-playlist-settings-saved' after a successful save
+ * ☆=========================================☆
+ */
 
 (function () {
 	let activePlaylistId = '';

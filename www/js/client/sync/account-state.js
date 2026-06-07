@@ -1,9 +1,22 @@
-/*
-Account state sync
--> this file keeps one canonical user state in sync between the device and the server.
--> it stores per-user sections like history, follows, playlists, and search history.
--> server wins when it has data; local cache is used as a fallback and migration source.
-*/
+/**
+ * ☆=========================================☆
+ * Account state - device-server state sync
+ * Keeps one canonical user state in sync between the device and the server.
+ * Stores sections like history, follows, playlists, and search history.
+ *
+ * --- What this file does? ---
+ * - refreshFromServer(): fetches the latest state and merges it locally
+ * - setSection() / getSection(): read and write named sections of state
+ * - Detects when a different account logs in and clears stale cached state
+ * - Fires 'starl-account-state-updated' whenever state changes
+ * - Fires 'starl-server-connection-state' to report if the server is reachable
+ * - Runs a reconnect loop to retry when offline
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "section" = a named part of state (ex: 'listeningHistory', 'playlists')
+ * - Server wins when it has data; local cache is used as fallback and migration source
+ * ☆=========================================☆
+ */
 
 (function () {
 	const STORAGE_KEY = 'starl_account_state';
@@ -19,6 +32,8 @@ Account state sync
 	let reconnectTimerId = null;
 	let quickRetryTimerId = null;
 	let serverReachable = false;
+
+	/* ☆======= Local helpers (shadow globals for IIFE scope) =======☆ */
 
 	function getApiBase() {
 		if (window.starlShared && typeof window.starlShared.getApiBase === 'function') {
@@ -42,6 +57,8 @@ Account state sync
 		}
 		return localStorage.getItem('starl_access_token');
 	}
+
+	/* ☆======= State cache =======☆ */
 
 	function loadCachedState() {
 		try {
@@ -93,6 +110,8 @@ Account state sync
 			window.dispatchEvent(new CustomEvent(UPDATE_EVENT, {detail: {state: getState()}}));
 		} catch (error) {}
 	}
+
+	/* ☆======= Server sync =======☆ */
 
 	function emitServerState(online) {
 		try {
@@ -201,7 +220,7 @@ Account state sync
 						: {};
 
 				if (serverUserId && previousOwnerId && previousOwnerId !== serverUserId) {
-					// Different account: never reuse cached state from the previous user.
+					// different account: never reuse cached state from the previous user.
 					stateCache = {};
 				}
 
@@ -278,6 +297,8 @@ Account state sync
 			refreshFromServer();
 		}, RECONNECT_INTERVAL_MS);
 	}
+
+	/* ☆======= Public API + boot =======☆ */
 
 	window.starlAccountState = {
 		getState,

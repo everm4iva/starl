@@ -1,15 +1,25 @@
-/*
-Context menu system
--> location-aware context menus for tracks in different library sections.
--> manages add to playlist, remove from collection, favorite/unfavorite actions.
--> delegates to appropriate API handlers based on context.
-*/
+/**
+ * ☆=========================================☆
+ * Context menu - location-aware track action menu
+ * Shows a pop-up action menu for a track based on where it lives (history,
+ * playlist, favorites, etc.). Menu options change depending on context.
+ *
+ * --- What this file does? ---
+ * - createContextMenu(): builds Play, Add to Playlist, Favorite, Remove, View Artist/Album buttons
+ * - openContextMenu(): positions and shows the menu near its anchor element
+ * - registerTrackProvider(): lets any element opt-in by passing a track getter function
+ * - Closes when anything outside the menu is clicked
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "location" = where the track lives, ex: 'history', 'playlist:id123', 'favorites'
+ * ☆=========================================☆
+ */
 
 (function () {
 	let activeMenuEl = null;
 	let activeAnchorEl = null;
 
-	// ----- Helpers -----
+	/* ☆======= API handles =======☆ */
 
 	function getPlaylistsApi() {
 		return window.starlPlaylists || null;
@@ -49,6 +59,8 @@ Context menu system
 			streamUrl,
 			trackKey,
 			duration: Number(track.duration || 0) || 0,
+			albumId: String(track.albumId || '').trim(),
+			artistChannelId: String(track.artistChannelId || '').trim(),
 		};
 	}
 
@@ -60,7 +72,7 @@ Context menu system
 		activeAnchorEl = null;
 	}
 
-	// ----- Menu creation -----
+	/* ☆======= Menu creation =======☆ */
 
 	function createButton(label, handler) {
 		const button = document.createElement('button');
@@ -89,7 +101,7 @@ Context menu system
 		const playlistsApi = getPlaylistsApi();
 		const favoritesApi = getFavoritesApi();
 
-		// Play track
+		// play track
 		const playBtn = createButton('Play', () => {
 			if (window.starlPlaybackQueue && typeof window.starlPlaybackQueue.setQueue === 'function') {
 				window.starlPlaybackQueue.setQueue([track], 0);
@@ -100,7 +112,7 @@ Context menu system
 		});
 		menu.appendChild(playBtn);
 
-		// Add to playlist
+		// add to playlist
 		if (playlistsApi && typeof playlistsApi.addTrackToPlaylist === 'function') {
 			const addBtn = createButton('Add to playlist', () => {
 				const playlistId = prompt('Enter playlist ID or select from list');
@@ -111,7 +123,7 @@ Context menu system
 			menu.appendChild(addBtn);
 		}
 
-		// Favorite / Unfavorite
+		// favorite / Unfavorite
 		if (favoritesApi) {
 			const isFavorite =
 				typeof favoritesApi.isFavorite === 'function' ? favoritesApi.isFavorite(track.trackKey) : false;
@@ -126,7 +138,7 @@ Context menu system
 			menu.appendChild(favoriteBtn);
 		}
 
-		// Remove from history
+		// remove from history
 		if (location === 'history') {
 			const historyApi = getListeningHistoryApi();
 			if (historyApi && typeof historyApi.removeFromHistory === 'function') {
@@ -137,7 +149,7 @@ Context menu system
 			}
 		}
 
-		// Remove from playlist
+		// remove from playlist
 		if (location && location.startsWith('playlist:')) {
 			const playlistId = location.substring(9);
 			if (playlistsApi && typeof playlistsApi.removeTrackFromPlaylist === 'function') {
@@ -148,34 +160,56 @@ Context menu system
 			}
 		}
 
-		// View album
+		// view album
 		if (track && track.album) {
 			const albumBtn = createButton('View album: ' + track.album, () => {
-				if (window.starlLibrarySearch && typeof window.starlLibrarySearch.searchAlbums === 'function') {
-					const results = window.starlLibrarySearch.searchAlbums(track.album);
-					try {
-						window.dispatchEvent(
-							new CustomEvent('starl-navigate-album', {detail: {album: track.album, results: results}}),
-						);
-					} catch (error) {}
+				if (!window.starlArtistPage) return;
+				if (track.albumId && typeof window.starlArtistPage.openServerAlbum === 'function') {
+					window.starlArtistPage.openServerAlbum({id: track.albumId, title: track.album, thumbnail: track.imageUrl, artist: track.artist});
+					return;
 				}
+				const native = window.starlLibraryNative;
+				const albums = native ? native.getAlbumList() : [];
+				const found = albums.find((a) => a.name === track.album);
+				window.starlArtistPage.openLocalAlbum(
+					found || {name: track.album, artist: track.artist, imageUrl: track.imageUrl, tracks: [track]},
+				);
 			});
 			menu.appendChild(albumBtn);
 		}
 
-		// View artist
+		// view artist
 		if (track && track.artist) {
-			const artistBtn = createButton('View artist: ' + track.artist, () => {
-				if (window.starlLibrarySearch && typeof window.starlLibrarySearch.searchArtists === 'function') {
-					const results = window.starlLibrarySearch.searchArtists(track.artist);
+			const artistBtn = createButton('View artist: ' + track.artist, async () => {
+				if (!window.starlArtistPage) return;
+				const native = window.starlLibraryNative;
+				const artists = native ? native.getArtistList() : [];
+				const exact = artists.find((a) => a.name.toLowerCase() === track.artist.toLowerCase());
+				let channelId = (exact && exact.channelId) || track.artistChannelId || '';
+
+				if (!channelId) {
 					try {
-						window.dispatchEvent(
-							new CustomEvent('starl-navigate-artist', {
-								detail: {artist: track.artist, results: results},
-							}),
-						);
-					} catch (error) {}
+						const base = typeof getApiBase === 'function' ? getApiBase() : '';
+						const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
+						if (base && token) {
+							const res = await fetch(base + '/search', {
+								method: 'POST',
+								headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token},
+								body: JSON.stringify({query: track.artist, kind: 'channels', limit: 1}),
+							});
+							if (res.ok) {
+								const data = await res.json();
+								const first = data && data.items && data.items[0];
+								if (first && first.id) channelId = first.id;
+							}
+						}
+					} catch (_) {}
 				}
+
+				const artistObj = exact
+					? {...exact, channelId}
+					: {name: track.artist, imageUrl: track.imageUrl, tracks: [track], channelId};
+				window.starlArtistPage.openArtist(artistObj);
 			});
 			menu.appendChild(artistBtn);
 		}
@@ -183,7 +217,7 @@ Context menu system
 		return menu;
 	}
 
-	// ----- Opening menu -----
+	/* ☆======= Open / close =======☆ */
 
 	function openContextMenu(anchorElement, track, location) {
 		closeActiveMenu();
@@ -209,7 +243,7 @@ Context menu system
 		window.addEventListener('click', closeActiveMenu, {once: true});
 	}
 
-	// ----- Track provider registration -----
+	/* ☆======= Track provider registration =======☆ */
 
 	function registerTrackProvider(element, trackProvider, location) {
 		if (!element || typeof trackProvider !== 'function') {
@@ -233,7 +267,7 @@ Context menu system
 		});
 	}
 
-	// ----- Public API -----
+	/* ☆======= Public API =======☆ */
 
 	window.starlContextMenu = {openContextMenu, closeActiveMenu, registerTrackProvider};
 })();

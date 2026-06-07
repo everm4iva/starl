@@ -1,9 +1,19 @@
-/*
-History manager
--> records, reads, and removes tracks from account state history section.
--> fires 'starl-history-updated' on any change.
--> no rendering — library.js owns all UI.
-*/
+/**
+ * ☆=========================================☆
+ * Listening history - play history tracker
+ * Records, reads, and removes tracks from the 'history' section of account state.
+ * No rendering here - library.js and last-tracks.js own the UI.
+ *
+ * --- What this file does? ---
+ * - record(track): adds a track to history, de-duping by trackKey
+ * - getHistory() / getAll(): returns the history list (newest first)
+ * - removeFromHistory(trackKey): removes a specific track
+ * - Fires 'starl-history-updated' on every change
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - Falls back to a legacy localStorage key on first load for migration
+ * ☆=========================================☆
+ */
 
 (function () {
 	const SECTION_KEY = 'history';
@@ -61,7 +71,7 @@ History manager
 		const duration = Number(meta.duration || 0) || 0;
 		const trackKey = String(meta.trackKey || sourceUrl || streamUrl || title + '|' + artist).trim();
 		if (!trackKey) return null;
-		return { title, artist, album, imageUrl, sourceUrl, streamUrl, duration, trackKey };
+		return {title, artist, album, imageUrl, sourceUrl, streamUrl, duration, trackKey};
 	}
 
 	// ----- Migration from old per-device key -----
@@ -86,7 +96,7 @@ History manager
 		const entry = normalize(meta);
 		if (!entry) return;
 		const entries = readHistory().filter((e) => e && e.trackKey !== entry.trackKey);
-		entries.unshift({ ...entry, playedAt: Date.now() });
+		entries.unshift({...entry, playedAt: Date.now()});
 		writeHistory(entries.slice(0, MAX_ENTRIES));
 	}
 
@@ -108,7 +118,7 @@ History manager
 		return readHistory().length;
 	}
 
-	window.starlHistory = { record, getAll, remove, clear, getCount };
+	window.starlHistory = {record, getAll, remove, clear, getCount};
 
 	window.addEventListener('starl-account-state-updated', () => {
 		migrateLegacy();
@@ -118,6 +128,6 @@ History manager
 	if (document.readyState !== 'loading') {
 		migrateLegacy();
 	} else {
-		document.addEventListener('DOMContentLoaded', migrateLegacy, { once: true });
+		document.addEventListener('DOMContentLoaded', migrateLegacy, {once: true});
 	}
 })();

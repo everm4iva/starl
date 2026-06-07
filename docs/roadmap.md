@@ -12,7 +12,7 @@ Not promises - genuine goals:
 | **Manual downloads** | Save songs explicitly for offline use |
 | **Lyrics** | Shown in the full player |
 | **Themes & customization** | Light/dark/system, accent color picker, animation toggle |
-| **Recommendation system** | Transparent algorithm — genre, mood, tempo — you control it |
+| **Recommendation system** | Transparent algorithm — genre, mood, tempo - you control it |
 | **Radio stations** | Auto-generated based on genres and moods |
 | **Video support** | Music videos in the same interface |
 | **Plugin system** | Community-hosted plugins |

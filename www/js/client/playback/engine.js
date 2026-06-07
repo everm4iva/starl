@@ -1,3 +1,25 @@
+/**
+ * ☆=========================================☆
+ * Engine - state persistence, stream helpers, audio event listeners
+ * The first half of the playback engine. Lives on top of runtime.js
+ * (which owns the <audio> element and global state vars).
+ * The starlPlayer API + state restore + queue live in engine-player.js (loaded after).
+ *
+ * --- What this file does? ---
+ * - savePlayerState() / readPlayerState() / updateStoredState(): localStorage persistence
+ * - playStream(): points the <audio> element at a URL and starts playback
+ * - getCachedPlayableTrackUrl(): checks the local cache for an offline copy first
+ * - Audio event listeners: loadedmetadata, timeupdate, ended, play, pause, scrub
+ * - dispatchPlaybackState(): fires 'starl-playback-changed' custom event
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "trackKey" = canonical identifier for a track (usually its source URL)
+ * - updateNativeElapsedState / updateMediaSession* are defined in runtime-notifications.js
+ * ☆=========================================☆
+ */
+
+/* ☆======= State persistence =======☆ */
+
 function savePlayerState(partial) {
 	try {
 		const now = Date.now();
@@ -29,6 +51,8 @@ function updateStoredState(overrides) {
 	savePlayerState(next);
 }
 
+/* ☆======= Stream helpers =======☆ */
+
 function getCanonicalArtworkUrl(item, downloadData = null) {
 	const apiBase = getApiBase();
 	const apiArtwork = downloadData && downloadData.image_url ? toAbsoluteUrl(apiBase, downloadData.image_url) : '';
@@ -52,6 +76,16 @@ async function playStream(streamUrl, token) {
 	setPlayIconState(true);
 }
 
+async function probeBlobUrl(url) {
+	if (!url || !/^blob:/i.test(url)) return true;
+	try {
+		const r = await fetch(url);
+		return r.ok;
+	} catch (e) {
+		return false;
+	}
+}
+
 async function getCachedPlayableTrackUrl(cache, itemOrState) {
 	if (!cache || typeof cache.getTrackUrl !== 'function' || !itemOrState) {
 		return '';
@@ -63,7 +97,18 @@ async function getCachedPlayableTrackUrl(cache, itemOrState) {
 		try {
 			const cachedUrl = await cache.getTrackUrl(candidateKey);
 			if (cachedUrl) {
-				return cachedUrl;
+				// verify the blob URL is still alive - the browser may have revoked it
+				if (await probeBlobUrl(cachedUrl)) {
+					return cachedUrl;
+				}
+				// stale blob: revoke and recreate so a fresh object URL is returned
+				if (typeof cache.revokeTrackUrl === 'function') {
+					cache.revokeTrackUrl(candidateKey);
+				}
+				const retried = await cache.getTrackUrl(candidateKey);
+				if (retried && (await probeBlobUrl(retried))) {
+					return retried;
+				}
 			}
 		} catch (error) {
 			console.warn('Failed to check cached track', error);
@@ -72,8 +117,15 @@ async function getCachedPlayableTrackUrl(cache, itemOrState) {
 	return '';
 }
 
+/* ☆======= Audio event listeners =======☆ */
+
 audio.addEventListener('loadedmetadata', () => {
-	const duration = Number(audio.duration) || 0;
+	const streamDuration = Number(audio.duration) || 0;
+	const metaDuration = Number(lastTrackMeta && lastTrackMeta.duration) || 0;
+	// trust the API-provided duration when it's longer than what the stream header
+	// reports - stream metadata can be slightly shorter due to encoding/container
+	// issues, which would otherwise make the slider max too short.
+	const duration = metaDuration > streamDuration ? metaDuration : streamDuration;
 	if (playerTime) {
 		playerTime.min = '0';
 		playerTime.max = duration ? String(Math.floor(duration)) : '0';
@@ -118,13 +170,38 @@ audio.addEventListener('ended', () => {
 	updateMediaSessionPositionState(true);
 	updateNativePlayingState();
 	updateNativeElapsedState(true);
+
+	if (endedEarly && currentStreamUrl) {
+		const queueApi = window.starlPlaybackQueue;
+		const hasNextTrack = queueApi && queueApi.getQueueLength() > 1;
+		if (!hasNextTrack) {
+			const resumePos = position;
+			setTimeout(() => {
+				const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
+				const sep = currentStreamUrl.includes('?') ? '&' : '?';
+				const resumeUrl = token
+					? currentStreamUrl + sep + 'token=' + encodeURIComponent(token)
+					: currentStreamUrl;
+				audio.src = resumeUrl;
+				audio.load();
+				const onReady = () => {
+					audio.removeEventListener('loadedmetadata', onReady);
+					try {
+						if (resumePos > 1) audio.currentTime = resumePos;
+					} catch (e) {}
+					audio.play().catch(() => {});
+				};
+				audio.addEventListener('loadedmetadata', onReady);
+			}, 400);
+		}
+	}
 });
 
 function dispatchPlaybackState() {
 	try {
-		window.dispatchEvent(new CustomEvent('starl-playback-changed', {
-			detail: {trackKey: currentTrackKey, isPlaying: !audio.paused},
-		}));
+		window.dispatchEvent(
+			new CustomEvent('starl-playback-changed', {detail: {trackKey: currentTrackKey, isPlaying: !audio.paused}}),
+		);
 	} catch (e) {}
 }
 
@@ -170,374 +247,3 @@ if (playerTime) {
 		}
 	});
 }
-
-window.starlPlayer = {
-	async playFromSearch(item) {
-		const trackKey =
-			item && (item.trackKey || item.url || item.sourceUrl || item.streamUrl)
-				? String(item.trackKey || item.url || item.sourceUrl || item.streamUrl)
-				: '';
-		if (isLoadingTrack && trackKey && trackKey === currentTrackKey) {
-			return;
-		}
-		isLoadingTrack = true;
-		currentTrackKey = trackKey;
-		setPlayIconState(false);
-		dispatchPlaybackState();
-
-		// Clear playback context when playing a single track directly (not via a playlist queue)
-		const queueLength = window.starlPlaybackQueue ? window.starlPlaybackQueue.getQueueLength() : 0;
-		if (queueLength <= 1) {
-			window.starlPlaybackContext = null;
-		}
-
-		const token = getAccessToken();
-		if (!token) {
-			console.warn('Login required to play.');
-			const authClient = window.starlAuth;
-			if (authClient && typeof authClient.redirectToLogin === 'function') {
-				authClient.redirectToLogin();
-			}
-			isLoadingTrack = false;
-			return;
-		}
-
-		setLoadingState(true);
-		const cache = getMediaCache();
-		const imageUrl = getCanonicalArtworkUrl(item);
-		const cachedUrl = await getCachedPlayableTrackUrl(cache, item);
-		if (cachedUrl) {
-			setTrackMeta({
-				title: item.title || 'Untitled',
-				artist: item.artist || 'Unknown artist',
-				album: item.album || '',
-				imageUrl,
-				duration: item.duration || 0,
-			});
-
-			try {
-				if (window.starlHistory && typeof window.starlHistory.record === 'function') {
-					window.starlHistory.record({
-						title: item.title || 'Untitled',
-						artist: item.artist || 'Unknown artist',
-						album: item.album || '',
-						imageUrl,
-						url: item.url || item.sourceUrl || item.streamUrl || '',
-						trackKey,
-						streamUrl: item.streamUrl || item.sourceUrl || item.url || '',
-						duration: item.duration || 0,
-					});
-				}
-			} catch (error) {}
-
-			updateStoredState({
-				title: item.title || 'Untitled',
-				artist: item.artist || 'Unknown artist',
-				album: item.album || '',
-				imageUrl,
-				streamUrl: item.url || item.sourceUrl || item.streamUrl || '',
-				trackKey,
-				position: 0,
-				duration: item.duration || 0,
-				isPlaying: false,
-			});
-
-			try {
-				await playStream(cachedUrl, '');
-			} catch (error) {
-				console.warn('Cached playback failed', error);
-			}
-			updateStoredState({isPlaying: !audio.paused});
-			setPlayerOpen(false);
-			setLoadingState(false);
-			isLoadingTrack = false;
-			return;
-		}
-
-		if (!navigator.onLine) {
-			console.warn('Offline playback unavailable until this song is cached.');
-			setLoadingState(false);
-			isLoadingTrack = false;
-			return;
-		}
-
-		if (cache) {
-			const cachedUrl = await getCachedPlayableTrackUrl(cache, item);
-			if (cachedUrl) {
-				try {
-					setTrackMeta({
-						title: item.title || 'Untitled',
-						artist: item.artist || 'Unknown artist',
-						album: item.album || '',
-						imageUrl,
-						duration: item.duration || 0,
-					});
-					await playStream(cachedUrl, '');
-					setLoadingState(false);
-					isLoadingTrack = false;
-					return;
-				} catch (error) {
-					console.warn('Cached playback failed', error);
-				}
-			}
-		}
-
-		let downloadData = null;
-		try {
-			const sourceUrl = item.url || item.sourceUrl || '';
-			const result = await requestTrackDownload(sourceUrl, token);
-			if (result && result.authFailed) {
-				isLoadingTrack = false;
-				return;
-			}
-			downloadData = result ? result.data : null;
-		} catch (error) {
-			console.warn('Stream request failed', error);
-			setLoadingState(false);
-			isLoadingTrack = false;
-			return;
-		}
-		const apiBase = getApiBase();
-
-		const resolvedImageUrl = getCanonicalArtworkUrl(item, downloadData);
-		const streamUrl = downloadData.stream_url ? toAbsoluteUrl(apiBase, downloadData.stream_url) : '';
-		const duration = downloadData.duration || item.duration || 0;
-
-		setTrackMeta({
-			title: item.title || downloadData.title || 'Untitled',
-			artist: item.artist || 'Unknown artist',
-			album: item.album || '',
-			imageUrl: resolvedImageUrl,
-			duration,
-		});
-
-		if (cache && typeof cache.cacheTrack === 'function' && streamUrl) {
-			cache
-				.cacheTrack({
-					trackKey,
-					sourceUrl: item.url || item.sourceUrl || '',
-					streamUrl,
-					token,
-					title: item.title || downloadData.title || 'Untitled',
-					artist: item.artist || 'Unknown artist',
-					album: item.album || '',
-					imageUrl: resolvedImageUrl,
-					duration,
-				})
-				.catch((error) => {
-					console.warn('Track cache failed', error);
-				});
-		}
-
-		if (cache && typeof cache.cacheImage === 'function' && resolvedImageUrl) {
-			cache.cacheImage(resolvedImageUrl).catch(() => {});
-		}
-
-		if (cache && typeof cache.getImageUrl === 'function' && resolvedImageUrl) {
-			cache
-				.getImageUrl(resolvedImageUrl)
-				.then((cachedImage) => {
-					if (cachedImage) {
-						try {
-							setBgVar(cachedImage);
-						} catch (e) {}
-					}
-				})
-				.catch(() => {});
-		}
-
-		try {
-			if (window.starlHistory && typeof window.starlHistory.record === 'function') {
-				window.starlHistory.record({
-					title: item.title || downloadData.title || 'Untitled',
-					artist: item.artist || 'Unknown artist',
-					album: item.album || '',
-					imageUrl: resolvedImageUrl,
-					url: item.url || '',
-					trackKey,
-					streamUrl,
-					duration,
-				});
-			}
-		} catch (error) {}
-
-		updateStoredState({
-			title: item.title || downloadData.title || 'Untitled',
-			artist: item.artist || 'Unknown artist',
-			album: item.album || '',
-			imageUrl: resolvedImageUrl,
-			streamUrl,
-			trackKey,
-			position: 0,
-			duration,
-			isPlaying: false,
-		});
-
-		try {
-			await playStream(streamUrl, token);
-		} catch (error) {
-			console.warn('Playback start failed', error);
-		}
-		updateStoredState({isPlaying: !audio.paused});
-		setPlayerOpen(false);
-		setLoadingState(false);
-		isLoadingTrack = false;
-	},
-};
-
-async function restorePlayerState() {
-	const state = readPlayerState();
-	if (!state || !state.streamUrl) {
-		setPlayerOpen(false);
-		return;
-	}
-
-	currentTrackKey = state.trackKey || '';
-	currentStreamUrl = state.streamUrl;
-	setTrackMeta({
-		title: state.title || 'Untitled',
-		artist: state.artist || 'Unknown artist',
-		album: state.album || '',
-		imageUrl: upgradeArtworkUrl(state.imageUrl || ''),
-		duration: state.duration || 0,
-	});
-
-	// If image is cached, set background immediately to avoid refetch
-	try {
-		const cache = getMediaCache();
-		if (cache && typeof cache.getImageUrl === 'function' && state.imageUrl) {
-			const cached = await cache.getImageUrl(state.imageUrl);
-			if (cached) {
-				try {
-					setBgVar(cached);
-				} catch (e) {}
-			}
-		}
-	} catch (e) {}
-
-	const token = getAccessToken();
-	if (!token) {
-		setPlayIconState(false);
-		setPlayerOpen(false);
-		return;
-	}
-
-	const cache = getMediaCache();
-	// If a cached playable track exists for the restored state, prefer it
-	let playableUrl = await getCachedPlayableTrackUrl(cache, state);
-	if (!playableUrl && state.streamUrl) {
-		const separator = state.streamUrl.includes('?') ? '&' : '?';
-		playableUrl = state.streamUrl + separator + 'token=' + encodeURIComponent(token);
-	}
-	if (!playableUrl) {
-		setPlayIconState(false);
-		setPlayerOpen(false);
-		return;
-	}
-
-	audio.src = playableUrl;
-	audio.load();
-
-	const position = Number(state.position) || 0;
-	if (Number.isFinite(position) && position > 0) {
-		audio.currentTime = position;
-		if (playerTime) {
-			playerTime.value = String(Math.floor(position));
-			updateSliderProgress();
-		}
-		setTimeVars(position, Number(state.duration) || 0);
-	}
-
-	if (state.isPlaying) {
-		audio
-			.play()
-			.then(() => {
-				setPlayIconState(true);
-			})
-			.catch(() => {
-				setPlayIconState(false);
-			});
-	} else {
-		setPlayIconState(false);
-	}
-
-	setPlayerOpen(false);
-	setLoadingState(false);
-}
-
-// ----- Queue integration -----
-
-function trackToPlayItem(track) {
-	return {
-		trackKey: track.trackKey || '',
-		url: track.sourceUrl || track.streamUrl || track.trackKey || '',
-		sourceUrl: track.sourceUrl || '',
-		streamUrl: track.streamUrl || '',
-		title: track.title || 'Untitled',
-		artist: track.artist || 'Unknown artist',
-		album: track.album || '',
-		thumbnail: track.imageUrl || '',
-		imageUrl: track.imageUrl || '',
-		duration: track.duration || 0,
-	};
-}
-
-window.starlPlayer.getPlaybackState = function () {
-	return {trackKey: currentTrackKey, isPlaying: !audio.paused};
-};
-
-window.starlPlayer.togglePlay = function () {
-	if (!audio.src) return;
-	if (audio.paused) {
-		audio.play().then(() => { setPlayIconState(true); updateStoredState({isPlaying: true}); }).catch(() => {});
-	} else {
-		audio.pause();
-		setPlayIconState(false);
-		updateStoredState({isPlaying: false});
-	}
-};
-
-window.starlPlayer.playWithQueue = function (tracks, startIndex, context) {
-	const queue = Array.isArray(tracks) ? tracks : [];
-	const idx = Math.max(0, Math.min(Number(startIndex) || 0, queue.length - 1));
-	window.starlPlaybackContext = context || null;
-	if (window.starlPlaybackQueue && typeof window.starlPlaybackQueue.setQueue === 'function') {
-		window.starlPlaybackQueue.setQueue(queue, idx);
-	}
-	const target = queue[idx];
-	if (target && typeof window.starlPlayer.playFromSearch === 'function') {
-		window.starlPlayer.playFromSearch(target);
-	}
-};
-
-audio.addEventListener('ended', function handleQueueAutoAdvance() {
-	const queueApi = window.starlPlaybackQueue;
-	if (!queueApi || queueApi.getQueueLength() <= 1) return;
-	const next = queueApi.nextTrack();
-	if (next && typeof window.starlPlayer.playFromSearch === 'function') {
-		window.starlPlayer.playFromSearch(trackToPlayItem(next));
-	}
-});
-
-// ----- Playback error notification -----
-
-audio.addEventListener('error', function handlePlaybackError() {
-	const err = audio.error;
-	if (!err) return;
-	// Ignore blob-fallback errors (handled by runtime.js)
-	if (/^blob:/i.test(audio.src || '') && typeof blobFallbackInProgress !== 'undefined') return;
-	const MESSAGES = {
-		1: 'Playback stopped.',
-		2: 'Network error while loading track.',
-		3: 'Could not decode audio.',
-		4: 'Format not supported or content unavailable.',
-	};
-	const msg = MESSAGES[err.code] || 'Playback error.';
-	if (typeof showToast === 'function') {
-		showToast(msg, 'danger');
-	} else if (window.starlLayout && typeof window.starlLayout.showToast === 'function') {
-		window.starlLayout.showToast(msg, 'danger');
-	}
-	setLoadingState(false);
-	isLoadingTrack = false;
-});

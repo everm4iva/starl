@@ -11,18 +11,20 @@
 	z-index: 4;
 	overflow-x: hidden;
 	overflow-y: auto;
-	transform: translateY(100%);
+	/* Horizontal drill-in: slides in from the right edge, slides back out to the
+	   right on close. Pairs with the swipe-right-to-go-back header gesture. */
+	transform: translateX(100%);
 	transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 	will-change: transform;
 }
 
 .inside-playlist:not(.hidden) {
-	transform: translateY(0);
+	transform: translateX(0);
 }
 
 .inside-playlist.hidden {
 	display: flex !important;
-	transform: translateY(100%);
+	transform: translateX(100%);
 	pointer-events: none;
 	visibility: visible !important;
 	width: 100% !important;
@@ -30,7 +32,7 @@
 
 /* --------- Inside Playlist - Header --------- */
 .inside-playlist .header {
-    position: relative;
+position: relative;
     width: 100%;
     border-radius: 0px 0px 20px 20px;
     background-color: #000000fb;
@@ -38,13 +40,11 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    /* overflow: hidden; */
     z-index: 7;
     touch-action: pan-y;
-    /* flex: 1; */
-    /* flex-shrink: revert; */
-    margin-bottom: 9%;
+    margin-bottom: 7%;
     min-height: 25%;
+    overflow: hidden;
 }
 
 .artist-page .header {
@@ -97,17 +97,17 @@
 }
 
 .inside-playlist .header .playlist-info {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	flex-direction: row;
-	padding-left: 4%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin-top: 10%;
-	justify-content: center;
-	width: 55%;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
+    padding-left: 4%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15%;
+    justify-content: center;
+    width: 55%;
 }
 
 .inside-playlist .header .playlist-info .playlist-title {
@@ -189,23 +189,35 @@
     gap: 5px;
     padding-left: 4%;
     padding-right: 4%;
-    padding-bottom: 145px;
 }
 
-.tab.library,
-.artist-page .body,
-.playlists.list {
-	padding-bottom: 120px;
+.tab.library:last-child,
+.inside-playlist .body .item:last-child,
+.artist-page .body:last-child,
+.playlists.list:last-child {
+	margin-bottom: 30%;
+}
+
+.artist-page {
+	padding-bottom: 25vh;
+}
+
+.inside-playlist .body::after {
+	content: '';
+	display: block;
+	height: 25vh;
+	flex-shrink: 0;
 }
 
 /* --------- Inside Playlist - Covers --------- */
 
 .inside-playlist .header .playlist-cover {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 1fr 1fr;
-	overflow: hidden;
-	background-image: none !important;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    overflow: hidden;
+    background-image: none !important;
+    margin-top: 4%;
 }
 
 .inside-playlist .header .playlist-cover.count-0,
@@ -283,18 +295,20 @@
 	z-index: 200;
 	overflow-x: hidden;
 	overflow-y: auto;
-	transform: translateY(100%);
+	/* Horizontal drill-in: slides in from the right edge, slides back out to the
+	   right on close. Pairs with the swipe-right-to-go-back header gesture. */
+	transform: translateX(100%);
 	transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 	will-change: transform;
 }
 
 .artist-page:not(.hidden) {
-	transform: translateY(0);
+	transform: translateX(0);
 }
 
 .artist-page.hidden {
 	display: flex !important;
-	transform: translateY(100%);
+	transform: translateX(100%);
 	pointer-events: none;
 	visibility: visible !important;
 	width: 100% !important;
@@ -1044,6 +1058,28 @@
 	background: rgba(220, 60, 60, 0.25);
 	color: rgba(220, 60, 60, 0.9);
 	flex: none;
+}
+
+.bsc-stat-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: baseline;
+	padding: 9px 20px;
+	gap: 12px;
+}
+
+.bsc-stat-label {
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.45);
+	flex-shrink: 0;
+}
+
+.bsc-stat-value {
+	font-size: 0.9rem;
+	color: rgba(255, 255, 255, 0.9);
+	text-align: right;
+	word-break: break-all;
 }
 
 .bsc-icon-star {

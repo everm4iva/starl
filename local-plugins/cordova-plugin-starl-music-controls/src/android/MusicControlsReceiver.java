@@ -9,7 +9,7 @@ public class MusicControlsReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if (intent == null || intent.getAction() == null) return;
-		// Forward the notification action to the native foreground service so
+		// forward the notification action to the native foreground service so
 		// play/pause works even when the WebView is backgrounded or gone.
 		try {
 			Intent serviceIntent = new Intent(context, MediaPlaybackService.class);
@@ -17,7 +17,7 @@ public class MusicControlsReceiver extends BroadcastReceiver {
 			ContextCompat.startForegroundService(context, serviceIntent);
 		} catch (Exception ignored) {}
 
-		// If the Cordova plugin is still alive, also forward the action to JS so
+		// if the Cordova plugin is still alive, also forward the action to JS so
 		// the WebView player state stays in sync when possible.
 		if (MusicControls.getInstance() == null) {
 			try {

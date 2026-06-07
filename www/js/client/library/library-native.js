@@ -1,14 +1,25 @@
-/*
-Native library data providers
--> history, favorites, all music, artists, albums from local user data.
--> updates the Artists/Albums CSS tile variables dynamically from real library data.
--> caches tile cover selections in localStorage so they restore instantly on next load.
-*/
+/**
+ * ☆=========================================☆
+ * Library native - local library data providers
+ * Builds the artist, album, and track lists from history + favorites + playlists.
+ * Also drives the Artists/Albums tile covers in the library header.
+ *
+ * --- What this file does? ---
+ * - getArtistList() / getAlbumList(): returns deduplicated lists from local data
+ * - updateArtistTiles() / updateAlbumTiles(): fills the tile cover CSS vars
+ * - Caches chosen tile cover images in localStorage for instant restore on reload
+ * - Exposes getMediaCacheArtwork() to resolve cover URLs through the media cache
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "tile covers" = the small mosaic of images on the Artists/Albums header tiles
+ * - Data comes from: listening history, favorites, and user playlists
+ * ☆=========================================☆
+ */
 
 (function () {
 	const TILE_CACHE_KEY = 'starl_tile_covers';
 
-	// ----- Data sources -----
+	/* ☆======= Data sources =======☆ */
 
 	function getHistoryTracks() {
 		return window.starlHistory ? window.starlHistory.getAll() : [];
@@ -39,13 +50,14 @@ Native library data providers
 			const name = String(track.artist || '').trim();
 			if (!name) return; // skip tracks with no artist
 			if (!map.has(name)) {
-				map.set(name, { name, imageUrl: track.imageUrl || '', tracks: [], albumNames: new Set() });
+				map.set(name, {name, imageUrl: track.imageUrl || '', tracks: [], albumNames: new Set(), channelId: ''});
 			}
 			const entry = map.get(name);
 			entry.tracks.push(track);
 			if (track.album) entry.albumNames.add(track.album);
+			if (!entry.channelId && track.artistChannelId) entry.channelId = track.artistChannelId;
 		});
-		// Also merge followed artists
+		// also merge followed artists
 		if (window.starlFollows && typeof window.starlFollows.getFollowedArtists === 'function') {
 			window.starlFollows.getFollowedArtists().forEach((a) => {
 				const name = String(a.name || '').trim();
@@ -56,39 +68,42 @@ Native library data providers
 			});
 		}
 		return Array.from(map.values())
-			.map((e) => ({ ...e, albumCount: e.albumNames.size }))
+			.map((e) => ({...e, albumCount: e.albumNames.size}))
 			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
 	function getAlbumList() {
-		// Only show albums explicitly followed/saved
+		// only show albums explicitly followed/saved
 		if (window.starlFollows && typeof window.starlFollows.getFollowedAlbums === 'function') {
 			const followed = window.starlFollows.getFollowedAlbums();
-			// For each followed album, try to enrich with local tracks
+			// for each followed album, try to enrich with local tracks
 			const all = getAllTracks();
 			const localByName = new Map();
 			all.forEach((track) => {
 				const name = String(track.album || '').trim();
 				if (!name) return;
-				if (!localByName.has(name)) localByName.set(name, {tracks: [], imageUrl: track.imageUrl || '', artist: track.artist || ''});
+				if (!localByName.has(name))
+					localByName.set(name, {tracks: [], imageUrl: track.imageUrl || '', artist: track.artist || ''});
 				localByName.get(name).tracks.push(track);
 			});
-			return followed.map((a) => {
-				const name = String(a.name || '').trim();
-				const local = localByName.get(name);
-				// browseId is the YTMusic MPREb_... id needed for server fetch.
-				// id is the save/lookup key (may equal browseId or fall back to name for local albums).
-				const browseId = a.browseId || (a.id && a.id !== name ? a.id : '') || '';
-				return {
-					name,
-					artist: a.artist || (local && local.artist) || '',
-					imageUrl: a.imageUrl || (local && local.imageUrl) || '',
-					tracks: (local && local.tracks) || [],
-					followed: true,
-					id: a.id || null,
-					browseId,
-				};
-			}).sort((a, b) => a.name.localeCompare(b.name));
+			return followed
+				.map((a) => {
+					const name = String(a.name || '').trim();
+					const local = localByName.get(name);
+					// browseId is the YTMusic MPREb_... id needed for server fetch.
+					// id is the save/lookup key (may equal browseId or fall back to name for local albums).
+					const browseId = a.browseId || (a.id && a.id !== name ? a.id : '') || '';
+					return {
+						name,
+						artist: a.artist || (local && local.artist) || '',
+						imageUrl: a.imageUrl || (local && local.imageUrl) || '',
+						tracks: (local && local.tracks) || [],
+						followed: true,
+						id: a.id || null,
+						browseId,
+					};
+				})
+				.sort((a, b) => a.name.localeCompare(b.name));
 		}
 		return [];
 	}
@@ -119,8 +134,12 @@ Native library data providers
 		if (!cached) return false;
 		const artists = cached.artists || [];
 		const albums = cached.albums || [];
-		artists.forEach((url, i) => { if (url) setCSSVar('--artist' + (i + 1), url); });
-		albums.forEach((url, i) => { if (url) setCSSVar('--album' + (i + 1), url); });
+		artists.forEach((url, i) => {
+			if (url) setCSSVar('--artist' + (i + 1), url);
+		});
+		albums.forEach((url, i) => {
+			if (url) setCSSVar('--album' + (i + 1), url);
+		});
 		return artists.length > 0 || albums.length > 0;
 	}
 
@@ -149,25 +168,29 @@ Native library data providers
 	}
 
 	async function updateTileCovers() {
-		// Apply cached version instantly first
+		// apply cached version instantly first
 		applyCachedCovers();
 
 		const artists = getArtistList().filter((a) => a.imageUrl);
 		const albums = getAlbumList().filter((a) => a.imageUrl);
 		if (!artists.length && !albums.length) return;
 
-		// Pick random selections for freshness
+		// pick random selections for freshness
 		const artistPicks = pickRandom(artists, 5);
 		const albumPicks = pickRandom(albums, 2);
 
 		const artistUrls = await Promise.all(artistPicks.map((a) => resolveUrl(a.imageUrl)));
 		const albumUrls = await Promise.all(albumPicks.map((a) => resolveUrl(a.imageUrl)));
 
-		// Apply to CSS variables
-		artistUrls.forEach((url, i) => { if (url) setCSSVar('--artist' + (i + 1), url); });
-		albumUrls.forEach((url, i) => { if (url) setCSSVar('--album' + (i + 1), url); });
+		// apply to CSS variables
+		artistUrls.forEach((url, i) => {
+			if (url) setCSSVar('--artist' + (i + 1), url);
+		});
+		albumUrls.forEach((url, i) => {
+			if (url) setCSSVar('--album' + (i + 1), url);
+		});
 
-		// Also set inline styles on the img-frame children for immediate effect
+		// also set inline styles on the img-frame children for immediate effect
 		const artistFrame = document.querySelector('.tile.artists .img-frame');
 		if (artistFrame) {
 			artistUrls.forEach((url, i) => {
@@ -183,25 +206,28 @@ Native library data providers
 			});
 		}
 
-		// Cache resolved URLs for next load
-		saveCachedCovers({ artists: artistUrls, albums: albumUrls });
+		// cache resolved URLs for next load
+		saveCachedCovers({artists: artistUrls, albums: albumUrls});
 	}
 
 	// ----- Search across library -----
 
 	function searchLibrary(query) {
-		if (!query || !query.trim()) return { tracks: [], artists: [], albums: [] };
+		if (!query || !query.trim()) return {tracks: [], artists: [], albums: []};
 		const q = query.trim().toLowerCase();
 		const all = getAllTracks();
 		const tracks = all.filter((t) => {
-			return (t.title || '').toLowerCase().includes(q)
-				|| (t.artist || '').toLowerCase().includes(q)
-				|| (t.album || '').toLowerCase().includes(q);
+			return (
+				(t.title || '').toLowerCase().includes(q) ||
+				(t.artist || '').toLowerCase().includes(q) ||
+				(t.album || '').toLowerCase().includes(q)
+			);
 		});
 		const artists = getArtistList().filter((a) => a.name.toLowerCase().includes(q));
-		const albums = getAlbumList().filter((a) => a.name.toLowerCase().includes(q)
-			|| a.artist.toLowerCase().includes(q));
-		return { tracks: tracks.slice(0, 30), artists: artists.slice(0, 10), albums: albums.slice(0, 10) };
+		const albums = getAlbumList().filter(
+			(a) => a.name.toLowerCase().includes(q) || a.artist.toLowerCase().includes(q),
+		);
+		return {tracks: tracks.slice(0, 30), artists: artists.slice(0, 10), albums: albums.slice(0, 10)};
 	}
 
 	// ----- Public API -----
@@ -216,7 +242,7 @@ Native library data providers
 		searchLibrary,
 	};
 
-	// Refresh tiles when library data changes
+	// refresh tiles when library data changes
 	function onLibraryUpdate() {
 		updateTileCovers();
 	}
@@ -226,14 +252,18 @@ Native library data providers
 	window.addEventListener('starl-account-state-updated', onLibraryUpdate);
 	window.addEventListener('starl-follows-updated', onLibraryUpdate);
 
-	// Apply cached covers immediately on load, refresh after data is ready
+	// apply cached covers immediately on load, refresh after data is ready
 	if (document.readyState !== 'loading') {
 		applyCachedCovers();
 		setTimeout(updateTileCovers, 500);
 	} else {
-		document.addEventListener('DOMContentLoaded', () => {
-			applyCachedCovers();
-			setTimeout(updateTileCovers, 500);
-		}, { once: true });
+		document.addEventListener(
+			'DOMContentLoaded',
+			() => {
+				applyCachedCovers();
+				setTimeout(updateTileCovers, 500);
+			},
+			{once: true},
+		);
 	}
 })();

@@ -1,11 +1,23 @@
-/*
-Client player shell
--> this file opens and closes the main player card and the mini player.
--> it decides when the player should feel open, hidden, or ready for a swipe.
--> the rest of the playback logic lives in the playback modules.
-*/
+/**
+ * ☆=========================================☆
+ * Player - player card open/close and drag gestures
+ * Controls the main player card (full-screen) and the mini player strip.
+ * Decides when the player is open, minimized, or hidden entirely.
+ *
+ * --- What this file does? ---
+ * - setPlayerOpen(): shows or hides the main player card and mini player
+ * - attachDragHandler(): swipe-down on the cover/track-info minimizes the player
+ * - Mini player tap opens the player; swipe left/right skips tracks; swipe down clears
+ * - Boots auth, fires 'starl-auth-ready', then restores last player state
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - All real playback logic lives in the playback/ modules
+ * - "clean" CSS class on .main-player = freshly initialized, no track loaded yet
+ * ☆=========================================☆
+ */
 
-// ----- Player open/close -----
+/* ☆======= Element refs =======☆ */
+
 const openPlayerButton = document.getElementById('open-player');
 const closePlayerButton = document.getElementById('close-player');
 const mainPlayer = document.querySelector('.main-player');
@@ -51,8 +63,16 @@ function setPlayerOpen(isOpen) {
 	}
 }
 
-restorePlayerState();
-fetchUserProvider().then(() => {});
+(async () => {
+	const auth = window.starlAuth;
+	if (auth && typeof auth.ensureAuth === 'function') {
+		const token = await auth.ensureAuth();
+		if (!token) return; // redirected to login
+	}
+	window.dispatchEvent(new CustomEvent('starl-auth-ready'));
+	restorePlayerState();
+	fetchUserProvider().then(() => {});
+})();
 
 if (openPlayerButton) {
 	openPlayerButton.addEventListener('click', () => setPlayerOpen(true));
@@ -71,7 +91,9 @@ if (miniPlayer) {
 	});
 }
 
-// Reusable swipe-down drag handler for minimizing the player
+/* ☆======= Swipe-down drag to minimize =======☆ */
+
+// reusable swipe-down drag handler for minimizing the player
 function attachDragHandler(targetEl, player) {
 	if (!targetEl || !player) return;
 	let startY = 0;
@@ -216,7 +238,9 @@ if (mpCover && mainPlayer) attachDragHandler(mpCover, mainPlayer);
 if (mpTrackInfo && mainPlayer) attachDragHandler(mpTrackInfo, mainPlayer);
 if (mpBgEl && mainPlayer) attachDragHandler(mpBgEl, mainPlayer);
 
-// Touch gestures on mini player: swipe left/right to change song, swipe up to open, swipe down to minimize
+/* ☆======= Mini player gestures =======☆ */
+
+// swipe left/right to skip, swipe up to open player, swipe down to clear
 if (miniPlayer) {
 	(function attachMiniGestures(root) {
 		let startX = 0;
@@ -286,4 +310,3 @@ if (repeatButton) {
 		setRepeatEnabled(!repeatEnabled);
 	});
 }
-

@@ -22,7 +22,7 @@ Starl uses OAuth via **Google** or **Discord** - no passwords stored anywhere. T
 - Tap any track to start playing.
 - The **mini-player** appears at the bottom while music is playing - tap it to expand the full player.
 - Use the **shuffle** and **repeat** buttons in the full player to control playback mode.
-- Music keeps playing in the background — control it from the notification.
+- Music keeps playing in the background - control it from the notification.
 
 ## Offline listening
 
@@ -55,5 +55,7 @@ Starl is gesture-driven. The system back button is not used.
 | Swipe up on mini-player | Expand to full player |
 | Swipe down on full player | Minimize to mini-player |
 | Swipe down on mini-player | Close currently playing track |
+| Swipe right on mini-player | Play next track in queue |
+| Swipe left on mini-player | Play previous track in queue |
 | Long-press on a track / tap ⋮ | Open context menu |
-
+| System button | Close app, minimize player, previous page |

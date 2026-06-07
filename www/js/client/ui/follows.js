@@ -1,10 +1,17 @@
-/*
-Follows manager
--> tracks followed artists and albums in account state under the 'follows' section.
--> follows = { artists: { [id]: {id, name, imageUrl, followedAt} }, albums: { [id]: {...} } }
--> fires 'starl-follows-updated' on change.
-*/
-
+/**
+ * ☆=========================================☆
+ * Follows - followed artists and albums manager
+ * Stores followed artists and albums in account state under the 'follows' section.
+ *
+ * --- What this file does? ---
+ * - followArtist() / unfollowArtist() / isArtistFollowed(): manage artist follows
+ * - followAlbum() / unfollowAlbum() / isAlbumFollowed(): manage album follows
+ * - Fires 'starl-follows-updated' on every change
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - Data shape: follows = { artists: { [id]: {...} }, albums: { [id]: {...} } }
+ * ☆=========================================☆
+ */
 
 (function () {
 	const SECTION_KEY = 'follows';

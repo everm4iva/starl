@@ -2,10 +2,14 @@ package com.everm4iva.starl.musiccontrols;
 
 import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
+import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import java.io.IOException;
@@ -14,6 +18,10 @@ public class MediaPlaybackService extends Service {
 	private static final String TAG = "MediaPlaybackService";
 	private MediaPlayer player = null;
 	private String currentUri = null;
+	// without these, the CPU sleeps and Wi-Fi powers down when the screen locks
+	// or battery saver kicks in, which stalls streaming/decoding and stops playback.
+	private PowerManager.WakeLock wakeLock = null;
+	private WifiManager.WifiLock wifiLock = null;
 
 	@Override
 	public void onCreate() {
@@ -34,26 +42,34 @@ public class MediaPlaybackService extends Service {
 					playUri(uri);
 				} else if (player != null) {
 					// resume
-					if (!player.isPlaying()) player.start();
+					if (!player.isPlaying()) {
+						acquireLocks();
+						player.start();
+					}
 					refreshNotification();
 				}
 				return START_STICKY;
 			}
 
 			if (MusicControls.ACTION_PLAY.equals(action)) {
-				if (player != null && !player.isPlaying()) player.start();
+				if (player != null && !player.isPlaying()) {
+					acquireLocks();
+					player.start();
+				}
 				refreshNotification();
 				return START_STICKY;
 			}
 
 			if (MusicControls.ACTION_PAUSE.equals(action)) {
 				if (player != null && player.isPlaying()) player.pause();
+				// drop the locks while paused so client don't pin the CPU/Wi-Fi awake.
+				releaseLocks();
 				refreshNotification();
 				return START_STICKY;
 			}
 
 			if (MusicControls.ACTION_NEXT.equals(action) || MusicControls.ACTION_PREVIOUS.equals(action)) {
-				// Forward next/previous to the plugin (if available) so JS player can handle track change.
+				// forward next/previous to the plugin (if available) so JS player can handle track change.
 				try {
 					MusicControls.dispatchAction(action);
 				} catch (Exception ignored) {}
@@ -69,6 +85,8 @@ public class MediaPlaybackService extends Service {
 			}
 
 			if (MusicControls.ACTION_START_SERVICE.equals(action)) {
+				// the service runs as a foreground service while the WebView audio is playing in the background. Hold a partial wake lock + Wi-Fi lock so the CPU/Wi-Fi don't power down (Doze / battery saver) and stall the WebView's decoding/streaming when the screen is off.
+				acquireLocks();
 				refreshNotification();
 				return START_STICKY;
 			}
@@ -87,23 +105,29 @@ public class MediaPlaybackService extends Service {
 			if (player == null) {
 				player = new MediaPlayer();
 				player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-				player.setOnPreparedListener(mp -> {
-					try {
-						startForeground(7824, MusicControls.getInstance() != null ? MusicControls.getInstance().buildNotification() : buildFallbackNotification());
-					} catch (Exception ignored) {}
-					mp.start();
-				});
-				player.setOnCompletionListener(mp -> {
-					// stop foreground when finished
-					stopAndRelease();
-					stopForeground(true);
-					stopSelf();
-				});
 			} else {
 				player.reset();
 			}
+			// keep the CPU awake for the duration of playback so the screen turning
+			// off (lock) or Doze doesn't suspend decoding mid-track.
+			player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+			acquireLocks();
+			// re-set listeners after every reset() - reset() clears them
+			player.setOnPreparedListener(mp -> {
+				// refresh notification now that client tells what it is playing
+				refreshNotification();
+				mp.start();
+			});
+			player.setOnCompletionListener(mp -> {
+				stopAndRelease();
+				stopForeground(true);
+				stopSelf();
+			});
 			currentUri = uri;
 			player.setDataSource(uri);
+			// promote to foreground immediately so Android doesn't kill the service
+			// before onPrepared fires (prepareAsync can take several seconds over network).
+			startForeground(7824, MusicControls.getInstance() != null ? MusicControls.getInstance().buildNotification() : buildFallbackNotification());
 			player.prepareAsync();
 		} catch (IOException e) {
 			Log.w(TAG, "Failed to play uri: " + uri, e);
@@ -129,6 +153,46 @@ public class MediaPlaybackService extends Service {
 				player = null;
 				currentUri = null;
 			}
+		} catch (Exception ignored) {}
+		releaseLocks();
+	}
+
+	private void acquireLocks() {
+		try {
+			if (wakeLock == null) {
+				PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+				if (pm != null) {
+					wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "starl:playback");
+					wakeLock.setReferenceCounted(false);
+				}
+			}
+			if (wakeLock != null && !wakeLock.isHeld()) wakeLock.acquire();
+		} catch (Exception e) {
+			Log.w(TAG, "Failed to acquire wake lock", e);
+		}
+		try {
+			if (wifiLock == null) {
+				WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+				if (wm != null) {
+					int mode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+							? WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+							: WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+					wifiLock = wm.createWifiLock(mode, "starl:wifi");
+					wifiLock.setReferenceCounted(false);
+				}
+			}
+			if (wifiLock != null && !wifiLock.isHeld()) wifiLock.acquire();
+		} catch (Exception e) {
+			Log.w(TAG, "Failed to acquire wifi lock", e);
+		}
+	}
+
+	private void releaseLocks() {
+		try {
+			if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+		} catch (Exception ignored) {}
+		try {
+			if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
 		} catch (Exception ignored) {}
 	}
 

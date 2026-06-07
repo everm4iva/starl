@@ -1,18 +1,28 @@
-/*
-Update check
--> on login, fetches /point.json from the server and compares to local point.json.
--> if server version > client version, marks app as outdated and caches the result.
--> outdated state gates image and audio API requests (enforced server-side too).
--> fires 'starl-update-available' event with { version, download_url } when outdated.
--> cached state persists until manually cleared in settings.
-*/
+/**
+ * ☆=========================================☆
+ * Update check - is this app version still current?
+ * On login it asks the server for the latest version and compares it to the
+ * version baked into this build, then remembers the answer.
+ *
+ * --- What this file does? ---
+ * - Fetches /point.json from the server and from this build, compares versions
+ * - If the build is older, marks the app "outdated" and caches that
+ * - Fires 'starl-update-available' (with download_url) or 'starl-up-to-date'
+ * - Patches fetch() to attach an X-Client-Version header to every API call
+ *
+ * --- Dictionary / Terms / Extra details ---
+ * - "point.json" = tiny file holding { version, download_url }
+ * - Outdated state also lets the server gate image/audio endpoints
+ * - Cached outdated state survives restarts until cleared in settings
+ * ☆=========================================☆
+ */
 
 (function () {
 	const CACHE_KEY = 'starl_update_state';
 	const UPDATE_EVENT = 'starl-update-available';
 	const UP_TO_DATE_EVENT = 'starl-up-to-date';
 
-	// ----- Version comparison -----
+	/* ☆======= Version comparison =======☆ */
 
 	function parseVersion(v) {
 		return String(v || '0').split('.').map((p) => parseInt(p, 10) || 0);
@@ -31,7 +41,7 @@ Update check
 		return false;
 	}
 
-	// ----- Cache -----
+	/* ☆======= Cache =======☆ */
 
 	function readCache() {
 		try {
@@ -48,7 +58,7 @@ Update check
 		try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
 	}
 
-	// ----- State -----
+	/* ☆======= State =======☆ */
 
 	let _outdated = false;
 	let _updateInfo = null;
@@ -64,7 +74,7 @@ Update check
 		}
 	}
 
-	// ----- Fetch -----
+	/* ☆======= Fetch + compare =======☆ */
 
 	async function check() {
 		const base = typeof getApiBase === 'function' ? getApiBase() : window.STARL_API_BASE || '';
@@ -86,7 +96,7 @@ Update check
 		} catch (e) {}
 
 		if (!serverData) {
-			// Server unreachable — restore cached outdated state if any
+			// server unreachable - restore cached outdated state if any
 			const cached = readCache();
 			if (cached && cached.outdated) applyState(cached);
 			return;
@@ -108,9 +118,10 @@ Update check
 		}
 	}
 
-	// ----- Client version header injection -----
-	// Patches the global fetch so all API requests carry X-Client-Version.
-	// The server uses this to gate image/audio endpoints on outdated clients.
+	/* ☆======= Client version header injection =======☆ */
+
+	// patches the global fetch so all API requests carry X-Client-Version.
+	// the server uses this to gate image/audio endpoints on outdated clients.
 
 	let _clientVersion = '0';
 
@@ -120,7 +131,7 @@ Update check
 			const url = typeof input === 'string' ? input : (input && input.url) || '';
 			const apiBase = typeof getApiBase === 'function' ? getApiBase() : '';
 			const isApiCall = apiBase && url.startsWith(apiBase);
-			// Don't inject on point.json fetches (avoid recursion / version loops)
+			// don't inject on point.json fetches (avoid recursion / version loops)
 			const isPointJson = url.endsWith('/point.json') || url.endsWith('point.json');
 			if (isApiCall && !isPointJson && _clientVersion !== '0') {
 				init = init || {};
@@ -130,7 +141,7 @@ Update check
 		};
 	})();
 
-	// ----- Public API -----
+	/* ☆======= Public API + boot =======☆ */
 
 	window.starlUpdateCheck = {
 		isOutdated() { return _outdated; },
@@ -144,18 +155,18 @@ Update check
 		},
 	};
 
-	// Restore cached outdated state immediately (before network)
+	// restore cached outdated state immediately (before network)
 	const cached = readCache();
 	if (cached && cached.outdated) applyState(cached);
 
-	// Read local version for header injection
+	// read local version for header injection
 	fetch('./point.json', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((d) => {
 		if (d && d.version) _clientVersion = d.version;
 	}).catch(() => {});
 
-	// Run check after login/auth ready
+	// run check after login/auth ready
 	window.addEventListener('starl-auth-ready', check);
-	// Also run if already authenticated when this script loads
+	// also run if already authenticated when this script loads
 	if (typeof getAccessToken === 'function' && getAccessToken()) {
 		check();
 	}

@@ -11,7 +11,10 @@
 :root {
 	--bg-color: #181818;
 	--font-color: rgb(255, 255, 255);
-	--status-bar-space: 32px;
+	/* Real status-bar / notch height now that the WebView draws edge-to-edge
+	   (viewport-fit=cover + AndroidEdgeToEdge). Falls back to 32px when the
+	   platform reports no safe-area inset. */
+	--status-bar-space: max(env(safe-area-inset-top), 32px);
 
 	--user-accentcolor: #e43967;
 	--user-accentcolor-transparent: #e4396788;
@@ -86,9 +89,9 @@ body {
 .globalbg {
 	overflow: hidden;
 	position: absolute;
-	top: var(--status-bar-space);
+	top: 0;
 	width: 200%;
-	height: calc(200vh - var(--status-bar-space));
+	height: 200vh;
 	background-color: var(--bg-color);
 	background-image: var(--player-bg);
 	background-size: cover;
