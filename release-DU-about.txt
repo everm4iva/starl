@@ -1,0 +1,13 @@
+Hello there!
+You maybe are wondering why are there two types of .apk's in the releases tab?
+It's simple, it's like a choice between stability or speed.
+
+## File: starl-android.apk
+- That's your default edition, uses a public server that stays always on, with the lastet version features. Sometimes the server may bug, randomly become slow (if too much activity), but usable for everyday use.
+
+## File: starl-android-DU-EDITION.apk
+- That's the "Developer Unique" edition, this version is the same as other but it's connected to another server, this server may have even more features, be 5x more fast than the regular one, but sometimes it goes offline, unpredictable - that makes the fetching of new content impossible.
+- Normally used for developers or testers to test new features of the server.
+
+that's about it, stay wild and curious my star!
+- da crazy (everm4iva | creator)

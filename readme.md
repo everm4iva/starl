@@ -65,6 +65,20 @@ Open an issue before sending a PR - just to align on the direction first. No for
 
 [PFF - Pure Freedom Forever](./LICENSE)
 
+## Inspiration:
+I took inspiration from many music apps, their functions, designs and the way they tell their message.
+- Spotify / Youtube Music
+
+- [vimusic](https://github.com/vfsfitvnm/ViMusic)
+> My first taste of a free music client.
+
+- [Harmony Music](https://github.com/anandnet/Harmony-Music)
+> I still use it sometimes, i admire the work and dedication put into it. It's so simple. I love it.
+
+
+- BubblePlay
+> I know it's my own project, but still, i tried to make it as different as possible from other apps, but if it wasn't for this little try, starl would't exist.
+
 ---
 
 <div align="center">
