@@ -6,13 +6,16 @@
  * Depends on runtime.js (audio, setPlayIconState) and engine.js (updateStoredState).
  *
  * --- What this file does? ---
- * - initMediaSession(): wires play/pause/seek/stop action handlers
+ * - initMediaSession(): wires play/pause/seek/next/prev/stop action handlers
  * - updateMediaSessionPlaybackState(): syncs navigator.mediaSession.playbackState
  * - updateMediaSessionPositionState(): syncs position + duration (throttled to 1s)
  *
  * --- Dictionary / Terms / Extra details ---
  * - "media session" = browser API for OS media controls (not Android-specific)
  * - These functions are called by engine.js audio event listeners
+ * - next/prev delegate to handleNativeMusicControlMessage (runtime-notifications-handler.js)
+ *   so Bluetooth/headset/Android Auto skip buttons reuse the same smart-queue/offline-aware
+ *   routing as the native notification's Next/Prev buttons, instead of duplicating it
  * ☆=========================================☆
  */
 
@@ -42,6 +45,7 @@ function initMediaSession() {
 	safeSetActionHandler('play', async () => {
 		try {
 			await audio.play();
+			window.starlPlaybackState.shouldBePlaying = true;
 			setPlayIconState(true);
 			updateStoredState({isPlaying: true});
 		} catch (error) {}
@@ -50,6 +54,7 @@ function initMediaSession() {
 	safeSetActionHandler('pause', () => {
 		try {
 			audio.pause();
+			window.starlPlaybackState.shouldBePlaying = false;
 			setPlayIconState(false);
 			updateStoredState({isPlaying: false});
 		} catch (error) {}
@@ -59,8 +64,21 @@ function initMediaSession() {
 		try {
 			audio.pause();
 			audio.currentTime = 0;
+			window.starlPlaybackState.shouldBePlaying = false;
 			setPlayIconState(false);
 			updateStoredState({isPlaying: false, position: 0});
+		} catch (error) {}
+	});
+
+	safeSetActionHandler('previoustrack', () => {
+		try {
+			handleNativeMusicControlMessage({message: 'music-controls-previous'});
+		} catch (error) {}
+	});
+
+	safeSetActionHandler('nexttrack', () => {
+		try {
+			handleNativeMusicControlMessage({message: 'music-controls-next'});
 		} catch (error) {}
 	});
 

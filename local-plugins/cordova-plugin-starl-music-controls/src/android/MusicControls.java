@@ -7,11 +7,13 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Base64;
 
@@ -50,9 +52,15 @@ public class MusicControls extends CordovaPlugin {
 	private static final int NOTIFICATION_ID = 7824;
 	static final String ACTION_START_SERVICE = "com.everm4iva.starl.musiccontrols.ACTION_START_SERVICE";
 
+	private static final String EXTRA_OPEN_PLAYER = "openPlayer";
+
 	private static final AtomicReference<MusicControls> INSTANCE = new AtomicReference<>(null);
+	// cache so MediaPlaybackService.refreshNotification() can call startForeground()
+	// with the already built notification instead of rebuilding it on the main thread.
+	private static volatile Notification lastBuiltNotification = null;
 
 	private CallbackContext subscribeCallback;
+	private volatile boolean pendingOpenPlayer = false;
 
 	private String track = "";
 	private String artist = "";
@@ -66,22 +74,24 @@ public class MusicControls extends CordovaPlugin {
 	private boolean hasPrev = true;
 	private boolean hasClose = true;
 
-	// throttle notification re-renders when JS spams updateElapsed
+	// throttle notification re-renders when JS spams "updateElapsed"
 	private long lastNotifyAtMs = 0L;
 	private int lastNotifiedElapsedSeconds = -1;
 	private boolean lastNotifiedIsPlaying = false;
 
-	private MediaSessionCompat mediaSession;
+	private volatile MediaSessionCompat mediaSession;
 	private final MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
 		@Override
 		public void onPlay() {
 			isPlaying = true;
 			emitToJs("music-controls-play", null);
-			cordova.getThreadPool().execute(() -> {
+			cordova.getActivity().runOnUiThread(() -> {
 				ensureMediaSession();
 				updateMediaSession();
-				maybeRenderNotification(true);
-				updateForegroundServiceState();
+				cordova.getThreadPool().execute(() -> {
+					maybeRenderNotification(true);
+					updateForegroundServiceState();
+				});
 			});
 		}
 
@@ -89,11 +99,13 @@ public class MusicControls extends CordovaPlugin {
 		public void onPause() {
 			isPlaying = false;
 			emitToJs("music-controls-pause", null);
-			cordova.getThreadPool().execute(() -> {
+			cordova.getActivity().runOnUiThread(() -> {
 				ensureMediaSession();
 				updateMediaSession();
-				maybeRenderNotification(true);
-				updateForegroundServiceState();
+				cordova.getThreadPool().execute(() -> {
+					maybeRenderNotification(true);
+					updateForegroundServiceState();
+				});
 			});
 		}
 
@@ -120,8 +132,24 @@ public class MusicControls extends CordovaPlugin {
 	@Override
 	protected void pluginInitialize() {
 		INSTANCE.set(this);
+		// cold-start: app was killed and launched by tapping the notification
+		Intent launchIntent = cordova.getActivity().getIntent();
+		if (launchIntent != null && launchIntent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) {
+			pendingOpenPlayer = true;
+			launchIntent.removeExtra(EXTRA_OPEN_PLAYER);
+		}
 		ensureMediaSession();
 		ensureChannel();
+	}
+
+	@Override
+	public void onNewIntent(Intent intent) {
+		// warm-start: app was backgrounded and the user tapped the notification
+		// HOT AS HELL 'INIT': british slang to make the code.. slightly more readable. :O
+		if (intent != null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) {
+			intent.removeExtra(EXTRA_OPEN_PLAYER);
+			emitToJs("music-controls-open-player", null);
+		}
 	}
 
 	@Override
@@ -129,19 +157,25 @@ public class MusicControls extends CordovaPlugin {
 		if (INSTANCE.get() == this) {
 			INSTANCE.set(null);
 		}
+		lastBuiltNotification = null;
 		subscribeCallback = null;
-		stopForegroundService();
-		if (mediaSession != null) {
+		try { stopForegroundService(); } catch (Exception ignored) {}
+		MediaSessionCompat toDestroy = mediaSession;
+		mediaSession = null;
+		if (toDestroy != null) {
 			try {
-				mediaSession.setActive(false);
-				mediaSession.release();
+				toDestroy.setActive(false);
+				toDestroy.release();
 			} catch (Exception ignored) {}
-			mediaSession = null;
 		}
 	}
 
 	static MusicControls getInstance() {
 		return INSTANCE.get();
+	}
+
+	static Notification getLastNotification() {
+		return lastBuiltNotification;
 	}
 
 	@Override
@@ -154,12 +188,14 @@ public class MusicControls extends CordovaPlugin {
 				if (durationSeconds > 0 && elapsedSeconds >= durationSeconds) {
 					elapsedSeconds = 0;
 				}
-				cordova.getThreadPool().execute(() -> {
+				cordova.getActivity().runOnUiThread(() -> {
 					ensureMediaSession();
 					updateMediaSession();
-					maybeRenderNotification(true);
-					updateForegroundServiceState();
-					callbackContext.success();
+					cordova.getThreadPool().execute(() -> {
+						maybeRenderNotification(true);
+						updateForegroundServiceState();
+						callbackContext.success();
+					});
 				});
 				return true;
 			case "updateIsPlaying":
@@ -173,12 +209,14 @@ public class MusicControls extends CordovaPlugin {
 				if (isPlaying && durationSeconds > 0 && elapsedSeconds >= durationSeconds) {
 					elapsedSeconds = 0;
 				}
-				cordova.getThreadPool().execute(() -> {
+				cordova.getActivity().runOnUiThread(() -> {
 					ensureMediaSession();
 					updateMediaSession();
-					maybeRenderNotification(true);
-					updateForegroundServiceState();
-					callbackContext.success();
+					cordova.getThreadPool().execute(() -> {
+						maybeRenderNotification(true);
+						updateForegroundServiceState();
+						callbackContext.success();
+					});
 				});
 				return true;
 			case "updateElapsed":
@@ -201,27 +239,36 @@ public class MusicControls extends CordovaPlugin {
 					// common -> when a track ended and was restarted/looped without resetting elapsed
 					elapsedSeconds = 0;
 				}
-				cordova.getThreadPool().execute(() -> {
+				cordova.getActivity().runOnUiThread(() -> {
 					ensureMediaSession();
 					updateMediaSession();
-					maybeRenderNotification(false);
-					updateForegroundServiceState();
-					callbackContext.success();
+					cordova.getThreadPool().execute(() -> {
+						maybeRenderNotification(false);
+						callbackContext.success();
+					});
 				});
 				return true;
 			case "destroy":
-				cordova.getThreadPool().execute(() -> {
-					destroyNotification();
-					stopForegroundService();
-					if (mediaSession != null) {
-						try {
-							mediaSession.setActive(false);
-							mediaSession.release();
-						} catch (Exception ignored) {}
+				// reply to JS immediately so the callback fires before the WebView
+				// navigates away and tears down the Cordova bridge.
+				callbackContext.success();
+				android.app.Activity destroyActivity = cordova.getActivity();
+				if (destroyActivity != null) {
+					destroyActivity.runOnUiThread(() -> {
+						MediaSessionCompat toDestroy = mediaSession;
 						mediaSession = null;
-					}
-					callbackContext.success();
-				});
+						if (toDestroy != null) {
+							try {
+								toDestroy.setActive(false);
+								toDestroy.release();
+							} catch (Exception ignored) {}
+						}
+						cordova.getThreadPool().execute(() -> {
+							destroyNotification();
+							stopForegroundService();
+						});
+					});
+				}
 				return true;
 			case "startNative": {
 				String uri = null;
@@ -272,6 +319,11 @@ public class MusicControls extends CordovaPlugin {
 				pr.setKeepCallback(true);
 				callbackContext.sendPluginResult(pr);
 				return true;
+			case "getAndClearPendingOpenPlayer":
+				boolean pending = pendingOpenPlayer;
+				pendingOpenPlayer = false;
+				callbackContext.success(pending ? 1 : 0);
+				return true;
 			default:
 				return false;
 		}
@@ -302,7 +354,7 @@ public class MusicControls extends CordovaPlugin {
 			cover = newCover;
 			coverBitmap = null;
 		}
-
+// WHAT A MESS
 		if (options.has("isPlaying")) {
 			isPlaying = options.optBoolean("isPlaying", isPlaying);
 		}
@@ -318,10 +370,30 @@ public class MusicControls extends CordovaPlugin {
 		if (options.has("hasClose")) {
 			hasClose = options.optBoolean("hasClose", hasClose);
 		}
+
+		// persist so the foreground service can show real track info if the plugin
+		// isn't ready yet (ex: Android restarts the sticky service after killing the process)
+		try {
+			Context ctx = cordova.getActivity().getApplicationContext();
+			ctx.getSharedPreferences("starl_last_track", Context.MODE_PRIVATE)
+				.edit()
+				.putString("track", track)
+				.putString("artist", artist)
+				.apply();
+		} catch (Exception ignored) {}
 	}
 
+	// mediaSessionCompat.setCallback() creates a Handler internally and crashes if
+	// called from any thread without a Looper (ex: not the UI thread).
+	// this method is safe to call from any thread - it self-marshals to the UI thread
+	// if needed. Callers that are already on the UI thread run synchronously.
 	private void ensureMediaSession() {
 		if (mediaSession != null) return;
+		if (Looper.myLooper() != Looper.getMainLooper()) {
+			cordova.getActivity().runOnUiThread(this::ensureMediaSession);
+			return;
+		}
+		if (mediaSession != null) return; // re-check after switching threads
 		Context context = cordova.getActivity().getApplicationContext();
 		mediaSession = new MediaSessionCompat(context, "starl");
 		try {
@@ -335,7 +407,10 @@ public class MusicControls extends CordovaPlugin {
 	}
 
 	private void updateMediaSession() {
-		if (mediaSession == null) return;
+		// snap to local to avoid "TOCTOU" race with destroy() nulling the field.
+		// heheh, funny acronym. :P
+		MediaSessionCompat session = mediaSession;
+		if (session == null) return;
 		MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder()
 				.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track)
 				.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
@@ -348,7 +423,7 @@ public class MusicControls extends CordovaPlugin {
 			meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art);
 			meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, art);
 		}
-		mediaSession.setMetadata(meta.build());
+		try { session.setMetadata(meta.build()); } catch (Exception ignored) {}
 
 		long actions = PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY_PAUSE;
 		if (hasNext) actions |= PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
@@ -368,7 +443,7 @@ public class MusicControls extends CordovaPlugin {
 				// used elapsedRealtime timebase so Android can advance the position correctly
 				.setState(state, positionMs, speed, SystemClock.elapsedRealtime())
 				.build();
-		mediaSession.setPlaybackState(playbackState);
+		try { session.setPlaybackState(playbackState); } catch (Exception ignored) {}
 	}
 
 	private void maybeRenderNotification(boolean force) {
@@ -399,13 +474,13 @@ public class MusicControls extends CordovaPlugin {
 
 	private void updateForegroundServiceState() {
 		Context context = cordova.getActivity().getApplicationContext();
-		if (isPlaying) {
-			Intent intent = new Intent(context, MediaPlaybackService.class);
-			intent.setAction(ACTION_START_SERVICE);
-			ContextCompat.startForegroundService(context, intent);
-		} else {
-			stopForegroundService();
-		}
+		Intent intent = new Intent(context, MediaPlaybackService.class);
+		// when playing: ACTION_START_SERVICE acquires locks and refreshes the notification.
+		// when paused: ACTION_PAUSE releases locks (battery-friendly) and refreshes the
+		// notification to show a swipable paused state, but keeps the service alive
+		// (START_STICKY) so Android doesn't kill the app process while backgrounded.
+		intent.setAction(isPlaying ? ACTION_START_SERVICE : ACTION_PAUSE);
+		ContextCompat.startForegroundService(context, intent);
 	}
 
 	private void emitToJs(String message, JSONObject extra) {
@@ -447,6 +522,11 @@ public class MusicControls extends CordovaPlugin {
 				}
 			}
 			if (c.startsWith("http://") || c.startsWith("https://")) {
+				// never block the main thread for a network fetch - the background thread
+				// (renderNotification from maybeRenderNotification) will fill in the bitmap.
+				if (Looper.myLooper() == Looper.getMainLooper()) {
+					return coverBitmap; // may be null; service will reuse whatever is cached
+				}
 				URL url = new URL(c);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setConnectTimeout(4000);
@@ -545,12 +625,14 @@ public class MusicControls extends CordovaPlugin {
 		if (launchIntent == null) {
 			launchIntent = new Intent();
 		}
+		launchIntent.putExtra(EXTRA_OPEN_PLAYER, true);
+		launchIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
 		int flags = PendingIntent.FLAG_UPDATE_CURRENT;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			flags |= PendingIntent.FLAG_IMMUTABLE;
 		}
-		return PendingIntent.getActivity(context, 0, launchIntent, flags);
+		return PendingIntent.getActivity(context, 1, launchIntent, flags);
 	}
 
 	private int getSmallIconResId() {
@@ -586,8 +668,6 @@ public class MusicControls extends CordovaPlugin {
 	Notification buildNotification() {
 		Context context = cordova.getActivity().getApplicationContext();
 		ensureChannel();
-		ensureMediaSession();
-		updateMediaSession();
 
 		Bitmap art = getCoverBitmapBestEffort();
 
@@ -655,8 +735,9 @@ public class MusicControls extends CordovaPlugin {
 		}
 
 		MediaStyle style = new MediaStyle();
-		if (mediaSession != null) {
-			style.setMediaSession(mediaSession.getSessionToken());
+		MediaSessionCompat session = mediaSession;
+		if (session != null) {
+			style.setMediaSession(session.getSessionToken());
 		}
 		// prefer showing (Prev, Play/Pause, Next) in compact if present, else just Play/Pause
 		if (compactPrevIndex >= 0 && compactPlayPauseIndex >= 0 && compactNextIndex >= 0) {
@@ -670,17 +751,25 @@ public class MusicControls extends CordovaPlugin {
 	}
 
 	private void renderNotification() {
-		Context context = cordova.getActivity().getApplicationContext();
-		NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, buildNotification());
+		android.app.Activity a = cordova.getActivity();
+		if (a == null) return;
+		Context context = a.getApplicationContext();
+		Notification n = buildNotification();
+		lastBuiltNotification = n;
+		NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, n);
 	}
 
 	private void destroyNotification() {
-		Context context = cordova.getActivity().getApplicationContext();
+		android.app.Activity a = cordova.getActivity();
+		if (a == null) return;
+		Context context = a.getApplicationContext();
 		NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID);
 	}
 
 	private void stopForegroundService() {
-		Context context = cordova.getActivity().getApplicationContext();
+		android.app.Activity a = cordova.getActivity();
+		if (a == null) return;
+		Context context = a.getApplicationContext();
 		Intent intent = new Intent(context, MediaPlaybackService.class);
 		context.stopService(intent);
 	}
@@ -714,34 +803,36 @@ public class MusicControls extends CordovaPlugin {
 		}
 
 		if (ACTION_DESTROY.equals(action)) {
-			cordova.getThreadPool().execute(() -> {
-				destroyNotification();
-				if (mediaSession != null) {
+			cordova.getActivity().runOnUiThread(() -> {
+				MediaSessionCompat toDestroy = mediaSession;
+				mediaSession = null;
+				if (toDestroy != null) {
 					try {
-						mediaSession.setActive(false);
-						mediaSession.release();
+						toDestroy.setActive(false);
+						toDestroy.release();
 					} catch (Exception ignored) {}
-					mediaSession = null;
 				}
+				cordova.getThreadPool().execute(this::destroyNotification);
 			});
 		} else if (ACTION_PLAY.equals(action)) {
 			isPlaying = true;
-			// also drive JS for older notification-action taps
-			emitToJs("music-controls-play", null);
-			cordova.getThreadPool().execute(() -> {
+			cordova.getActivity().runOnUiThread(() -> {
 				ensureMediaSession();
 				updateMediaSession();
-				maybeRenderNotification(true);
-				updateForegroundServiceState();
+				cordova.getThreadPool().execute(() -> {
+					maybeRenderNotification(true);
+					updateForegroundServiceState();
+				});
 			});
 		} else if (ACTION_PAUSE.equals(action)) {
 			isPlaying = false;
-			emitToJs("music-controls-pause", null);
-			cordova.getThreadPool().execute(() -> {
+			cordova.getActivity().runOnUiThread(() -> {
 				ensureMediaSession();
 				updateMediaSession();
-				maybeRenderNotification(true);
-				updateForegroundServiceState();
+				cordova.getThreadPool().execute(() -> {
+					maybeRenderNotification(true);
+					updateForegroundServiceState();
+				});
 			});
 		}
 

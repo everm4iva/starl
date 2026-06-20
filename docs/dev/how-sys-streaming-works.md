@@ -2,6 +2,8 @@
 
 This document explains how Starl finds, downloads, and plays music -- from the moment you tap a song to the moment you hear it.
 
+*- [Back to documentation](https://github.com/everm4iva/starl/blob/main/docs/index.md)*
+
 ---
 
 ## The Two Sides
@@ -9,7 +11,7 @@ This document explains how Starl finds, downloads, and plays music -- from the m
 There are two computers involved every time you play a song.
 
 - The **client** is your phone running the app.
-- The **server** is a computer running Python (FastAPI) that talks to YouTube on your behalf.
+- The **server** is a computer running Nodejs/Express + python worker (yt-dlp) that treats youtube as a slave on your behalf.
 
 The app never talks to YouTube directly. It always goes through the server. The server fetches the audio, optionally caches it to disk, and hands a stream URL back to the app.
 
@@ -129,7 +131,7 @@ current song starts playing
             +-- calls POST /download for the next track
             |     (fast because prewarm already ran)
             |
-            +-- gets back the proxy URL (e.g. /proxy/xyz?src=...)
+            +-- gets back the proxy URL (ex: /proxy/xyz?src=...)
             |
             +-- starts a hidden silent audio element pointing at that URL
             |     the browser begins downloading bytes in the background
@@ -255,3 +257,5 @@ Slow case (nothing was prewarmed -- cold start):
 ```
 
 The first three cases are what you get for any track in a queue after the current song has been playing for more than a few seconds.
+
+learn more about the backend architecture in [server-architecture.md](./server-architecture.md).

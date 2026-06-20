@@ -18,9 +18,7 @@
 	transform: translateY(100%);
 	transform-origin: center bottom;
 	pointer-events: auto;
-	transition:
-		opacity 0.18s ease,
-		transform 0.18s ease;
+	transition: var(--anim-page-openclose);
 }
 
 .track-context-menu.opens-up {
@@ -76,38 +74,35 @@
 	text-align: left;
 	width: 100%;
 	cursor: pointer;
-	transition:
-		transform 0.14s ease,
-		background-color 0.14s ease,
-		border-color 0.14s ease;
+	transition: var(--anim-general-button);
 }
 
 .track-context-button:hover,
 .track-context-button:focus-visible {
 	transform: translateY(-1px);
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	border-color: rgba(255, 255, 255, 0.2);
 	outline: none;
 }
 
 .track-context-button.primary {
-	background: var(--user-accentcolor-transparent);
+	background-color: var(--user-accentcolor-transparent-8);
 }
 
 .track-context-button.primary:hover,
 .track-context-button.primary:focus-visible {
-	background: var(--user-accentcolor);
+	background-color: var(--user-accentcolor);
 }
 
 .track-context-button.danger {
 	border-color: rgba(255, 120, 120, 0.22);
-	background: rgba(255, 88, 88, 0.12);
+	background-color: rgba(255, 88, 88, 0.12);
 	color: #ffd8d8;
 }
 
 .track-context-button.danger:hover,
 .track-context-button.danger:focus-visible {
-	background: rgba(255, 88, 88, 0.18);
+	background-color: rgba(255, 88, 88, 0.18);
 	border-color: rgba(255, 120, 120, 0.36);
 }
 
@@ -154,7 +149,7 @@
 	border: 1px solid rgba(255, 255, 255, 0.12);
 	border-radius: 12px;
 	padding: 10px 12px;
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	color: #ffffff;
 	font: inherit;
 	font-size: 0.86rem;
@@ -162,16 +157,13 @@
 	text-align: left;
 	width: 100%;
 	cursor: pointer;
-	transition:
-		transform 0.14s ease,
-		background-color 0.14s ease,
-		border-color 0.14s ease;
+	transition: var(--anim-general-button);
 }
 
 .track-context-playlist-button:hover,
 .track-context-playlist-button:focus-visible {
 	transform: translateY(-1px);
-	background: rgba(255, 255, 255, 0.09);
+	background-color: rgba(255, 255, 255, 0.09);
 	border-color: rgba(255, 255, 255, 0.22);
 	outline: none;
 }

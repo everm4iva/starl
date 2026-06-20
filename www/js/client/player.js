@@ -33,7 +33,7 @@ function setPlayerOpen(isOpen) {
 		return;
 	}
 
-	const hasTrack = Boolean(currentStreamUrl || currentTrackKey);
+	const hasTrack = Boolean(window.starlPlaybackState.currentStreamUrl || window.starlPlaybackState.currentTrackKey);
 	if (!hasTrack && !isOpen) {
 		mainPlayer.classList.add('hidden');
 		miniPlayer.classList.add('hidden');
@@ -307,6 +307,6 @@ if (miniPlayer) {
 
 if (repeatButton) {
 	repeatButton.addEventListener('click', () => {
-		setRepeatEnabled(!repeatEnabled);
+		setRepeatEnabled(!window.starlPlaybackState.repeatEnabled);
 	});
 }

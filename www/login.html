@@ -12,7 +12,7 @@
 	<body class="login-body">
 		<div class="login-page">
 			<div class="login-card">
-				<img class="login-header-icon" src="./media/img/login/v2.png">
+				<img class="login-header-icon" src="./shc/PixelMadnessTransparent.png" />
 				<div class="login-title">Starl</div>
 				<div class="login-actions">
 					<button class="login-button login-button--google" data-provider="google">
@@ -22,6 +22,16 @@
 					<button class="login-button login-button--discord" data-provider="discord">
 						<span class="login-icon login-icon--discord"></span>
 						<span>Continue with Discord</span>
+					</button>
+					<div class="login-divider" id="login-offline-divider">
+						<span>or</span>
+					</div>
+					<button class="login-button login-button--offline" id="login-button-cache">
+						<span class="login-icon login-icon--offline"></span>
+						<span class="login-button-offline-content">
+							<span>Continue offline</span>
+							<span class="login-button-offline-sub">Play cached music without signing in</span>
+						</span>
 					</button>
 				</div>
 				<div class="login-status" id="login-status"></div>

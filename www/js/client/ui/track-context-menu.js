@@ -58,6 +58,15 @@
 		};
 	}
 
+	/* ☆======= Row resolution (for explode-on-remove) =======☆ */
+
+	const ROW_SELECTOR = '.ap-track-row, .lsr-row, .slt-item, .item';
+
+	function resolveRowEl(target) {
+		if (!target) return null;
+		return target.closest ? target.closest(ROW_SELECTOR) || target : target;
+	}
+
 	/* ☆======= Cover image helper =======☆ */
 
 	function setImage(el, imageUrl) {
@@ -95,6 +104,23 @@
 				handler() {
 					if (window.starlPlaylists)
 						window.starlPlaylists.removeTrackFromPlaylist(options.playlistId, track.trackKey);
+				},
+			};
+		}
+		if (source === 'favorites') {
+			return {
+				label: 'Remove from starred',
+				handler() {
+					if (window.starlFavorites) window.starlFavorites.removeFavorite(track.trackKey);
+				},
+			};
+		}
+		if (source === 'music' || source === 'all') {
+			return {
+				label: 'Remove from library',
+				handler() {
+					if (window.starlHistory) window.starlHistory.remove(track.trackKey);
+					if (window.starlFavorites) window.starlFavorites.removeFavorite(track.trackKey);
 				},
 			};
 		}
@@ -137,6 +163,51 @@
 		if (window.starlTrackContextQueue && typeof window.starlTrackContextQueue.buildQueueSection === 'function') {
 			window.starlTrackContextQueue.buildQueueSection(body, bs);
 		}
+	}
+
+	/* ☆======= Artist navigation =======☆ */
+
+	async function resolveAndOpenArtist(t) {
+		if (!window.starlArtistPage || !t || !t.artist) return;
+		const native = window.starlLibraryNative;
+		const artists = native ? native.getArtistList() : [];
+		const exact = artists.find((a) => a.name.toLowerCase() === t.artist.toLowerCase());
+		let channelId = (exact && exact.channelId) || t.artistChannelId || '';
+
+		if (!channelId) {
+			try {
+				const base = typeof getApiBase === 'function' ? getApiBase() : '';
+				const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
+				if (base && token) {
+					const res = await fetch(base + '/search', {
+						method: 'POST',
+						headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token},
+						body: JSON.stringify({query: t.artist, kind: 'channels', limit: 1}),
+					});
+					if (res.ok) {
+						const data = await res.json();
+						const first = data && data.items && data.items[0];
+						// only trust the search hit if its name actually matches the track's
+						// artist - YouTube channel search can return a different, similarly
+						// named channel as the top result.
+						if (
+							first &&
+							first.id &&
+							String(first.title || '')
+								.trim()
+								.toLowerCase() === t.artist.trim().toLowerCase()
+						) {
+							channelId = first.id;
+						}
+					}
+				}
+			} catch (_) {}
+		}
+
+		const artistObj = exact
+			? {...exact, channelId}
+			: {name: t.artist, imageUrl: t.imageUrl, tracks: [t], channelId};
+		window.starlArtistPage.openArtist(artistObj);
 	}
 
 	/* ☆======= Build and open sheet =======☆ */
@@ -275,7 +346,8 @@
 					function create() {
 						const name = inputEl && inputEl.value.trim();
 						if (!name) return;
-						if (window.starlPlaylists) window.starlPlaylists.createPlaylist(name, t, {openAfterCreate: true});
+						if (window.starlPlaylists)
+							window.starlPlaylists.createPlaylist(name, t, {openAfterCreate: true});
 						bsInner.close();
 					}
 				});
@@ -283,37 +355,7 @@
 				sep();
 
 				if (t.artist) {
-					action('View artist: ' + t.artist, 'bsc-icon-artist', async () => {
-						if (!window.starlArtistPage) return;
-						const native = window.starlLibraryNative;
-						const artists = native ? native.getArtistList() : [];
-						const exact = artists.find((a) => a.name.toLowerCase() === t.artist.toLowerCase());
-						let channelId = (exact && exact.channelId) || t.artistChannelId || '';
-
-						if (!channelId) {
-							try {
-								const base = typeof getApiBase === 'function' ? getApiBase() : '';
-								const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
-								if (base && token) {
-									const res = await fetch(base + '/search', {
-										method: 'POST',
-										headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token},
-										body: JSON.stringify({query: t.artist, kind: 'channels', limit: 1}),
-									});
-									if (res.ok) {
-										const data = await res.json();
-										const first = data && data.items && data.items[0];
-										if (first && first.id) channelId = first.id;
-									}
-								}
-							} catch (_) {}
-						}
-
-						const artistObj = exact
-							? {...exact, channelId}
-							: {name: t.artist, imageUrl: t.imageUrl, tracks: [t], channelId};
-						window.starlArtistPage.openArtist(artistObj);
-					});
+					action('View artist: ' + t.artist, 'bsc-icon-artist', () => resolveAndOpenArtist(t));
 				}
 
 				if (
@@ -322,24 +364,28 @@
 					opts.source !== 'search' &&
 					opts.source !== 'playlist'
 				) {
-					action('View album: ' + t.album, 'bsc-icon-album', () => {
-						if (!window.starlArtistPage) return;
-						if (t.albumId && typeof window.starlArtistPage.openServerAlbum === 'function') {
-							window.starlArtistPage.openServerAlbum({
-								id: t.albumId,
-								title: t.album,
-								thumbnail: t.imageUrl,
-								artist: t.artist,
-							});
-							return;
-						}
-						const native = window.starlLibraryNative;
-						const albums = native ? native.getAlbumList() : [];
-						const found = albums.find((a) => a.name === t.album);
-						window.starlArtistPage.openLocalAlbum(
-							found || {name: t.album, artist: t.artist, imageUrl: t.imageUrl, tracks: [t]},
-						);
-					});
+					const hasServerAlbum = !!t.albumId;
+					const native = window.starlLibraryNative;
+					const localAlbum =
+						!hasServerAlbum && native
+							? (native.getAlbumList() || []).find((a) => a.name === t.album) || null
+							: null;
+
+					if (hasServerAlbum || localAlbum) {
+						action('View album: ' + t.album, 'bsc-icon-album', () => {
+							if (!window.starlArtistPage) return;
+							if (hasServerAlbum && typeof window.starlArtistPage.openServerAlbum === 'function') {
+								window.starlArtistPage.openServerAlbum({
+									id: t.albumId,
+									title: t.album,
+									thumbnail: t.imageUrl,
+									artist: t.artist,
+								});
+								return;
+							}
+							window.starlArtistPage.openLocalAlbum(localAlbum);
+						});
+					}
 				}
 
 				sep();
@@ -354,7 +400,19 @@
 				const removal = getRemovalAction(opts, t);
 				if (removal) {
 					sep();
-					action(removal.label, 'bsc-icon-remove', removal.handler, true);
+					action(
+						removal.label,
+						'bsc-icon-remove',
+						() => {
+							const rowEl = opts._rowEl;
+							if (rowEl && rowEl.isConnected && window.starlExplodeViolently) {
+								window.starlExplodeViolently(rowEl, {onDone: removal.handler});
+							} else {
+								removal.handler();
+							}
+						},
+						true,
+					);
 				}
 
 				sep();
@@ -408,6 +466,7 @@
 	function bindTarget(target, getTrack, options) {
 		if (!target || typeof getTrack !== 'function' || TARGETS.has(target)) return;
 		const opts = options && typeof options === 'object' ? options : {};
+		opts._rowEl = resolveRowEl(target);
 		const state = {target, getTrack, options: opts};
 		TARGETS.set(target, state);
 
@@ -435,6 +494,7 @@
 	window.starlTrackContextMenu = {
 		bindTarget,
 		openForTrack,
+		resolveAndOpenArtist,
 		close() {
 			if (window.starlBottomSheet) window.starlBottomSheet.close();
 		},

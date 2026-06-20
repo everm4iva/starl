@@ -1,9 +1,10 @@
 (() => {
 	const TOKEN_KEY = 'starl_access_token';
 	const REFRESH_TOKEN_KEY = 'starl_refresh_token';
+	const CACHE_MODE_KEY = 'starl_cache_mode';
 	const LOGIN_PAGE = 'login.html';
 	const RETURN_URL = 'starl://auth';
-	window.STARL_API_BASE = 'https://your-server-url-here';
+	window.STARL_API_BASE = 'https://bangsunsetdream.tail82eddd.ts.net';
 
 	function getApiBase() {
 		if (typeof window.STARL_API_BASE === 'string' && window.STARL_API_BASE.trim()) {
@@ -70,7 +71,7 @@
 		if (_refreshTimer) clearTimeout(_refreshTimer);
 		const exp = getTokenExpiry(token);
 		if (!exp) return;
-		// Refresh 5 minutes before expiry
+		// refresh 5 minutes before expiry
 		const delay = exp - Date.now() - 5 * 60 * 1000;
 		if (delay <= 0) return;
 		_refreshTimer = setTimeout(async () => {
@@ -80,6 +81,18 @@
 				if (newToken) scheduleTokenRefresh(newToken);
 			}
 		}, delay);
+	}
+
+	function isCacheMode() {
+		return localStorage.getItem(CACHE_MODE_KEY) === '1';
+	}
+
+	function enterCacheMode() {
+		localStorage.setItem(CACHE_MODE_KEY, '1');
+	}
+
+	function exitCacheMode() {
+		localStorage.removeItem(CACHE_MODE_KEY);
 	}
 
 	function getLoginUrl() {
@@ -95,8 +108,9 @@
 	}
 
 	function redirectToLogin() {
+		if (isCacheMode()) return;
 		if (!isLoginPage()) {
-			window.location.href = LOGIN_PAGE;
+			window.location.replace(LOGIN_PAGE);
 		}
 	}
 
@@ -120,12 +134,15 @@
 	}
 
 	async function ensureAuth() {
+		if (isCacheMode()) {
+			return 'cache';
+		}
 		const token = getAccessToken();
 		if (!token) {
 			redirectToLogin();
 			return null;
 		}
-		// If the token is locally expired or expiring soon, try to refresh silently first
+		// if the token is locally expired or expiring soon, try to refresh silently first
 		if (isTokenExpiredOrExpiringSoon(token, 60 * 1000)) {
 			const refreshed = await tryRefreshToken();
 			if (refreshed) {
@@ -133,7 +150,7 @@
 				if (newToken) scheduleTokenRefresh(newToken);
 				return newToken;
 			}
-			// Refresh failed - if offline, keep going with the expired token so
+			// refresh failed - if offline, keep going with the expired token so
 			// cached content stays accessible. If online, the token is truly dead.
 			if (!navigator.onLine) {
 				return token;
@@ -142,13 +159,14 @@
 			redirectToLogin();
 			return null;
 		}
-		// Token looks valid locally; schedule refresh and skip the server round-trip
+		// token looks valid locally; schedule refresh and skip the server round-trip
 		scheduleTokenRefresh(token);
 		return token;
 	}
 
 	let _handlingAuthFailure = false;
 	function handleAuthFailure(response) {
+		if (isCacheMode()) return false;
 		if (response && response.status === 401) {
 			if (_handlingAuthFailure) return true;
 			_handlingAuthFailure = true;
@@ -198,6 +216,7 @@
 			clearAccessToken();
 			return false;
 		}
+		exitCacheMode();
 		if (isLoginPage()) {
 			window.location.replace('index.html');
 		}
@@ -209,11 +228,42 @@
 		try {
 			localStorage.setItem('starl_last_deeplink', String(url));
 		} catch (e) {}
-		setTimeout(() => {
+		// handleOpenURL can fire before deviceready and before app JS is initialized.
+		// wait for deviceready so starlAccountState and other globals are ready before
+		// processing the token - otherwise the account-state update fires into an
+		// uninitialized UI and crashes the app.
+		function runFinalize() {
 			finalizeLoginFromUrl(url)
 				.then((ok) => console.log('[starl] finalizeLoginFromUrl ok=', ok))
 				.catch((err) => console.error('[starl] finalizeLoginFromUrl err=', err));
-		}, 0);
+		}
+		// if the app was already running (returning from external browser auth),
+		// deviceready already fired and will never fire again - run immediately.
+		// if deviceready hasn't fired yet (cold start via deep link), wait for it.
+		// fall back after 3s in browser/test environments where deviceready never fires.
+		let fired = false;
+		if (window._starlDeviceReady) {
+			fired = true;
+			runFinalize();
+			return;
+		}
+		const fallback = setTimeout(() => {
+			if (!fired) {
+				fired = true;
+				runFinalize();
+			}
+		}, 3000);
+		document.addEventListener(
+			'deviceready',
+			() => {
+				if (!fired) {
+					fired = true;
+					clearTimeout(fallback);
+					runFinalize();
+				}
+			},
+			{once: true},
+		);
 	};
 
 	window.starlAuth = {
@@ -232,10 +282,13 @@
 		isTokenExpiredOrExpiringSoon,
 		tryRefreshToken,
 		scheduleTokenRefresh,
+		isCacheMode,
+		enterCacheMode,
+		exitCacheMode,
 	};
 })();
 
-// On page load, also check if the current URL contains an access_token (query or hash)
+// on page load, also check if the current URL contains an access_token (query or hash)
 (function _starl_deeplink_check_onload() {
 	try {
 		const href = window.location.href || '';

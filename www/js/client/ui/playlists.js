@@ -246,7 +246,6 @@
 		getStats,
 		formatDuration,
 		normalizeTrack,
-		// renderTo, openCreateModal, openAddToPlaylistModal, openSettingsModal live in playlists-ui.js
 	};
 
 	window.addEventListener('starl-account-state-updated', dispatch);

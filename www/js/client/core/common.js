@@ -1,8 +1,9 @@
 /**
  * ☆=========================================☆
- * Common - shared core toolbox for the whole app
+ * Common "ball knowledge" - shared core toolbox for the whole app
  * The small shared toolbox every other file leans on. Keeps the storage keys,
- * the API base URL, and the access token in one calm place.
+ * the API base URL, and the access token in one calm zen place.
+ *
  * --- What this file does? ---
  * - Holds the localStorage key names (token, player state, repeat state)
  * - getApiBase(): tells you which server URL to talk to
@@ -12,6 +13,7 @@
  * - It asks window.starlAuth first, then falls back to a stored value
  * ☆=========================================☆
  */
+
 (function () {
 	const shared = window.starlShared || {};
 
@@ -22,7 +24,7 @@
 		configurable: true,
 	});
 
-    // don't change, this is default value
+	// don't change, this is default value
 	shared.keys = {
 		accessToken: 'starl_access_token',
 		playerState: 'starl_player_state',

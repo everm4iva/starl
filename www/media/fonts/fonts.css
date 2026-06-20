@@ -1,4 +1,9 @@
 @font-face {
+	font-family: SystemUI;
+	src: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+@font-face {
 	font-family: SourGummy;
 	src: url(./SourGummy/SourGummy-VariableFont.ttf);
 }
@@ -31,4 +36,20 @@
 @font-face {
 	font-family: Inter;
 	src: url(./Inter/Inter.ttf);
+}
+
+@font-face {
+	font-family: Juxel;
+	src: url(./additional/juxel.ttf);
+}
+
+@font-face {
+	font-family: Minecraft;
+	src: url(./additional/Minecraft.ttf);
+}
+
+
+@font-face {
+	font-family: SugarPunchDemo;
+	src: url(./additional/SugarpunchDEMO.ttf);
 }

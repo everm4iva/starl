@@ -40,14 +40,6 @@ if (auth && typeof auth.ensureAuth === 'function') {
 
 function logoutAndRedirect() {
 	clearAllLocalAccountData();
-	try {
-		if (window.MusicControls && typeof window.MusicControls.destroy === 'function') {
-			window.MusicControls.destroy(
-				() => {},
-				() => {},
-			);
-		}
-	} catch (error) {}
 
 	try {
 		if (typeof audio !== 'undefined') {
@@ -64,11 +56,17 @@ function logoutAndRedirect() {
 	if (auth && typeof auth.clearAccessToken === 'function') {
 		auth.clearAccessToken();
 	}
-	if (auth && typeof auth.redirectToLogin === 'function') {
-		auth.redirectToLogin();
-		return;
-	}
-	window.location.href = 'login.html';
+
+	// fire-and-forget: destroy the notification/media session, then navigate
+	// after a short delay so the foreground service has time to stop before the
+	// webView tears down.
+	try {
+		if (window.MusicControls && typeof window.MusicControls.destroy === 'function') {
+			window.MusicControls.destroy(() => {}, () => {});
+		}
+	} catch (error) {}
+
+	setTimeout(() => window.location.replace('login.html'), 300);
 }
 
 function showToast(message, kind) {
@@ -123,7 +121,24 @@ function clearAllLocalAccountData() {
 	const updateBtn = document.getElementById('update-app-button');
 	if (!banner) return;
 
+	const DISMISS_KEY = 'starl_update_banner_dismissed_version';
+
+	function isDismissedForSession(serverVersion) {
+		try {
+			return sessionStorage.getItem(DISMISS_KEY) === String(serverVersion || '');
+		} catch (e) {
+			return false;
+		}
+	}
+
+	function dismissForSession(serverVersion) {
+		try {
+			sessionStorage.setItem(DISMISS_KEY, String(serverVersion || ''));
+		} catch (e) {}
+	}
+
 	function showBanner(info) {
+		if (isDismissedForSession(info.serverVersion)) return;
 		if (bannerTitle) bannerTitle.textContent = 'Update available - v' + (info.serverVersion || '');
 		if (bannerSub)
 			bannerSub.textContent =
@@ -137,7 +152,58 @@ function clearAllLocalAccountData() {
 		banner.classList.add('hidden');
 	}
 
-	// Restore from cached state immediately
+	/* ☆======= Swipe left-to-right to dismiss =======☆ */
+
+	(function attachSwipeDismiss() {
+		let startX = 0;
+		let startY = 0;
+		let tracking = false;
+
+		banner.addEventListener(
+			'touchstart',
+			(e) => {
+				const t = e.touches && e.touches[0];
+				if (!t) return;
+				startX = t.clientX;
+				startY = t.clientY;
+				tracking = true;
+				banner.style.transition = 'none';
+			},
+			{passive: true},
+		);
+
+		banner.addEventListener(
+			'touchmove',
+			(e) => {
+				if (!tracking) return;
+				const t = e.touches && e.touches[0];
+				if (!t) return;
+				const dx = t.clientX - startX;
+				if (dx > 0) banner.style.transform = 'translateX(' + dx + 'px)';
+			},
+			{passive: true},
+		);
+
+		banner.addEventListener('touchend', (e) => {
+			if (!tracking) return;
+			tracking = false;
+			banner.style.transition = '';
+			const t = (e.changedTouches && e.changedTouches[0]) || {};
+			const dx = (t.clientX || 0) - startX;
+			const dy = Math.abs((t.clientY || 0) - startY);
+			if (dx > 80 && dx > dy) {
+				const upd = window.starlUpdateCheck;
+				const info = upd && typeof upd.getUpdateInfo === 'function' ? upd.getUpdateInfo() : null;
+				dismissForSession(info && info.serverVersion);
+				banner.style.transform = '';
+				hideBanner();
+			} else {
+				banner.style.transform = '';
+			}
+		});
+	})();
+
+	// restore from cached state immediately
 	const upd = window.starlUpdateCheck;
 	if (upd && typeof upd.isOutdated === 'function' && upd.isOutdated()) {
 		showBanner(upd.getUpdateInfo() || {});
@@ -246,7 +312,7 @@ function renderExportLocationSettings() {
 		return;
 	}
 
-	// if Cordova is present but the File plugin isn't available, pop up a helpful hint
+	// if co~rdova is present but the File plugin isn't available, pop up a helpful hint
 	// so users know why native directories aren't listed.
 	if (typeof window !== 'undefined' && window.cordova && !(window.cordova && window.cordova.file)) {
 		if (exportLocationHint) {
@@ -316,10 +382,9 @@ function clearCurrentTrack() {
 		}
 	} catch (e) {}
 
-	currentTrackKey = '';
-	currentStreamUrl = '';
+	window.starlPlaybackState.reset();
 	try {
-		localStorage.removeItem(PLAYER_STATE_KEY);
+		localStorage.removeItem(window.starlPlaybackState.PLAYER_STATE_KEY);
 	} catch (e) {}
 
 	try {

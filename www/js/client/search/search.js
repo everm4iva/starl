@@ -33,10 +33,21 @@
 	let activeKind = 'music';
 
 	const PAGE_SIZE = 12;
+	const FETCH_LIMIT = 20;
 	let allResults = [];
 	let shownCount = 0;
 	let isLoadingMore = false;
 	let currentQuery = '';
+	let serverHasMore = false;
+
+	// monotonic counter sent with every /search call so the server can let a
+	// freshly typed search jump ahead of an older one still in its queue.
+	// activeAbortController cancels the previous in-flight fetch when a new
+	// search starts - the server-side work for it still finishes and warms
+	// the cache, this just stops the client from waiting on a stale response.
+	let searchSeq = 0;
+	let currentSeq = 0;
+	let activeAbortController = null;
 
 	/* ☆======= Helpers =======☆ */
 
@@ -66,7 +77,7 @@
 	function setThumb(el, url) {
 		if (!el || !url) return;
 		const cache = window.starlMediaCache;
-		// small thumbnails: request low variant to avoid pulling maxres per row (scroll jank)
+		// small thumbnails: request low variant to avoid pulling maxres per row (scroll jank shit)
 		if (cache && typeof cache.setImageEl === 'function') {
 			cache.setImageEl(el, url, {variant: 'low'});
 		} else if (cache && typeof cache.resolveImageUrl === 'function') {
@@ -84,26 +95,41 @@
 	/* ☆======= Click tracking =======☆ */
 
 	let lastSearchQuery = '';
+	// set when first results appear; clicks within MISCLICK_THRESHOLD_MS are ignored as misclicks.
+	let resultsReadyAt = 0;
+	let recentItemsThisSearch = 0;
+	const MISCLICK_THRESHOLD_MS = 500;
+	const MAX_ITEMS_PER_SEARCH = 5;
 
-	function recordSearchClick(item) {
+	function recordSearchClick(item, shape) {
 		const itemId = item.id || item.url || item.sourceUrl || item.trackKey || '';
 		if (!itemId || !lastSearchQuery) return;
 		const token = getToken();
-		if (!token) return;
-		fetch(API_BASE + '/search/click', {
-			method: 'POST',
-			headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-			body: JSON.stringify({query: lastSearchQuery, item_id: itemId, kind: item.kind || null}),
-		}).catch(() => {});
+		if (token) {
+			fetch(API_BASE + '/search/click', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+				body: JSON.stringify({query: lastSearchQuery, item_id: itemId, kind: item.kind || null}),
+			}).catch(() => {});
+		}
+		const recents = window.starlSearchRecents;
+		if (
+			recents && typeof recents.addItem === 'function' &&
+			recentItemsThisSearch < MAX_ITEMS_PER_SEARCH &&
+			Date.now() - resultsReadyAt >= MISCLICK_THRESHOLD_MS
+		) {
+			recents.addItem(item, shape || 'square');
+			recentItemsThisSearch++;
+		}
 	}
 
 	/* ☆======= Pills =======☆ */
 
 	function buildPills(container) {
 		const pills = [
-			{label: 'Music', kind: 'music', color: '#df38af'},
-			{label: 'Artists', kind: 'channels', color: '#01e071'},
-			{label: 'Albums', kind: 'playlists', color: '#7c8ef0'},
+			{label: 'Music', kind: 'music', color: 'var(--user-accentcolor-music)'},
+			{label: 'Artists', kind: 'channels', color: 'var(--user-accentcolor-artists)'},
+			{label: 'Albums', kind: 'playlists', color: 'var(--user-accentcolor-albums)'},
 		];
 		const bar = document.createElement('div');
 		bar.className = 'sr-pills';
@@ -256,8 +282,17 @@
 		row.appendChild(info);
 		row.appendChild(actions);
 
+		// prewarm artist page data immediately when the row appears - so opening the
+		// artist overlay is instant instead of waiting on a server fetch.
+		if (shape === 'circle' && item.id) {
+			const ap = window.starlArtistPage;
+			if (ap && typeof ap.prewarmArtist === 'function' && navigator.onLine) {
+				ap.prewarmArtist(item.title || '', item.id).catch(() => {});
+			}
+		}
+
 		row.addEventListener('click', () => {
-			recordSearchClick(item);
+			recordSearchClick(item, shape);
 			if (shape === 'circle') {
 				if (window.starlArtistPage) {
 					const artist = {name: item.title || '', imageUrl: imgUrl, tracks: [], channelId: item.id || ''};
@@ -325,6 +360,7 @@
 
 	function appendResults(items) {
 		if (!items.length) return;
+		if (!resultsReadyAt) resultsReadyAt = Date.now();
 		items.forEach((item, i) => {
 			const shape = item.kind === 'channel' || item.kind === 'artist' ? 'circle' : 'square';
 			const row = createResultItem(item, shape);
@@ -334,11 +370,34 @@
 		schedulePrewarm(items);
 	}
 
+	async function fetchSearchPage(query, offset, seq) {
+		const token = getToken();
+		if (!token) return null;
+		const res = await fetch(API_BASE + '/search', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+			body: JSON.stringify({query, limit: FETCH_LIMIT, offset, kind: activeKind, seq}),
+			signal: activeAbortController ? activeAbortController.signal : undefined,
+		});
+		if (auth && typeof auth.handleAuthFailure === 'function' && auth.handleAuthFailure(res)) return null;
+		if (!res.ok) return null;
+		return await res.json();
+	}
+
 	async function performSearch(query) {
 		lastSearchQuery = query;
 		currentQuery = query;
+		resultsReadyAt = 0;
+		recentItemsThisSearch = 0;
 		allResults = [];
 		shownCount = 0;
+		serverHasMore = false;
+
+		// Ccancel the previous in-flight search (if any) - its server-side work
+		// keeps running and still populates the cache, just deprioritized.
+		if (activeAbortController) activeAbortController.abort();
+		activeAbortController = new AbortController();
+		currentSeq = ++searchSeq;
 
 		const requestId = ++currentRequest;
 		resultsRoot.innerHTML = '';
@@ -354,21 +413,16 @@
 			return;
 		}
 		try {
-			const res = await fetch(API_BASE + '/search', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-				body: JSON.stringify({query, limit: 20, kind: activeKind}),
-			});
-			if (auth && typeof auth.handleAuthFailure === 'function' && auth.handleAuthFailure(res)) return;
-			const data = await res.json();
+			const data = await fetchSearchPage(query, 0, currentSeq);
 			if (requestId !== currentRequest) return;
-			if (!res.ok) {
+			if (!data) {
 				notifyServerFailure();
-				msg.textContent = (data && data.detail) || 'Search failed.';
+				msg.textContent = 'Search failed.';
 				return;
 			}
 			msg.remove();
 			allResults = Array.isArray(data.items) ? data.items : [];
+			serverHasMore = !!data.has_more;
 			if (!allResults.length) {
 				const noMsg = document.createElement('div');
 				noMsg.className = 'sr-message';
@@ -378,6 +432,8 @@
 			}
 			showNextPage();
 		} catch (error) {
+			// abortError means a newer search superseded this one - not a failure.
+			if (error && error.name === 'AbortError') return;
 			notifyServerFailure();
 			if (requestId === currentRequest) {
 				resultsRoot.innerHTML = '';
@@ -400,9 +456,35 @@
 		isLoadingMore = false;
 	}
 
-	function loadMoreResults() {
-		if (isLoadingMore || shownCount >= allResults.length || !currentQuery) return;
-		showNextPage();
+	async function loadMoreResults() {
+		if (isLoadingMore || !currentQuery) return;
+
+		// if client still has to locally buffer results, show the next page immediately.
+		if (shownCount < allResults.length) {
+			showNextPage();
+			return;
+		}
+
+		// local buffer exhausted - ask the server for the next batch.
+		if (!serverHasMore) return;
+
+		isLoadingMore = true;
+		const requestId = currentRequest;
+		try {
+			const data = await fetchSearchPage(currentQuery, allResults.length, currentSeq);
+			if (requestId !== currentRequest) { isLoadingMore = false; return; }
+			if (data && Array.isArray(data.items) && data.items.length) {
+				serverHasMore = !!data.has_more;
+				allResults = allResults.concat(data.items);
+				isLoadingMore = false;
+				showNextPage();
+			} else {
+				serverHasMore = false;
+				isLoadingMore = false;
+			}
+		} catch (_) {
+			isLoadingMore = false;
+		}
 	}
 
 	function schedulePrewarm(items) {
@@ -411,30 +493,75 @@
 		if (!token || !navigator.onLine) return;
 		const candidates = (Array.isArray(items) ? items : [])
 			.filter((item) => item && (item.url || item.sourceUrl || item.streamUrl))
-			.slice(0, 4);
+			.slice(0, 6);
 		if (!candidates.length) return;
 		const reqId = ++prewarmRequestId;
-		prewarmTimerId = setTimeout(() => {
+
+		// top result: prewarm immediately - it's most likely to be played next
+		const topSrc = String(candidates[0].url || candidates[0].sourceUrl || candidates[0].streamUrl || '').trim();
+		if (topSrc) {
 			const t = getToken();
-			if (!t || reqId !== prewarmRequestId) return;
-			candidates.forEach((item) => {
-				const src = String(item.url || item.sourceUrl || item.streamUrl || '').trim();
-				if (!src) return;
+			if (t) {
 				fetch(API_BASE + '/prewarm', {
 					method: 'POST',
 					headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + t},
-					body: JSON.stringify({url: src, quality: 'high'}),
+					body: JSON.stringify({url: topSrc, quality: 'high'}),
 				}).catch(() => {});
-			});
-		}, 2000);
+			}
+		}
+
+		// remaining results: batch prewarm after a short delay so they're ready if user scrolls
+		if (candidates.length > 1) {
+			prewarmTimerId = setTimeout(() => {
+				const t = getToken();
+				if (!t || reqId !== prewarmRequestId) return;
+				const urls = candidates.slice(1)
+					.map((item) => String(item.url || item.sourceUrl || item.streamUrl || '').trim())
+					.filter(Boolean);
+				if (!urls.length) return;
+				fetch(API_BASE + '/prewarm/batch', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + t},
+					body: JSON.stringify({urls, quality: 'high'}),
+				}).catch(() => {});
+			}, 500);
+		}
 	}
 
 	/* ☆======= Event listeners =======☆ */
 
 	function renderRecents() {
-		// delegate to search-recents.js
+		// report to search-recents.js
 		if (window.starlSearchRecents && typeof window.starlSearchRecents.render === 'function') {
-			window.starlSearchRecents.render(resultsRoot, buildPills, createResultItem);
+			window.starlSearchRecents.render(
+				resultsRoot,
+				buildPills,
+				createResultItem,
+				(q) => { searchInput.value = q; performSearch(q); },
+				(item, shape) => {
+					// replay the same click action as in live search results
+					if (shape === 'circle') {
+						if (window.starlArtistPage) {
+							window.starlArtistPage.openArtist({
+								name: item.title || '',
+								imageUrl: item.imageUrl || item.thumbnail || '',
+								tracks: [],
+								channelId: item.id || '',
+							});
+						}
+						return;
+					}
+					if (item.kind === 'playlist' || item.kind === 'album') {
+						if (window.starlArtistPage && typeof window.starlArtistPage.openServerAlbum === 'function') {
+							window.starlArtistPage.openServerAlbum(item);
+						}
+						return;
+					}
+					if (window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
+						window.starlPlayer.playFromSearch(item);
+					}
+				},
+			);
 		}
 	}
 
@@ -469,7 +596,4 @@
 	// initial state: show recents
 	renderRecents();
 
-	window.addEventListener('starl-history-updated', () => {
-		if (!searchInput.value.trim()) renderRecents();
-	});
 })();

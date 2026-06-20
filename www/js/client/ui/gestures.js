@@ -7,6 +7,7 @@
  * --- What this file does? ---
  * - setupPlaylistHeaderSwipe(): wires a right-swipe on a header to go back
  * - setupSwipeElement(): wires both left and right swipe handlers on any element
+ * - setupSwipeToRemove(): drag-following swipe-left-to-reveal-delete on a row
  * - isValidSwipe(): checks distance and speed to confirm it's a real swipe
  *
  * --- Dictionary / Terms / Extra details ---
@@ -92,9 +93,11 @@
 			return;
 		}
 
+		// use capture phase so it intercept the touch before any child element
+		// can absorb/steal or stop it (ex: artist-cover, artist-name, playlist-cover).
 		headerElement.addEventListener('touchstart', (e) => {
 			handleTouchStart(e, headerElement);
-		});
+		}, {passive: true, capture: true});
 
 		headerElement.addEventListener('touchend', (e) => {
 			handleTouchEnd(e, headerElement, (direction) => {
@@ -102,7 +105,7 @@
 					backCallback();
 				}
 			});
-		});
+		}, {capture: true});
 	}
 
 	function setupSwipeElement(element, handlers) {
@@ -126,7 +129,92 @@
 		});
 	}
 
+	/* ☆======= Swipe-to-remove (drag-following reveal) =======☆ */
+
+	const REMOVE_REVEAL_PX = 80;
+	const REMOVE_COMMIT_RATIO = 1.10;
+
+	function setupSwipeToRemove(rowElement, contentElement, onRemove) {
+		if (!rowElement || !contentElement) {
+			return;
+		}
+
+		let startX = 0;
+		let startY = 0;
+		let currentX = 0;
+		let dragging = false;
+		let canceled = false;
+
+		rowElement.addEventListener(
+			'touchstart',
+			(e) => {
+				startX = e.touches[0].clientX;
+				startY = e.touches[0].clientY;
+				currentX = 0;
+				dragging = true;
+				canceled = false;
+				contentElement.style.transition = 'none';
+			},
+			{passive: true}
+		);
+
+		rowElement.addEventListener(
+			'touchmove',
+			(e) => {
+				if (!dragging) {
+					return;
+				}
+				const dx = e.touches[0].clientX - startX;
+				const dy = e.touches[0].clientY - startY;
+				if (!canceled && Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx)) {
+					canceled = true;
+				}
+				if (canceled) {
+					return;
+				}
+				currentX = Math.min(0, dx);
+				const clamped = Math.max(currentX, -REMOVE_REVEAL_PX * 1.4);
+				contentElement.style.transform = 'translateX(' + clamped + 'px)';
+				rowElement.classList.toggle('swipe-active', clamped < 0);
+				rowElement.classList.toggle('swipe-armed', Math.abs(clamped) > REMOVE_REVEAL_PX * REMOVE_COMMIT_RATIO);
+			},
+			{passive: true}
+		);
+
+		rowElement.addEventListener('touchend', () => {
+			dragging = false;
+			contentElement.style.transition = '';
+			const commit = !canceled && Math.abs(currentX) > REMOVE_REVEAL_PX * REMOVE_COMMIT_RATIO;
+			rowElement.classList.remove('swipe-armed');
+			if (!commit) {
+				rowElement.classList.remove('swipe-active');
+			}
+			if (commit) {
+				rowElement.classList.add('swipe-removing');
+				contentElement.style.transform = 'translateX(-100%)';
+				rowElement.addEventListener(
+					'transitionend',
+					() => {
+						if (typeof onRemove === 'function') {
+							onRemove();
+						}
+					},
+					{once: true}
+				);
+			} else {
+				contentElement.style.transform = '';
+			}
+			currentX = 0;
+		});
+	}
+
 	/* ☆======= Public API =======☆ */
 
-	window.starlGestures = {setupPlaylistHeaderSwipe, setupSwipeElement, getSwipeDirection, isValidSwipe};
+	window.starlGestures = {
+		setupPlaylistHeaderSwipe,
+		setupSwipeElement,
+		setupSwipeToRemove,
+		getSwipeDirection,
+		isValidSwipe,
+	};
 })();

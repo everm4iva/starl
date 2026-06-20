@@ -142,6 +142,18 @@
 		return getCurrentTrack();
 	}
 
+	function peekNext() {
+		if (currentQueue.length === 0) return null;
+		const nextIndex = currentIndex < currentQueue.length - 1 ? currentIndex + 1 : 0;
+		return currentQueue[nextIndex] || null;
+	}
+
+	function peekPrev() {
+		if (currentQueue.length === 0) return null;
+		const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentQueue.length - 1;
+		return currentQueue[prevIndex] || null;
+	}
+
 	function goToTrack(index) {
 		const validIndex = Number(index) || 0;
 		if (validIndex < 0 || validIndex >= currentQueue.length) {
@@ -160,7 +172,7 @@
 		for (let i = 0; i < currentQueue.length; i++) {
 			indices.push(i);
 		}
-		// "fisher-Yates" shuffle
+		// "fisher-Yates" shuffle, because why not go fishing for the best algorithm.. hah! bad joke, i know, i know.
 		for (let i = indices.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[indices[i], indices[j]] = [indices[j], indices[i]];
@@ -278,6 +290,8 @@
 		getQueueLength,
 		nextTrack,
 		previousTrack,
+		peekNext,
+		peekPrev,
 		goToTrack,
 		addToEnd,
 		insertAfterCurrent,

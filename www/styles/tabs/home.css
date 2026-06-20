@@ -18,7 +18,7 @@
 	--section-title-size: 1.1rem;
 }
 
-/* --------- General stuff --------- */
+/* --------- general stuff --------- */
 
 .sec-phrase {
 	display: flex;
@@ -76,7 +76,7 @@
 	gap: 4%;
 }
 
-/* --------- Welcome header --------- */
+/* --------- welcome header --------- */
 
 .sec-header {
 	margin-top: var(--gap-between-sections);
@@ -94,7 +94,7 @@
 .sh-shortcut {
 	height: 100%;
 	min-width: 40%;
-	background-color: var(--user-accentcolor-transparent);
+	background-color: var(--user-accentcolor-transparent-6);
 	border-radius: 12px;
 	border-width: 1px;
 	border-color: rgba(255, 255, 255, 0.3);
@@ -115,9 +115,7 @@
 	background-repeat: no-repeat;
 	background-size: contain;
 	background-position: center;
-	transition:
-		background-image 0.1s ease,
-		height 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sh-shortcut-icon.favorites {
@@ -152,7 +150,7 @@
 	background-image: url('../../media/common-icons/light/star_fill.svg');
 }
 
-/* --------- Last Tracks --------- */
+/* --------- last tracks --------- */
 
 .sec-LastTracks {
 	width: 100%;
@@ -177,7 +175,7 @@
 	min-width: 55%;
 	border-radius: 12px;
 	display: flex;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-element-generate);
 	flex-direction: column;
 	align-items: left;
 	justify-content: flex-end;
@@ -194,9 +192,7 @@
 	height: 100%;
 	background-size: 100%;
 	background-position: 50% 35%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .slt-item-gradient {
@@ -208,7 +204,7 @@
 	border-radius: 12px;
 	background: linear-gradient(to top, black, transparent);
 	opacity: 0.6;
-	transition: opacity 0.1s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .slt-item-time-artist {
@@ -235,14 +231,12 @@
 .slt-item:hover .slt-item-bg {
 	filter: brightness(1.1);
 	background-size: 110%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .slt-item:hover .slt-item-gradient {
 	opacity: 0.8;
-	transition: opacity 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 /* - */
@@ -266,7 +260,7 @@
 	background-image: url('../../media/dev/LastTracks/geoxor.png');
 }
 
-/* --------- New Releases --------- */
+/* --------- new releases --------- */
 
 .sec-newreleases {
 	width: 100%;
@@ -291,7 +285,7 @@
 	min-width: 42%;
 	border-radius: 12px;
 	display: flex;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-element-generate);
 	flex-direction: column;
 	align-items: left;
 	justify-content: flex-end;
@@ -308,9 +302,7 @@
 	height: 100%;
 	background-size: 100%;
 	background-position: 50% 35%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .snr-item-gradient {
@@ -322,7 +314,7 @@
 	border-radius: 12px;
 	background: linear-gradient(to top, black, transparent);
 	opacity: 0.6;
-	transition: opacity 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .snr-item-time-artist {
@@ -349,14 +341,12 @@
 .snr-item:hover .snr-item-bg {
 	filter: brightness(1.1);
 	background-size: 110%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .snr-item:hover .snr-item-gradient {
 	opacity: 0.8;
-	transition: opacity 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 /* - */
@@ -380,7 +370,7 @@
 	background-image: url('../../media/dev/NewTracks/robasmywitness.png');
 }
 
-/* --------- Albums --------- */
+/* --------- albums --------- */
 
 .sec-album {
 	width: 100%;
@@ -411,7 +401,7 @@
 	min-width: 45%;
 	border-radius: 12px;
 	display: flex;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 	flex-direction: column;
 	align-items: left;
 	justify-content: flex-end;
@@ -422,18 +412,17 @@
 
 .sa-item.favorite {
 	border-color: var(--user-accentcolor);
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item.favorite .sa-item-favorite {
 	display: block;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item.favorite:hover .sa-item-gradient {
 	background: linear-gradient(to top, var(--user-accentcolor), transparent);
-
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item-favorite {
@@ -447,9 +436,7 @@
 	background-size: cover;
 	background-position: center;
 	opacity: 0.7;
-	transition:
-		background-image 0.1s ease,
-		opacity 0.1s ease;
+	transition: var(--anim-general-button);
 	z-index: 2;
 }
 
@@ -461,9 +448,7 @@
 	height: 100%;
 	background-size: 100%;
 	background-position: 50% 35%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item-gradient {
@@ -475,7 +460,7 @@
 	border-radius: 12px;
 	background: linear-gradient(to top, black, transparent);
 	opacity: 0.6;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item-time-artist {
@@ -502,18 +487,16 @@
 .sa-item:hover .sa-item-bg {
 	filter: brightness(1.1);
 	background-size: 110%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sa-item:hover .sa-item-gradient {
 	opacity: 0.8;
-	transition: opacity 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 /* - */
-.sa-item-bg.m1 {
+/* .sa-item-bg.m1 {
 	background-image: url('../../media/dev/Albums/geoxor-moneko.png');
 }
 
@@ -535,9 +518,9 @@
 
 .sa-item-bg.m6 {
 	background-image: url('../../media/dev/Albums/geoxor-euphoria.png');
-}
+} */
 
-/* --------- Artists --------- */
+/* --------- artists --------- */
 
 .sec-artists {
 	width: 100%;
@@ -561,13 +544,13 @@
 	height: 8em;
 	min-width: fit-content;
 	display: flex;
-	transition: all 0.1s ease;
+	transition: var(--anim-general-button);
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-end;
 	gap: 2%;
 	cursor: pointer;
-	color: red;
+	/* color: red; */
 }
 
 .sart-item-bg {
@@ -577,9 +560,7 @@
 	border-radius: 25px;
 	background-size: 100%;
 	background-position: 50% 35%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 .sart-item-title {
@@ -598,13 +579,11 @@
 .sart-item:hover .sart-item-bg {
 	filter: brightness(1.1);
 	background-size: 110%;
-	transition:
-		background-image 0.1s ease,
-		background-size 0.1s ease;
+	transition: var(--anim-general-button);
 }
 
 /* - */
-.sart-item-bg.m1 {
+/* .sart-item-bg.m1 {
 	background-image: url('../../media/dev/Artists/tiffanyday.png');
 }
 
@@ -626,9 +605,9 @@
 
 .sart-item-bg.m6 {
 	background-image: url('../../media/dev/Artists/queencult.png');
-}
+} */
 
-/* --------- Media query --------- */
+/* --------- media query --------- */
 @media (max-height: 680px) {
 	.sec-artists .sec-container {
 		height: 18vh;

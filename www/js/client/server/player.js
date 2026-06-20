@@ -12,7 +12,7 @@
  * - toAbsoluteUrl(): normalises relative server paths to full URLs
  *
  * --- Dictionary / Terms / Extra details ---
- * - "user provider" = login method (e.g. 'google') returned by the server
+ * - "user provider" = login method (ex: 'google') returned by the server
  * - Profile CSS vars: --user-profile-name, --user-profile-pic (used in account tab)
  * ☆=========================================☆
  */
@@ -54,8 +54,19 @@ function writeCachedProfileToLocalStorage(profile) {
 	} catch (e) {}
 }
 
+function hasCustomAccountOverride() {
+	try {
+		const raw = localStorage.getItem('starl_account_settings');
+		if (!raw) return false;
+		const parsed = JSON.parse(raw);
+		return Boolean(parsed && (parsed.name || parsed.pictureDataUrl));
+	} catch (e) {
+		return false;
+	}
+}
+
 function applyProfileToCss(profile) {
-	if (!profile || (!profile.name && !profile.picture)) {
+	if (!profile || (!profile.name && !profile.picture) || hasCustomAccountOverride()) {
 		return;
 	}
 	const root = document.documentElement.style;
@@ -188,7 +199,10 @@ async function fetchUserProvider() {
 				};
 				const pic = user.picture || '';
 				const displayName = getFirstName(name);
-				root.setProperty('--user-profile-name', "'" + escapeCss(displayName) + "'");
+				const hasOverride = hasCustomAccountOverride();
+				if (!hasOverride) {
+					root.setProperty('--user-profile-name', "'" + escapeCss(displayName) + "'");
+				}
 				let profilePicUrl = '';
 				if (pic) {
 					// decode common HTML entities and strip quotes to avoid &quot; appearing in CSS
@@ -204,7 +218,9 @@ async function fetchUserProvider() {
 					clean = clean.replace(/['\"]/g, '');
 					// use server-side image cache/proxy to avoid client-side 429s from providers like Google
 					const proxy = getApiBase() + '/cache/image?url=' + encodeURIComponent(clean) + '&res=low';
-					root.setProperty('--user-profile-pic', 'url("' + proxy + '")');
+					if (!hasOverride) {
+						root.setProperty('--user-profile-pic', 'url("' + proxy + '")');
+					}
 					profilePicUrl = proxy;
 
 					// persist cached profile for offline UI - pass the raw URL so media-cache handles its own proxying and avoids double-wrapping

@@ -252,40 +252,118 @@
 				<div class="tab radio is-hidden" data-tab="radio"></div>
 				<!-- ---- Account ---- -->
 				<div class="tab account is-hidden" data-tab="account">
-					<div class="account-panel">
-						<div class="account-title">account tools</div>
-						<div class="update-banner hidden" id="update-banner">
-							<div class="update-banner-text">
-								<div class="update-banner-title" id="update-banner-title">Update available</div>
-								<div class="update-banner-sub" id="update-banner-sub"></div>
+					<div class="header">
+						<div class="pf-header"></div>
+						<div class="pf-info">
+							<div class="pf-details">
+								<div class="name"></div>
+								<div class="connection hidden">superawesomehuman@gmail.com</div>
 							</div>
-							<button class="account-button account-button-update" id="update-app-button" type="button">
-								Update app
-							</button>
+							<div class="pf-actions">
+								<div class="pf-btn edit"></div>
+							</div>
 						</div>
-						<div class="account-status hidden" id="cache-status">Loading cache status...</div>
-						<div class="account-field-group hidden">
-							<label class="account-field-label" for="export-location-select">Export location</label>
-							<select class="account-select" id="export-location-select"></select>
-							<div class="account-field-hint" id="export-location-hint">Loading export location...</div>
+					</div>
+					<div class="body">
+						<!-- --- -->
+						<div class="section update section-update-banner" id="update-banner">
+							<div class="box update">
+								<div class="item update">
+									<div class="update-details">
+										<button
+											class="update-button account-button-update"
+											id="update-app-button"
+											type="button">
+											<div class="text">Open Github</div>
+											<div class="item-navtype page"></div>
+										</button>
+									</div>
+								</div>
+							</div>
 						</div>
-						<button class="account-button" id="clear-local-cache-button" type="button">
-							Clear local cache
-						</button>
-						<button class="account-button hidden" id="export-account-button" type="button">
-							Export account--artist
-						</button>
-						<button class="account-button account-button-danger" id="delete-account-button" type="button">
-							Delete account
-						</button>
-						<button class="account-button" id="logout-button" type="button">Log out</button>
+						<!-- --- -->
+						<div class="section">
+							Profile & Privacy
+							<div class="box">
+								<div class="item" id="clear-local-cache-button" type="button">
+									<div class="item-icon clear-cache"></div>
+									<div class="item-text">Clear cache</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="logout-button" type="button">
+									<div class="item-icon signout"></div>
+									<div class="item-text">Sign out</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item danger" id="delete-account-button" type="button">
+									<div class="item-icon account-delete"></div>
+									<div class="item-text">Delete account</div>
+									<div class="item-navtype page"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Appearence & animations
+							<div class="box">
+								<div class="item" id="appearance-colors-item" type="button">
+									<div class="item-icon colors"></div>
+									<div class="item-text">Set colors</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="appearance-transitions-item" type="button">
+									<div class="item-icon transitions"></div>
+									<div class="item-text">Set transitions</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="appearance-font-item" type="button">
+									<div class="item-icon font"></div>
+									<div class="item-text">Set font</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Playback
+							<div class="box">
+								<div class="item" id="playback-queuefail-item" type="button">
+									<div class="item-icon soundfail"></div>
+									<div class="item-text">When queue fails</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section info">
+							About app
+							<div class="box">
+								<div class="item">
+									<div class="item-text">Version & edition:</div>
+								</div>
+								<div class="item">
+									<div class="item-text">Created by everm4iva</div>
+								</div>
+								<div
+									type="button"
+									class="item"
+									onclick="
+										window.open('https://github.com/everm4iva/starl/blob/main/cool-people.md')
+									">
+									<div class="item-text">View all supporters (open github)</div>
+									<div class="item-navtype page"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section filler"></div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script src="cordova.js"></script>
 		<script>
-			window.STARL_API_BASE = 'https://your-server-url-here';
+			window.STARL_API_BASE = 'https://bangsunsetdream.tail82eddd.ts.net';
 			document.addEventListener(
 				'deviceready',
 				function () {
@@ -298,15 +376,23 @@
 		</script>
 		<script src="./auth.js"></script>
 		<script src="./js/client/core/common.js"></script>
+		<script src="./js/client/core/share-intent.js"></script>
 		<script src="./js/client/core/update-check.js"></script>
 		<script src="./js/client/core/file-protocol.js"></script>
+		<script src="./js/client/core/back-button.js"></script>
 		<script src="./js/client/sync/account-state.js"></script>
 		<script src="./js/client/data/media-cache.js"></script>
 		<script src="./js/client/data/listening-history.js"></script>
 		<script src="./js/client/ui/favorites.js"></script>
 		<script src="./js/client/ui/follows.js"></script>
 		<script src="./js/client/playback/queue.js"></script>
-		<!-- runtime first: declares audio, currentTrackKey, setPlayIconState etc. as globals -->
+		<!-- playback-state first: single owner of the audio element + shared playback state -->
+		<script src="./js/client/playback/playback-state.js"></script>
+		<!-- now-playing: shared 'is this row playing' highlighting for all track-row builders -->
+		<script src="./js/client/playback/now-playing.js"></script>
+		<!-- offline-availability: dims rows not fully cached while offline (wraps now-playing) -->
+		<script src="./js/client/playback/offline-availability.js"></script>
+		<!-- runtime after state: aliases audio, owns setPlayIconState/setRepeatEnabled + blob fallback -->
 		<script src="./js/client/playback/runtime.js"></script>
 		<!-- layout: element refs + auth + account panel actions -->
 		<script src="./js/client/layout.js"></script>
@@ -315,6 +401,8 @@
 		<!-- meta after layout: setTrackMeta uses setTextVar from layout -->
 		<script src="./js/client/playback/meta.js"></script>
 		<script src="./js/client/server/player.js"></script>
+		<!-- account-settings: editable name/picture, applies on top of player.js's OAuth profile -->
+		<script src="./js/client/ui/account-settings.js"></script>
 		<!-- engine after layout+meta: uses playerTime, setLoadingState, setTrackMeta -->
 		<script src="./js/client/playback/engine.js"></script>
 		<!-- runtime-media-session: Web Media Session API handlers (before notifications) -->
@@ -336,11 +424,16 @@
 		<script src="./js/client/ui/context-menu.js"></script>
 		<script src="./js/client/ui/gestures.js"></script>
 		<script src="./js/client/ui/bottom-sheet.js"></script>
+		<!-- smart-queue: "When queue fails" recovery policy + its settings sheet -->
+		<script src="./js/client/playback/smart-queue.js"></script>
+		<!-- appearence: reads CSS vars from root.css at runtime, no hardcoded color/font/anim lists -->
+		<script src="./js/client/ui/appearence.js"></script>
 		<!-- playlists: CRUD first, UI rendering second -->
 		<script src="./js/client/ui/playlists.js"></script>
 		<script src="./js/client/ui/playlists-ui.js"></script>
 		<script src="./js/client/ui/inside-playlist.js"></script>
 		<script src="./js/client/library/library-native.js"></script>
+		<script src="./js/client/library/explode-violently.js"></script>
 		<!-- artist-cards: card builders, loaded before artist-page -->
 		<script src="./js/client/library/artist-cards.js"></script>
 		<script src="./js/client/library/artist-page.js"></script>
@@ -351,6 +444,5 @@
 		<!-- search: core first, recents renderer second -->
 		<script src="./js/client/search/search.js"></script>
 		<script src="./js/client/search/search-recents.js"></script>
-		<script src="./js/client/core/back-button.js"></script>
 	</body>
 </html>

@@ -3,7 +3,7 @@
      works by running a foreground MediaPlaybackService that keeps audio alive
      even when the app is backgrounded or the screen is off. -->
 
-<plugin id="cordova-plugin-starl-music-controls" version="1.2.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="cordova-plugin-starl-music-controls" version="1.0.9" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>StarlMusicControls</name>
     <description>First-party media notification for starl (Android)</description>
     <license>PFF1.0</license>

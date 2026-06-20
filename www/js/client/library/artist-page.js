@@ -31,6 +31,26 @@
 
 	let navigationStack = [];
 
+	/* ☆======= Artist data cache =======☆ */
+
+	// mirrors the server's 30-min artist TTL - repeat opens within a session
+	const _ARTIST_CACHE_TTL = 30 * 60 * 1000;
+	const _artistCache = new Map();
+
+	function _artistCacheGet(key) {
+		const entry = _artistCache.get(key);
+		if (!entry) return null;
+		if (Date.now() > entry.expiresAt) {
+			_artistCache.delete(key);
+			return null;
+		}
+		return entry.data;
+	}
+
+	function _artistCacheSet(key, data) {
+		_artistCache.set(key, {data, expiresAt: Date.now() + _ARTIST_CACHE_TTL});
+	}
+
 	/* ☆======= Init =======☆ */
 
 	function init() {
@@ -84,7 +104,24 @@
 
 	/* ☆======= Server fetch =======☆ */
 
+	function normalizeName(s) {
+		return String(s)
+			.normalize('NFD')
+			.replace(/[̀-ͯ]/g, '')
+			.toLowerCase()
+			.replace(/[^a-z0-9\s]/g, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+	}
+
 	async function fetchArtistFromServer(name, channelId) {
+		const cacheKey = channelId ? 'cid:' + channelId : 'name:' + normalizeName(name || '');
+		const hit = _artistCacheGet(cacheKey);
+		if (hit) return hit;
+
+		const _auth = window.starlAuth;
+		if (_auth && typeof _auth.isCacheMode === 'function' && _auth.isCacheMode()) return null;
+
 		try {
 			const base = typeof getApiBase === 'function' ? getApiBase() : window.STARL_API_BASE || '';
 			const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
@@ -93,14 +130,41 @@
 				? 'channel_id=' + encodeURIComponent(channelId)
 				: 'name=' + encodeURIComponent(name);
 			const res = await fetch(base + '/artist?' + param, {headers: {Authorization: 'Bearer ' + token}});
+			const _authA = window.starlAuth;
+			if (_authA && typeof _authA.handleAuthFailure === 'function' && _authA.handleAuthFailure(res)) return null;
 			if (!res.ok) return null;
-			return await res.json();
+			const remote = await res.json();
+			// when queried by name (no channelId), reject if the server returned a different artist.
+			// normalize comparison handles punctuation/accent/symbol variants of the same name.
+			if (!channelId && remote && remote.name) {
+				if (normalizeName(remote.name) !== normalizeName(name)) return null;
+			}
+			if (remote) {
+				if (channelId) _artistCacheSet('cid:' + channelId, remote);
+				if (remote.channel_id) _artistCacheSet('cid:' + remote.channel_id, remote);
+				if (remote.name) _artistCacheSet('name:' + normalizeName(remote.name), remote);
+			}
+			return remote;
 		} catch (error) {
 			return null;
 		}
 	}
 
+	// fetch and cache an artist page in the background without opening the overlay
+	// safe to call fire-and-forget; errors are silently swallowed. system is now happy because it didn't crash.
+	// code fight code. :P
+	async function prewarmArtist(name, channelId) {
+		if (!name && !channelId) return;
+		if (!navigator.onLine) return;
+		const cacheKey = channelId ? 'cid:' + channelId : 'name:' + normalizeName(name || '');
+		if (_artistCacheGet(cacheKey)) return;
+		await fetchArtistFromServer(name || '', channelId || null);
+	}
+
 	async function fetchAlbumFromServer(browseId) {
+		const _auth = window.starlAuth;
+		if (_auth && typeof _auth.isCacheMode === 'function' && _auth.isCacheMode()) return null;
+
 		try {
 			const base = typeof getApiBase === 'function' ? getApiBase() : window.STARL_API_BASE || '';
 			const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
@@ -108,6 +172,8 @@
 			const res = await fetch(base + '/album?id=' + encodeURIComponent(browseId), {
 				headers: {Authorization: 'Bearer ' + token},
 			});
+			const _authB = window.starlAuth;
+			if (_authB && typeof _authB.handleAuthFailure === 'function' && _authB.handleAuthFailure(res)) return null;
 			if (!res.ok) return null;
 			return await res.json();
 		} catch (e) {
@@ -125,17 +191,20 @@
 				const by = Number(b.year) || 0;
 				if (!ay && by) return 1;
 				if (ay && !by) return -1;
-				return by - ay;
+				const diff = by - ay;
+				// tiebreak alphabetically so items with equal/missing year get a stable visible order
+				return diff !== 0 ? diff : (a.title || '').localeCompare(b.title || '');
 			});
 		}
 		if (mode === 'date-asc') {
 			return copy.sort((a, b) => {
 				const ay = Number(a.year) || 0;
 				const by = Number(b.year) || 0;
-				if (!ay && !by) return 0;
+				if (!ay && !by) return (a.title || '').localeCompare(b.title || '');
 				if (!ay) return 1;
 				if (!by) return -1;
-				return ay - by;
+				const diff = ay - by;
+				return diff !== 0 ? diff : (a.title || '').localeCompare(b.title || '');
 			});
 		}
 		if (mode === 'alpha-asc') {
@@ -166,8 +235,8 @@
 
 		[
 			{label: 'Popular', mode: 'default'},
+			{label: 'A-Z', mode: 'alpha-asc'},
 			{label: 'Newest', mode: 'date-desc'},
-			{label: 'Oldest', mode: 'date-asc'},
 		].forEach(({label, mode}) => {
 			const btn = document.createElement('div');
 			btn.className = 'ap-sort-btn' + (mode === sortMode ? ' active' : '');
@@ -283,7 +352,6 @@
 		);
 		if (!bodyEl) return;
 		bodyEl.innerHTML = '';
-
 		const followRow = document.createElement('div');
 		followRow.className = 'ap-follow-row';
 		const saveBtn = document.createElement('div');
@@ -393,29 +461,22 @@
 		songsSection.appendChild(songsList);
 		bodyEl.appendChild(songsSection);
 
-		const localAlbums = [];
-		const seen = new Set();
-		artist.tracks.forEach((t) => {
-			if (t.album && !seen.has(t.album)) {
-				seen.add(t.album);
-				localAlbums.push({
-					name: t.album,
-					artist: artist.name,
-					imageUrl: t.imageUrl,
-					tracks: artist.tracks.filter((x) => x.album === t.album),
-				});
-			}
-		});
-		if (localAlbums.length) {
-			const albumGrid = document.createElement('div');
-			albumGrid.className = 'ap-grid';
-			localAlbums.forEach((a) => albumGrid.appendChild(createAlbumCard(a)));
-			bodyEl.appendChild(addSection('Albums (library)', albumGrid));
-		}
-
 		fetchArtistFromServer(artist.name, artist.channelId || null)
 			.then((remote) => {
 				if (!remote) return;
+				// guard: user may have navigated into an album while the fetch was in flight.
+				// applying server data to the wrong view would corrupt the header and body.
+				const currentTop = navigationStack[navigationStack.length - 1];
+				if (!currentTop || currentTop.view !== 'artist-detail' || currentTop.artist !== artist) return;
+
+				// guard against same-name disambiguation: when we queried by name (no channelId),
+				// reject the server result if none of its tracks appear in the user's local library
+				// for this artist - two artists can share a name (ex: "BEX" punk rock artist vs "BEX" Bollywood).
+				if (!artist.channelId && artist.tracks.length && remote.tracks && remote.tracks.length) {
+					const localTitles = new Set(artist.tracks.map((t) => normalizeName(t.title || '')));
+					const hasOverlap = remote.tracks.some((t) => localTitles.has(normalizeName(t.title || '')));
+					if (!hasOverlap) return;
+				}
 
 				const subParts = [];
 				if (remote.subscribers) subParts.push(remote.subscribers + ' followers');
@@ -599,7 +660,7 @@
 			.catch(() => {});
 	}
 
-	// internal helper used by artist-cards.js to push an album onto the nav stack
+	// helper used by artist-cards.js to push an album onto the nav stack
 	function _pushAlbumDetail(album) {
 		if (!overlayEl) init();
 		if (!overlayEl) return;
@@ -623,6 +684,7 @@
 		openServerAlbum,
 		goBack,
 		close,
+		prewarmArtist,
 		// semi-private helpers used by artist-cards.js
 		_pushAlbumDetail,
 		_renderArtistsList: renderArtistsList,

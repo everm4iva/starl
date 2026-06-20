@@ -151,6 +151,17 @@
 						if (formatRow) formatRow.style.display = 'none';
 						resetBtn.textContent = 'Reset done';
 						resetBtn.style.opacity = '0.5';
+
+						// if this is the track currently playing, the local cache/blob it was
+						// playing from is now gone (or was the source of the playback issue) -
+						// re-request the stream from the server and restart from 0 instead of
+						// leaving playback running off the stale source.
+						const pb = window.starlPlaybackState;
+						const playingKey = pb && pb.currentTrackKey;
+						const trackKeys = [t.trackKey, t.sourceUrl, t.streamUrl].filter(Boolean);
+						if (playingKey && trackKeys.includes(playingKey) && window.starlPlayer) {
+							window.starlPlayer.playFromSearch(t, {keepPlayerState: true, queueAlreadySet: true});
+						}
 					} catch (err) {
 						resetBtn.disabled = false;
 						resetBtn.textContent = 'Reset failed - tap to retry';

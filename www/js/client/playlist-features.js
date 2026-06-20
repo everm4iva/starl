@@ -361,7 +361,7 @@ Playlist features integration
 	// ----- Playlist click integration -----
 
 	function setupPlaylistClickHandlers() {
-		// Use event delegation on library panel to catch all playlist clicks
+		// use event delegation on library panel to catch all playlist clicks
 		const libraryPanel = document.querySelector('.library-panel');
 		if (!libraryPanel) {
 			// Try again in a moment if panel not ready
@@ -369,7 +369,7 @@ Playlist features integration
 			return;
 		}
 
-		// When a playlist card or row is clicked, also open detail view
+		// when a playlist card or row is clicked, also open detail view
 		libraryPanel.addEventListener(
 			'click',
 			function (e) {

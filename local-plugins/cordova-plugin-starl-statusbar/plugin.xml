@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!-- status bar plugin: makes the Android status bar transparent with white icons.
      works by calling StatusBar.overlaysWebView + styleLightContent on deviceready. -->
-<plugin id="cordova-plugin-starl-statusbar" version="1.1.3" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="cordova-plugin-starl-statusbar" version="1.1.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>StarlStatusBar</name>
-    <description>Small plugin to make Android status bar transparent and force light icons (white).</description>
+    <description>small plugin to make Android status bar transparent and force light icons (white).</description>
 
     <js-module src="www/StatusBarManager.js" name="StatusBarManager">
         <clobbers target="StatusBarManager" />

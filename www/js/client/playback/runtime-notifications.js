@@ -2,8 +2,9 @@
  * ☆=========================================☆
  * Runtime notifications - Android media controls + Web Media Session
  * Drives the lock-screen/notification player and the browser Media Session API.
- * Depends on runtime.js (loaded first) for: audio, nativeMusicControlsReady,
- * cordovaDeviceReady, lastTrackMeta, and the other state vars declared there.
+ * Reads/writes shared state through window.starlPlaybackState (nativeMusicControlsReady,
+ * cordovaDeviceReady, lastTrackMeta, the elapsed-tracking fields, etc.) and uses the
+ * `audio` element aliased by runtime.js.
  *
  * --- What this file does? ---
  * - createOrUpdateNativeNotification(): builds/refreshes the Android media notification
@@ -19,7 +20,8 @@
  * --- Dictionary / Terms / Extra details ---
  * - "native music controls" = the Android notification/lock screen control
  * - "media session" = browser API for OS media controls (not Android-specific)
- * - "nativePlaybackActive" = WebView is backgrounded, driving the native service
+ * - "shouldBePlaying" (starlPlaybackState) = intent flag: true whenever audio should be
+ *   playing/resume, even if a backgrounded play() was silently rejected by Android
  * ☆=========================================☆
  */
 
@@ -133,7 +135,33 @@ document.addEventListener('resume', async () => {
 			}
 		}
 
-		// web audio keeps playing in the background on its own (KeepRunning + the media foreground service), so there's nothing to resume here.
+		// Android may kill the WebView process and restarte the foreground
+		// service while backgrounded, leaving a degraded fallback notification.
+		// Rebuild the full notification so it shows cover art and proper controls.
+		const pb = window.starlPlaybackState;
+		if (pb.lastTrackMeta && pb.nativeMusicControlsReady) {
+			createOrUpdateNativeNotification(pb.lastTrackMeta);
+		}
+
+		// web audio normally keeps playing in the background on its own (KeepRunning +
+		// the media foreground service). but a backgrounded queue auto-advance can have
+		// its audio.play() silently rejected by Android (untrusted-gesture policy) - if so,
+		// shouldBePlaying stays true while audio.paused is true. the 'resume' callback is
+		// itself an OS-trusted context (same family as a notification button tap), so this
+		// is the most efficient place to recover: catch the queue up the instant they reopen
+		// the app, before they even look at the player.
+		if (pb.shouldBePlaying && audio.paused && audio.src) {
+			try {
+				await audio.play();
+				setPlayIconState(true);
+				updateStoredState({isPlaying: true});
+				updateMediaSessionPlaybackState();
+				updateNativePlayingState();
+			} catch (resumeError) {
+				// still rejected - leave the honest paused state; the notification's
+				// play button is a real user gesture the WebView will allow.
+			}
+		}
 	} catch (error) {
 		console.warn('Resume handler failed', error);
 	}
@@ -181,10 +209,10 @@ function ensureBatteryOptimizationExemption() {
 // are defined in runtime-notifications-handler.js (loaded before this file)
 
 function initNativeMusicControls() {
-	if (nativeMusicControlsReady || !canUseNativeMusicControls()) {
+	if (window.starlPlaybackState.nativeMusicControlsReady || !canUseNativeMusicControls()) {
 		return;
 	}
-	nativeMusicControlsReady = true;
+	window.starlPlaybackState.nativeMusicControlsReady = true;
 	try {
 		window.MusicControls.subscribe(handleNativeMusicControlMessage);
 		window.MusicControls.listen();
@@ -213,16 +241,17 @@ async function resolveNativeArtworkUrl(meta) {
 }
 
 function createOrUpdateNativeNotification(meta) {
+	const pb = window.starlPlaybackState;
 	if (!canUseNativeMusicControls()) {
 		return;
 	}
-	// DO NOT creating the notification before deviceready / permission flow. :3
-	if (!cordovaDeviceReady || !notificationsPermissionKnown || !notificationsPermissionGranted) {
-		lastTrackMeta = meta || lastTrackMeta;
+	// DO NOT create the notification before deviceready / permission flow. :3
+	if (!pb.cordovaDeviceReady || !pb.notificationsPermissionKnown || !pb.notificationsPermissionGranted) {
+		pb.lastTrackMeta = meta || pb.lastTrackMeta;
 		return;
 	}
-	lastTrackMeta = meta || lastTrackMeta;
-	const currentMeta = lastTrackMeta;
+	pb.lastTrackMeta = meta || pb.lastTrackMeta;
+	const currentMeta = pb.lastTrackMeta;
 	if (!currentMeta) {
 		return;
 	}
@@ -230,7 +259,7 @@ function createOrUpdateNativeNotification(meta) {
 	const duration = Number(currentMeta.duration) || 0;
 	const elapsed = Math.floor(Number(audio.currentTime) || 0);
 	const cover = currentMeta.imageUrl ? prepareArtworkUrl(currentMeta.imageUrl) : '';
-	lastNativeArtworkUrl = cover;
+	pb.lastNativeArtworkUrl = cover;
 
 	try {
 		window.MusicControls.create(
@@ -259,13 +288,13 @@ function createOrUpdateNativeNotification(meta) {
 		window.MusicControls.listen();
 		resolveNativeArtworkUrl(currentMeta)
 			.then((resolvedCover) => {
-				if (!resolvedCover || resolvedCover === lastNativeArtworkUrl) {
+				if (!resolvedCover || resolvedCover === pb.lastNativeArtworkUrl) {
 					return;
 				}
-				if (lastTrackMeta !== currentMeta) {
+				if (pb.lastTrackMeta !== currentMeta) {
 					return;
 				}
-				lastNativeArtworkUrl = resolvedCover;
+				pb.lastNativeArtworkUrl = resolvedCover;
 				window.MusicControls.create(
 					{
 						track: currentMeta.title || 'Untitled',
@@ -296,28 +325,34 @@ function createOrUpdateNativeNotification(meta) {
 	}
 }
 
+let _nativePlayingStateTimer = null;
 function updateNativePlayingState() {
 	if (!canUseNativeMusicControls()) {
 		return;
 	}
-	try {
-		window.MusicControls.updateIsPlaying(
-			!audio.paused,
-			() => {},
-			() => {},
-		);
-	} catch (error) {}
+	// debounce: audio briefly pauses during buffering/reconnect/offline can fire
+	clearTimeout(_nativePlayingStateTimer);
+	_nativePlayingStateTimer = setTimeout(() => {
+		try {
+			window.MusicControls.updateIsPlaying(
+				!audio.paused,
+				() => {},
+				() => {},
+			);
+		} catch (error) {}
+	}, 200);
 }
 
 function updateNativeElapsedState(force = false) {
+	const pb = window.starlPlaybackState;
 	if (!canUseNativeMusicControls()) {
 		return;
 	}
 	const now = Date.now();
-	if (!force && now - lastNativeElapsedUpdateMs < 1000) {
+	if (!force && now - pb.lastNativeElapsedUpdateMs < 1000) {
 		return;
 	}
-	lastNativeElapsedUpdateMs = now;
+	pb.lastNativeElapsedUpdateMs = now;
 	const currentTime = Number(audio.currentTime);
 	if (!Number.isFinite(currentTime) || currentTime < 0) {
 		// avoid pushing invalid values (which would snap the native timebar to 0). :O
@@ -327,34 +362,37 @@ function updateNativeElapsedState(force = false) {
 	const durationSeconds = Number.isFinite(duration) && duration > 0 ? Math.floor(duration) : 0;
 	const elapsedSeconds = Math.floor(currentTime);
 
-	// keep elapsed "monotonic" while playing unless we clearly switched tracks.
+	// keep elapsed "monotonic" while playing unless user clearly switched tracks.
+	const lastTrackMeta = pb.lastTrackMeta;
 	const trackKey =
 		lastTrackMeta && (lastTrackMeta.id || lastTrackMeta.key || lastTrackMeta.streamUrl || lastTrackMeta.title)
 			? String(lastTrackMeta.id || lastTrackMeta.key || lastTrackMeta.streamUrl || lastTrackMeta.title)
 			: '';
-	if (trackKey && trackKey !== lastNativeTrackKey) {
-		lastNativeTrackKey = trackKey;
-		lastNativeElapsedSeconds = 0;
+	if (trackKey && trackKey !== pb.lastNativeTrackKey) {
+		pb.lastNativeTrackKey = trackKey;
+		pb.lastNativeElapsedSeconds = 0;
 	}
 	const isPlaying = !audio.paused;
-	const nearTrackEnd = durationSeconds > 0 && lastNativeElapsedSeconds >= Math.max(2, durationSeconds - 2);
+	const nearTrackEnd = durationSeconds > 0 && pb.lastNativeElapsedSeconds >= Math.max(2, durationSeconds - 2);
 	const loopRestart = isPlaying && elapsedSeconds <= 1 && nearTrackEnd;
-	const backwardJump = isPlaying && elapsedSeconds + 2 < lastNativeElapsedSeconds && elapsedSeconds <= 1;
+	const backwardJump = isPlaying && elapsedSeconds + 2 < pb.lastNativeElapsedSeconds && elapsedSeconds <= 1;
 
 	if (loopRestart || backwardJump) {
 		// repeat mode or a deliberate restart: allow the native notification to return to 0.
-		lastNativeElapsedSeconds = 0;
-	} else if (isPlaying && elapsedSeconds === 0 && lastNativeElapsedSeconds > 2) {
+		pb.lastNativeElapsedSeconds = 0;
+	} else if (isPlaying && elapsedSeconds === 0 && pb.lastNativeElapsedSeconds > 2) {
 		// likely a transient WebView/decoder "hiccup"; don't reset the bar.
 		return;
 	} else {
-		lastNativeElapsedSeconds = Math.max(lastNativeElapsedSeconds, elapsedSeconds);
+		pb.lastNativeElapsedSeconds = Math.max(pb.lastNativeElapsedSeconds, elapsedSeconds);
 	}
 	try {
 		window.MusicControls.updateElapsed(
 			{
 				elapsed:
-					lastNativeElapsedSeconds === 0 && elapsedSeconds <= 1 ? elapsedSeconds : lastNativeElapsedSeconds,
+					pb.lastNativeElapsedSeconds === 0 && elapsedSeconds <= 1
+						? elapsedSeconds
+						: pb.lastNativeElapsedSeconds,
 				duration: durationSeconds,
 				isPlaying,
 			},
@@ -365,15 +403,26 @@ function updateNativeElapsedState(force = false) {
 }
 
 document.addEventListener('deviceready', async () => {
-	cordovaDeviceReady = true;
+	const pb = window.starlPlaybackState;
+	pb.cordovaDeviceReady = true;
+	window._starlDeviceReady = true;
 	const granted = await ensurePostNotificationsPermission();
-	notificationsPermissionKnown = true;
-	notificationsPermissionGranted = Boolean(granted);
-	if (!notificationsPermissionGranted) {
+	pb.notificationsPermissionKnown = true;
+	pb.notificationsPermissionGranted = Boolean(granted);
+	if (!pb.notificationsPermissionGranted) {
 		console.warn('POST_NOTIFICATIONS not granted; Android may hide media notifications.');
 	}
 	initNativeMusicControls();
 	ensureBatteryOptimizationExemption();
+	// cold-start: check if the app was launched by tapping the notification
+	if (canUseNativeMusicControls() && typeof window.MusicControls.getAndClearPendingOpenPlayer === 'function') {
+		window.MusicControls.getAndClearPendingOpenPlayer(
+			(flag) => {
+				if (flag && typeof setPlayerOpen === 'function') setPlayerOpen(true);
+			},
+			() => {},
+		);
+	}
 	// make status bar transparent with light (white) icons when possible
 	try {
 		if (window.StatusBar) {
@@ -388,10 +437,7 @@ document.addEventListener('deviceready', async () => {
 			}
 		}
 	} catch (e) {}
-	if (lastTrackMeta) {
-		createOrUpdateNativeNotification(lastTrackMeta);
+	if (pb.lastTrackMeta) {
+		createOrUpdateNativeNotification(pb.lastTrackMeta);
 	}
 });
-
-// initMediaSession / updateMediaSessionPlaybackState / updateMediaSessionPositionState
-// are defined in runtime-media-session.js (loaded before this file)

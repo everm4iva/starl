@@ -13,7 +13,7 @@
 	width: 92%;
 	height: 46px;
 	border-radius: 24px;
-	background-color: rgba(40, 40, 40, 0.75);
+	background-color: rgba(0, 0, 0, 0.2);
 	backdrop-filter: blur(10px);
 	margin-top: 12px;
 	margin-bottom: 4px;
@@ -23,7 +23,7 @@
 	justify-content: flex-start;
 	padding: 0 16px;
 	gap: 10px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.2);
 	flex-shrink: 0;
 }
 
@@ -90,7 +90,7 @@
 	border: 1.5px solid transparent;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: var(--anim-general-button);
 	flex-shrink: 0;
 }
 
@@ -131,8 +131,8 @@
 	cursor: pointer;
 	opacity: 0;
 	transform: translateY(8px);
-	animation: sr-item-in 240ms ease forwards;
-	transition: background-color 0.12s ease;
+	animation: sr-item-in 0.2s ease forwards;
+	transition: var(anim-player-bg);
 }
 
 .sr-item:active {
@@ -163,6 +163,13 @@
 
 .sr-cover-circle {
 	border-radius: 50%;
+}
+
+.sr-recent-query-icon {
+	background-image: url('../../media/common-icons/light/search.svg');
+	background-size: 52%;
+	background-position: center;
+	opacity: 0.5;
 }
 
 /* ---- Info ---- */
@@ -209,7 +216,7 @@
 	justify-content: center;
 	cursor: pointer;
 	opacity: 0.55;
-	transition: opacity 0.12s ease;
+	transition: var(--anim-general-button);
 	background-size: 18px;
 	background-position: center;
 	background-repeat: no-repeat;
@@ -245,7 +252,7 @@
 	justify-content: center;
 	cursor: pointer;
 	opacity: 0.4;
-	transition: opacity 0.12s ease;
+	transition: var(--anim-general-button);
 	position: relative;
 }
 
@@ -281,7 +288,7 @@
 	opacity: 0.5;
 	cursor: pointer;
 	border-radius: 50%;
-	transition: opacity 0.12s ease;
+	transition: var(--anim-general-button);
 }
 
 .sr-more-btn:active {

@@ -1,7 +1,7 @@
 /**
  * ☆=========================================☆
  * File protocol - where saved files land on the device
- * Central place that decides where generated files get written on the client.
+ * The union that decides where generated files get written on the client. - like a cult or smth
  * First use-case is the account export, but new "targets" can register later.
  *
  * --- What this file does? ---

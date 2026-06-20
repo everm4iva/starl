@@ -1,25 +1,3 @@
-@keyframes slideInFromBottom {
-	from {
-		transform: translateY(100%);
-		opacity: 0;
-	}
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
-}
-
-@keyframes slideOutToBottom {
-	from {
-		transform: translateY(0);
-		opacity: 1;
-	}
-	to {
-		transform: translateY(50%);
-		opacity: 0;
-	}
-}
-
 .main-player {
 	display: flex;
 	flex-direction: column;
@@ -31,21 +9,19 @@
 	width: 100%;
 	height: 100vh;
 	background-color: black;
-	animation: slideInFromBottom 0.4s ease-out;
+	animation: var(--anim-player-open);
+	animation-fill-mode:none;
 	z-index: 10;
-	transition:
-		transform 0.25s ease,
-		opacity 0.25s ease;
+	/* transition:var(--anim-page-openclose); */
 }
 
 .main-player.hidden {
-	animation: slideOutToBottom 0.4s ease-in forwards;
+	animation: var(--anim-player-close);
 	pointer-events: none;
 }
 
 .mp-bg {
 	position: absolute;
-	/* Fill the whole player, including behind the transparent status bar. */
 	top: 0;
 	width: 100%;
 	height: 100%;
@@ -53,12 +29,10 @@
 	background-image: var(--player-bg);
 	background-size: cover;
 	background-position: center;
-	filter: blur(20px);
-	opacity: 0.7;
+	filter: blur(10px);
+	opacity: 0.65;
 	touch-action: none;
-	transition:
-		transform 260ms cubic-bezier(0.22, 0.9, 0.31, 1),
-		opacity 260ms ease;
+	transition: var(--anim-player-bg);
 	will-change: transform, opacity;
 }
 
@@ -76,7 +50,7 @@
 }
 
 .mp-cover {
-	height: 85%;
+	height: 80%;
 	min-width: 150px;
 	min-height: 150px;
 	aspect-ratio: 1/1;
@@ -85,12 +59,12 @@
 	background-position: center;
 	border-radius: 20px;
 	touch-action: none;
-	transition: transform 260ms cubic-bezier(0.22, 0.9, 0.31, 1);
+	transition: var(--anim-player-bg);
 	will-change: transform;
 }
 
 .mp-track-info {
-	transition: transform 260ms cubic-bezier(0.22, 0.9, 0.31, 1);
+	transition: var(--anim-player-info);
 	will-change: transform;
 	touch-action: none;
 }
@@ -146,6 +120,7 @@
 	width: 100%;
 	color: white;
 	position: relative;
+	cursor: pointer;
 }
 
 .mp-track-artist::before {
@@ -186,11 +161,17 @@
 .slider-wrapper {
 	position: relative;
 	width: 100%;
-	height: 8px;
-	background: rgba(255, 255, 255, 0.3);
+	height: 4px;
+	background-color: rgba(255, 255, 255, 0.3);
 	border-radius: 5px;
 	overflow: visible;
 	margin-bottom: 2%;
+	transition: var(--anim-player-slider);
+}
+
+.slider-wrapper:has(#player-time:active),
+.slider-wrapper:has(#player-time:hover) {
+	height: 10px;
 }
 
 .player-time-cached {
@@ -203,9 +184,7 @@
 	z-index: 0;
 	width: 0%;
 	pointer-events: none;
-	transition:
-		width 220ms linear,
-		opacity 220ms linear;
+	transition: var(--anim-player-slider);
 }
 
 .slider-progress {
@@ -214,10 +193,11 @@
 	left: 0;
 	height: 100%;
 	background-color: var(--user-accentcolor);
-	border-radius: 5px 0px 0px 5px;
+	border-radius: 5px;
 	pointer-events: none;
 	z-index: 1;
 	width: 0%;
+	transition: var(--anim-player-slider);
 }
 
 #player-time {
@@ -234,43 +214,76 @@
 }
 
 #player-time::-webkit-slider-runnable-track {
-	height: 8px;
+	height: 4px;
 	background-color: transparent;
 	border-radius: 5px;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-webkit-slider-runnable-track,
+#player-time:hover::-webkit-slider-runnable-track {
+	height: 15px;
 }
 
 #player-time::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 15px;
-	height: 15px;
+	width: 14px;
+	height: 14px;
 	border-radius: 50%;
 	background: white;
 	cursor: pointer;
-	margin-top: -20px;
+	margin-top: -5px;
+	transform: scale(0);
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-webkit-slider-thumb,
+#player-time:hover::-webkit-slider-thumb {
+	transform: scale(1);
+	margin-top: -5%;
 }
 
 #player-time::-moz-range-track {
-	height: 8px;
+	height: 4px;
 	background-color: rgba(255, 255, 255, 0.3);
 	border-radius: 5px;
 	border: none;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-track,
+#player-time:hover::-moz-range-track {
+	height: 10px;
 }
 
 #player-time::-moz-range-progress {
 	background-color: var(--user-accentcolor);
-	height: 8px;
+	height: 4px;
 	border-radius: 5px;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-progress,
+#player-time:hover::-moz-range-progress {
+	height: 10px;
 }
 
 #player-time::-moz-range-thumb {
-	width: 20px;
-	height: 20px;
+	width: 14px;
+	height: 14px;
 	border-radius: 50%;
 	background-color: white;
 	cursor: pointer;
 	border: none;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	transform: scale(0);
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-thumb,
+#player-time:hover::-moz-range-thumb {
+	transform: scale(1);
 }
 
 /* --------- timeinfo --------- */
@@ -284,21 +297,24 @@
 	color: white;
 	font-weight: 500;
 	font-family: var(--default-font);
+	transition: var(--anim-player-info);
 }
 
 .timeinfo-elapsed::before {
 	content: var(--player-time-elapsed);
 	position: relative;
 	color: white;
+	transition: var(--anim-player-info);
 }
 
 .timeinfo-total::before {
 	content: var(--player-time-total);
 	position: relative;
 	color: white;
+	transition: var(--anim-player-info);
 }
 
-/* --------- More buttons ... --------- */
+/* --------- More buttons --------- */
 .mp-controls-btncontainer {
 	width: 100%;
 	height: 40%;
@@ -323,9 +339,7 @@
 
 .mp-btn.repeat {
 	opacity: 0.5;
-	transition:
-		opacity 0.15s ease,
-		transform 0.15s ease;
+	transition: var(--anim-general-button);
 }
 
 .mp-btn.repeat.active {
@@ -472,6 +486,7 @@
 }
 
 .mp-add-btn:active {
+	transition: var(--anim-general-button);
 	transform: scale(0.9);
 	opacity: 0.9;
 }
@@ -495,7 +510,7 @@
 	height: 40px;
 }
 
-/* -- main player - clean -- */
+/*--------- main player - clean styles --------- */
 
 .main-player.clean .mp-add-btn-contain {
 	display: none;
@@ -515,4 +530,27 @@
 
 .main-player.clean .img-button.icon.star {
 	margin-right: 10%;
+}
+
+/*--------- mp animations --------- */
+@keyframes slideInFromBottom {
+	from {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes slideOutToBottom {
+	from {
+		transform: translateY(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateY(50%);
+		opacity: 0;
+	}
 }

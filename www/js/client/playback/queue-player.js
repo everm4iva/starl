@@ -35,7 +35,7 @@
 		return document.querySelector('.mp-btn.icon.shuffle');
 	}
 
-	// both the maximized player (.mp-btn) and the mini player (.mini-player-btn) have their own skip buttons - wire all of them, not just the maximized set.
+	// both the maximized player (.mp-btn) and the mini player (.mini-player-btn) have their own skip buttons
 	function getPreviousButtons() {
 		return Array.from(document.querySelectorAll('.mp-btn.icon.skip-previous, .mini-player-btn.icon.skip-previous'));
 	}
@@ -92,18 +92,36 @@
 		};
 	}
 
-	function handleNextClick() {
+	// while offline, smart-queue handles the skip by jumping straight to the next/prev
+	// CACHED track (an uncached track can't play offline, so user never land on one). when
+	// online it returns false and client does the normal adjacent skip below.
+
+	async function smartQueueHandledSkip(direction) {
+		const sq = window.starlSmartQueue;
+		if (!sq || typeof sq.skip !== 'function') return false;
+		try {
+			return await sq.skip(direction);
+		} catch (error) {
+			return false;
+		}
+	}
+
+	async function handleNextClick() {
 		const queueApi = getQueueApi();
 		if (!queueApi || typeof queueApi.nextTrack !== 'function') return;
+		if (window.starlPlaybackState) window.starlPlaybackState.lastNavDirection = 1;
+		if (await smartQueueHandledSkip(1)) return;
 		const nextTrack = queueApi.nextTrack();
 		if (nextTrack && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
 			window.starlPlayer.playFromSearch(trackToPlayItem(nextTrack), {keepPlayerState: true});
 		}
 	}
 
-	function handlePreviousClick() {
+	async function handlePreviousClick() {
 		const queueApi = getQueueApi();
 		if (!queueApi || typeof queueApi.previousTrack !== 'function') return;
+		if (window.starlPlaybackState) window.starlPlaybackState.lastNavDirection = -1;
+		if (await smartQueueHandledSkip(-1)) return;
 		const prevTrack = queueApi.previousTrack();
 		if (prevTrack && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
 			window.starlPlayer.playFromSearch(trackToPlayItem(prevTrack), {keepPlayerState: true});
@@ -159,7 +177,7 @@
 
 		const savedState = queueApi.loadQueueState();
 		if (savedState && typeof queueApi.restoreQueueState === 'function') {
-			// only restore a real multi-track queue. A single-track entry just means the user played a standalone track, not that there's a queue to resume.
+			// only restore a real multi-track queue. a single-track entry just means the user played a standalone track, not that there's a queue to resume.
 			const queueTracks = Array.isArray(savedState.queue) ? savedState.queue : [];
 			if (queueTracks.length > 1) {
 				queueApi.restoreQueueState(savedState);

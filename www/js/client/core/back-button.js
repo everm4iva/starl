@@ -1,6 +1,6 @@
 /**
  * ☆=========================================☆
- * Back button - Android hardware back handling
+ * Back button - Android system back action handling
  * Makes the system back button close the topmost open UI layer instead of
  * exiting the app (which is Cordova's default with no listener).
  *
@@ -22,11 +22,9 @@
 
 	/* ☆======= Visibility guard =======☆ */
 
-	// true only if the element is really on screen. The maximized player keeps
-	// the .main-player node in the DOM and animates out with an inline
-	// translateY(100%) / opacity:0 BEFORE the .hidden class is applied, so a
-	// plain .hidden check can false-positive mid/after a close. Guard against
-	// display:none, the .hidden class, zero opacity, and being translated away.
+	// true only if the element is really on screen. the maximized player keeps
+	// the .main-player node in the DOM and animates it up from the bottom,
+	// so we need to check more than just presence of the node or a .hidden class.
 	function isActuallyVisible(el) {
 		if (!el || el.classList.contains('hidden')) return false;
 		var cs = window.getComputedStyle(el);
@@ -43,13 +41,10 @@
 	// each handler returns true if it consumed the back press (something was
 	// open and got dismissed). First to return true wins.
 	var layers = [
-		// 1. track/album context menu (created ad-hoc with class .context-menu).
+		// 1. track/album context menu (created "ad-hoc" with class .context-menu).
 		function contextMenu() {
 			var menu = document.querySelector('.context-menu');
 			if (!menu) return false;
-			// clicking elsewhere is how it normally closes; simplest reliable
-			// dismissal is to remove it. The module nulls its own ref on the
-			// next open, and its outside-click listener is idempotent.
 			menu.remove();
 			return true;
 		},
@@ -87,7 +82,8 @@
 			return false;
 		},
 
-		// 5. artist/album page overlay. It keeps its own navigation stack
+		// 5. artist/album page overlay.
+		// it keeps its own navigation stack
 		// (artists list -> artist -> album), so defer to its goBack via the
 		// exposed close: client calls the dedicated back if present, else close.
 		function artistPage() {
@@ -109,7 +105,7 @@
 		function maximizedPlayer() {
 			var player = document.querySelector('.main-player');
 			if (!isActuallyVisible(player)) return false;
-			// Reuse the existing close-player button so client hits the exact same state transition the UI already uses.
+			// reuse the existing close-player button so client hits the exact same state transition the UI already uses.
 			var closeBtn = document.getElementById('close-player');
 			if (closeBtn) {
 				closeBtn.click();
@@ -150,7 +146,7 @@
 	}
 
 	function showExitToast() {
-		// prefer the app's own toast if available; fall back to a tiny inline one.
+		// prefer the app's own toast if available; fall back to a tiny tiny inline one.
 		if (window.starlLayout && typeof window.starlLayout.showToast === 'function') {
 			window.starlLayout.showToast('Press back again to exit');
 			return;
@@ -179,8 +175,8 @@
 	/* ☆======= Back press handler + wiring =======☆ */
 
 	// a single physical back press can fire 'backbutton' more than once (key
-	// down/up, or Cordova re-dispatch). Without this, one press could close a
-	// layer AND then switch tabs. Collapse rapid repeats into one logical press.
+	// down/up, or Cordova re-dispatch).
+	// without this, one press could close a layer AND then switch tabs.
 	var DEBOUNCE_MS = 350;
 	var lastHandled = 0;
 

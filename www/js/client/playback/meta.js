@@ -88,7 +88,8 @@ function setTrackMeta(meta) {
 				const cache = getMediaCache();
 				let cachedPercent = 0;
 				if (cache) {
-					// try several candidate keys from meta first, then fallback to globals and stored player state.
+					// try several "candidate" keys from meta first, then fallback to globals and stored player state.
+					// took me 5 minutes to find the correct word to use for this process, but "candidates" just felt right
 					const candidates = [];
 					if (meta) {
 						if (meta.trackKey) candidates.push(String(meta.trackKey).trim());
@@ -96,10 +97,10 @@ function setTrackMeta(meta) {
 						if (meta.sourceUrl) candidates.push(String(meta.sourceUrl).trim());
 						if (meta.url) candidates.push(String(meta.url).trim());
 					}
-					if (typeof currentTrackKey !== 'undefined' && currentTrackKey)
-						candidates.push(String(currentTrackKey).trim());
-					if (typeof currentStreamUrl !== 'undefined' && currentStreamUrl)
-						candidates.push(String(currentStreamUrl).trim());
+					if (window.starlPlaybackState.currentTrackKey)
+						candidates.push(String(window.starlPlaybackState.currentTrackKey).trim());
+					if (window.starlPlaybackState.currentStreamUrl)
+						candidates.push(String(window.starlPlaybackState.currentStreamUrl).trim());
 					try {
 						if (typeof readPlayerState === 'function') {
 							const state = readPlayerState() || {};
@@ -147,7 +148,7 @@ function setTrackMeta(meta) {
 
 	/* ☆======= Native notification + media session =======☆ */
 
-	lastTrackMeta = meta;
+	window.starlPlaybackState.lastTrackMeta = meta;
 	createOrUpdateNativeNotification(meta);
 
 	if (canUseMediaSession()) {

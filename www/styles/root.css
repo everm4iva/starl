@@ -6,32 +6,69 @@
 @import url('./maximized-player.css');
 @import url('./tabs/track-context-menu.css');
 @import url('./tab-logic.css');
+@import url('./tabs/account.css');
+@import url('./tabs/appearance-settings.css');
 
 /* -- root properties -- */
 :root {
-	--bg-color: #181818;
-	--font-color: rgb(255, 255, 255);
 	/* Real status-bar / notch height now that the WebView draws edge-to-edge
-	   (viewport-fit=cover + AndroidEdgeToEdge). Falls back to 32px when the
-	   platform reports no safe-area inset. */
+	(viewport-fit=cover + AndroidEdgeToEdge). Falls back to 32px when the
+	platform reports no safe-area inset. */
 	--status-bar-space: max(env(safe-area-inset-top), 32px);
 
-	--user-accentcolor: #e43967;
-	--user-accentcolor-transparent: #e4396788;
-
-	--default-font: 'Fredoka', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
 	/* player */
-	--player-bg: url('../media/img/example.png');
-	--player-song-title: 'crybaby';
-	--player-song-artist: 'BEX';
-	--player-song-album: 'SCUM';
-	--player-time-elapsed: '0:38';
-	--player-time-total: '3:17';
-	--player-time-progress: 23%;
+	--player-bg: url('../media/img/default-cover.png');
+	--player-song-title: '-y';
+	--player-song-artist: '-';
+	--player-song-album: '-';
+	--player-time-elapsed: '0:00';
+	--player-time-total: '0:00';
+	--player-time-progress: 0%;
 	--player-time-cached: 0%;
-	--user-profile-pic: url('../../media/img/DefaultUser.png');
+	--user-profile-pic: url('../media/img/DefaultUser.png');
 	--user-profile-name: 'StarChaser';
+
+	/* font & colors */
+	--default-font:
+		'Fredoka', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* options: fredoka, SourGummy. Jersey10, Quicksand, inter, sans, system-ui */
+	--bg-color: #181818;
+	--font-color: rgb(255, 255, 255);
+	--app-accent: #b039e4;
+	--app-accent-transparent-2: #b039e422;
+	--app-accent-transparent-4: #b039e444;
+	--app-accent-transparent-6: #b039e466;
+	--app-accent-transparent-8: #b039e488;
+
+	--user-accentcolor: #b039e4;
+	--user-accentcolor-transparent-2: #b039e422;
+	--user-accentcolor-transparent-4: #b039e444;
+	--user-accentcolor-transparent-6: #b039e466;
+	--user-accentcolor-transparent-8: #b039e488;
+	--user-accentcolor-artists: #01e071;
+	--user-accentcolor-artists-btnfont: #004523;
+	--user-accentcolor-albums: #7c8ef0;
+	--user-accentcolor-albums-btnfont: white;
+	--user-accentcolor-music: #df38af;
+	--user-accentcolor-music-btnfont: #28001d;
+	--user-accentcolor-history: #fc7941;
+	--user-accentcolor-history-btnfont: #371100;
+	--user-accentcolor-favorites: white;
+	--user-accentcolor-favorites-btnfont: black;
+
+	/* animations */
+	--anim-player-open: slideInFromBottom 0.4s linear forwards;
+	--anim-player-close: slideOutToBottom 0.4s linear backwards;
+	--anim-player-bg: all 1s ease; /* in player and cover images: transition for background image and resolution changes */
+	--anim-player-info: all 260ms cubic-bezier(0.22, 0.9, 0.31, 1); /* in player: transition for info changes in text*/
+	--anim-player-slider: all 150ms ease; /* in player: transition for slider changes */
+	--anim-player-loading-indicator: loading-sweep all 1s linear infinite; /* in player: transition for loading indicator speed, type (ease or linear) */
+	--anim-general-button: all 150ms ease; /* in buttons: transition for hover and active states */
+	--anim-general-element-generate: all 200ms ease; /* in elements: transition for element generation */
+	--anim-general-element-slideinout: slideUp 0.3s ease-out; /* in elements: transition for element slide in and out */
+	--anim-general-bottom-nav: all 300ms ease; /* in bottom nav: transition, size, dimentions, appearence*/
+	--anim-general-tab-transition: all 150ms ease; /* in tab logic: transition for tab*/
+	--anim-page-openclose: all 150ms ease; /* in pages: transition for page open/close */
+
 }
 
 * {
@@ -55,7 +92,7 @@ body {
 	justify-content: center;
 	background-color: var(--bg-color);
 	color: var(--font-color);
-	font-family: 'Fredoka', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-family:var(--default-font);
 }
 
 .img-button {
@@ -97,7 +134,7 @@ body {
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
-	filter: blur(100px);
+	filter: blur(50px);
 	opacity: 0.4;
 	mix-blend-mode: screen;
 	transition: 1s ease background-image;
@@ -117,3 +154,12 @@ body {
 	background-repeat: no-repeat;
 	opacity: 0.9;
 } */
+
+/* -- offline availability -- */
+/* rows for tracks that aren't fully cached fade out while offline, signalling
+   they can't be played until a connection returns.
+   applied by js/client/playback/offline-availability.js on the row element itself. */
+.offline-unavailable {
+	opacity: 0.4;
+	transition: opacity 0.25s ease;
+}

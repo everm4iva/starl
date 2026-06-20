@@ -1,0 +1,11 @@
+{
+  "name": "cordova-plugin-starl-intent",
+  "version": "1.1.0",
+  "description": "Receives shared YouTube/YouTube Music URLs and routes them to the starl player",
+  "cordova": {
+    "id": "cordova-plugin-starl-intent",
+    "platforms": ["android"]
+  },
+  "keywords": ["cordova", "android", "intent", "share", "youtube", "ecosystem:cordova", "cordova-android"],
+  "license": "PFF1.0"
+}

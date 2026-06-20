@@ -1,21 +1,23 @@
 {
   "name": "everm4iva.starl",
   "displayName": "starl",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "art of sound for free",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "cordova run android",
-    "clean": "rimraf platforms; cordova prepare android"
+    "clean": "rimraf platforms; cordova prepare android",
+    "rebuild": "cordova platform rm android && cordova platform add android && cordova plugin add --force ./local-plugins/cordova-plugin-starl-music-controls && cordova plugin add --force ./local-plugins/cordova-plugin-starl-intent && cordova run android"
   },
   "author": "everm4iva",
-  "license": "./LICENSE",
+  "license": "PFF1.0",
   "devDependencies": {
     "cordova-android": "^15.0.0",
     "cordova-browser": "^7.0.0",
     "cordova-plugin-android-permissions": "^1.1.5",
     "cordova-plugin-customurlscheme": "^5.0.2",
+    "cordova-plugin-starl-intent": "file:local-plugins/cordova-plugin-starl-intent",
     "cordova-plugin-starl-music-controls": "file:local-plugins/cordova-plugin-starl-music-controls",
     "cordova-plugin-starl-splash": "file:local-plugins/cordova-plugin-starl-splash"
   },
@@ -36,6 +38,7 @@
       "cordova-plugin-statusbar": {},
       "cordova-plugin-starl-statusbar": {},
       "cordova-plugin-starl-splash": {},
+      "cordova-plugin-starl-intent": {},
       "cordova-plugin-starl-music-controls": {}
     }
   },

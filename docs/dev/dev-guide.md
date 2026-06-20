@@ -1,6 +1,6 @@
 # Developer Guide
 
-*← [Back to README](https://github.com/everm4iva/starl/blob/main/readme.md)*
+*- [Back to documentation](https://github.com/everm4iva/starl/blob/main/docs/index.md)*
 
 ---
 
@@ -36,6 +36,8 @@ mobile/
 │   ├── cordova-plugin-starl-music-controls/
 │   ├── cordova-plugin-starl-background/
 │   └── cordova-plugin-starl-statusbar/
+│   └── cordova-plugin-starl-splash/
+│   └── ...
 ├── docs/                       # Documentation
 ├── config.xml                  # Cordova project config
 └── package.json
@@ -44,7 +46,7 @@ mobile/
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
-- [Apache Cordova CLI](https://cordova.apache.org/docs/en/latest/guide/cli/) — `npm install -g cordova`
+- [Apache Cordova CLI](https://cordova.apache.org/docs/en/latest/guide/cli/) - `npm install -g cordova`
 - [Android Studio](https://developer.android.com/studio) with Android SDK
 - Java 17+
 
@@ -76,10 +78,14 @@ cordova build android --release
 
 ## Local plugins
 
-The three local Cordova plugins (`music-controls`, `background`, `statusbar`) live in `local-plugins/` and are referenced by path — `npm install` picks them up automatically, no extra steps needed.
+The three local Cordova plugins (`music-controls`, `background`, `statusbar`) live in `local-plugins/` and are referenced by path - `npm install` picks them up automatically, no extra steps needed.
 
 ## Backend
 
 It's planned to release a standalone executable server for you to config and host your own stuff, but for now.. it's not ready.
 So i host a version of the executable server with auth for data protection and basic user handling.
 When the server is open-sourced, this section will be updated with a link and setup guide.
+
+### Backend architecture (for curious minds)
+
+learn more about the backend architecture in [server-architecture.md](./server-architecture.md).

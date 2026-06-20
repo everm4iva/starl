@@ -103,6 +103,9 @@
 	}
 
 	function normalizeImageKey(value) {
+		if (value === 'user_profile_picture') {
+			return value;
+		}
 		const raw = normalizeUrl(value);
 		if (!raw) {
 			return '';
@@ -168,7 +171,7 @@
 		const normalizedVariant = normalizeImageVariant(variant);
 		const apiBase = getApiBase();
 
-		// unwrap already-proxied URLs to avoid double-wrapping.
+		// unwrap already proxied URLs
 		let unwrapped = rawUrl.startsWith('/image/') ? apiBase + rawUrl : rawUrl;
 		for (let i = 0; i < 3; i++) {
 			try {
@@ -295,8 +298,9 @@
 	}
 
 	function setProgressiveImage(targetKey, imageUrl, applyUrl, opts) {
-		// opts.variant === 'low' (or opts.upgrade === false) keeps the low-res variant and skips the high-res upgrade. Small list-row thumbnails don't need the ~1280px maxres image
-		// downloading and decoding it per row is a major source of scroll jank - so callers rendering small covers should pass {variant: 'low'}. Headers / full-screen art omit it and stay cute
+		// opts.variant === 'low' (or opts.upgrade === false) keeps the low-res variant and skips the high-res upgrade.
+		// small list-row thumbnails don't need the ~1280px maxres image - gpu doesn't like to eat that much data for a tiny thumbnail heheh
+		// downloading and decoding it per row is a major source of scroll jank shit - so callers rendering small covers should pass {variant: 'low'}. Headers / full-screen art omit it and stay cute
 		opts = opts || {};
 		const lowOnly = opts.variant === 'low' || opts.upgrade === false;
 		// try to use a locally cached blob first (works offline)
@@ -354,8 +358,8 @@
 		if (!blob) {
 			return '';
 		}
-		// reuse existing object URL for the same key - revoking and recreating it breaks any element that already has the URL set as its src/backgroundImage.
-		// clearCache() clears the map, so after a cache wipe a fresh URL is created.
+		// reuse existing object URL for the same key - revoking and recreating it breaks any element that already has the URL set as its src/backgroundImage
+		// clearCache() clears the map, so after a cache wipe a fresh URL is created
 		if (objectUrlByKey.has(key)) {
 			return objectUrlByKey.get(key);
 		}
@@ -373,7 +377,7 @@
 		return withStore(TRACK_STORE, 'readonly', (store) => requestToPromise(store.get(trackKey)));
 	}
 
-	// KV store helpers (top-level)
+	// KV store helpers (top-level) - kv means key value
 	async function getKVRecord(key) {
 		key = normalizeUrl(key);
 		if (!key) return null;
@@ -481,7 +485,7 @@
 
 		// retry with backoff - the server-side /stream/ file may still be 404 while
 		// the proxy is writing it. poll patiently (up to ~2.5 min) because a long
-		// track isn't fully written server-side until it has finished streaming once.
+		// track isn't fully written server-side until it has finished streaming once
 		let response;
 		const delays = [0, 3000, 5000, 8000, 12000, 20000, 30000, 45000, 45000];
 		for (let attempt = 0; attempt < delays.length; attempt++) {
@@ -491,7 +495,7 @@
 			try {
 				response = await fetch(attachToken(streamUrl, token));
 			} catch (err) {
-				// network blip (ex: went offline mid-cache) - give up quietly.
+				// network blip (ex: went offline mid-cache) - give up quietly and behave
 				console.warn('[media-cache] track fetch network error for', trackKey, err);
 				return null;
 			}
@@ -529,6 +533,10 @@
 			'(' + (Number(blob.size) || 0) + ' bytes); aliases:',
 			aliases,
 		);
+		// let offline-availability , and code else know this track is now playable offline
+		try {
+			window.dispatchEvent(new CustomEvent('starl-track-cached', {detail: {trackKey}}));
+		} catch (e) {}
 		return record;
 	}
 
@@ -688,6 +696,7 @@
 	}
 
 	// sets a DOM element's background-image progressively: low-res first, then high-res
+	// logic: background/music tiles load first, high-res load later for big elements.
 	function setImageEl(el, imageUrl, opts) {
 		if (!el || !imageUrl) return;
 		const key = imageUrl + '|' + (el.dataset.imgKey || (el.dataset.imgKey = Math.random().toString(36).slice(2)));
@@ -717,7 +726,7 @@
 		const key = normalizeTrackKey(trackKey);
 		if (!key) return false;
 		revokeTrackUrl(key);
-		// also revoke any aliased object URLs that share the same blob
+		// also revoke any aliased object URLs that share the same blob, because blobs are funny like that.
 		const rec = await getTrackRecord(key).catch(() => null);
 		const aliases = [];
 		if (rec) {

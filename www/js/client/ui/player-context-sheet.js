@@ -41,9 +41,7 @@
 		const album = getCSSVar('--player-song-album') || '';
 		const bgVar = getComputedStyle(document.documentElement).getPropertyValue('--player-bg').trim();
 		const imageUrl = extractBgUrl(bgVar);
-		// currentTrackKey is a global from runtime.js - access via window to survive IIFE scope
-		const trackKey =
-			window.currentTrackKey || (typeof currentTrackKey !== 'undefined' ? currentTrackKey : '') || '';
+		const trackKey = (window.starlPlaybackState && window.starlPlaybackState.currentTrackKey) || '';
 
 		// sourceUrl: use trackKey when it's a YouTube URL, otherwise look up from queue or history
 		let sourceUrl = '';
@@ -52,7 +50,7 @@
 		if (/^https?:\/\//i.test(trackKey)) {
 			sourceUrl = trackKey;
 		} else {
-			// Try the current queue track first (has sourceUrl, albumId, artistChannelId stored)
+			// try the current queue track first (has sourceUrl, albumId, artistChannelId stored)
 			const queueApi = window.starlPlaybackQueue;
 			if (queueApi && typeof queueApi.getCurrentTrack === 'function') {
 				const qt = queueApi.getCurrentTrack();
@@ -105,12 +103,26 @@
 		el.addEventListener('contextmenu', (e) => e.preventDefault());
 	}
 
+	function openArtist() {
+		const menu = window.starlTrackContextMenu;
+		if (!menu || typeof menu.resolveAndOpenArtist !== 'function') return;
+		menu.resolveAndOpenArtist(getCurrentTrack());
+	}
+
 	function attachGesture() {
 		const additional = document.querySelector('.mp-additional');
 		const indicator = document.querySelector('.mp-scrollupindicator');
 		const cover = document.querySelector('.mp-cover');
+		const artistEl = document.querySelector('.mp-track-artist');
 
-		// Swipe-up on mp-additional opens the sheet
+		if (artistEl) {
+			artistEl.addEventListener('click', (e) => {
+				e.stopPropagation();
+				openArtist();
+			});
+		}
+
+		// swipe-up on mp-additional opens the sheet
 		if (additional) {
 			let startY = 0;
 			let startX = 0;
@@ -141,11 +153,11 @@
 				{passive: true},
 			);
 
-			// Tap on the pill indicator also opens it
+			// tap on the pill indicator also opens it
 			if (indicator) indicator.addEventListener('click', open);
 		}
 
-		// Long-press on the album cover as a backup trigger
+		// long-press on the album cover as a backup trigger
 		attachLongPress(cover);
 	}
 

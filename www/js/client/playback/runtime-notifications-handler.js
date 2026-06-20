@@ -10,7 +10,6 @@
  * - handleNativeMusicControlMessage(raw): routes play/pause/next/prev/seek/destroy
  *
  * --- Dictionary / Terms / Extra details ---
- * - nativePlaybackActive (runtime.js global): true when WebView is backgrounded
  * - trackToPlayItem (engine-player.js global): converts queue track to player format
  * ☆=========================================☆
  */
@@ -29,77 +28,56 @@ function parseNativeMusicControlMessage(raw) {
 	return raw;
 }
 
+// while offline, smart-queue jumps straight to the next/prev CACHED track instead of
+// the plain adjacent one (mirrors queue-player.js's smartQueueHandledSkip). without this
+// the lock-screen/notification skip buttons would land on an uncached, unplayable track.
+async function smartQueueHandledNativeSkip(direction) {
+	const sq = window.starlSmartQueue;
+	if (!sq || typeof sq.skip !== 'function') return false;
+	try {
+		return await sq.skip(direction);
+	} catch (error) {
+		return false;
+	}
+}
+
 function handleNativeMusicControlMessage(raw) {
 	const payload = parseNativeMusicControlMessage(raw);
 	const message = String(payload.message || payload.action || payload.event || '').toLowerCase();
 
 	if (message === 'music-controls-play') {
-		if (nativePlaybackActive) {
-			try {
-				window.MusicControls.playNative(
-					() => {},
-					() => {},
-				);
-			} catch (error) {}
-			setPlayIconState(true);
-			updateStoredState({isPlaying: true});
-			try {
-				window.MusicControls.updateIsPlaying(
-					true,
-					() => {},
-					() => {},
-				);
-			} catch (error) {}
-		} else {
-			audio
-				.play()
-				.then(() => {
-					setPlayIconState(true);
-					updateStoredState({isPlaying: true});
-					try {
-						window.MusicControls.updateIsPlaying(
-							true,
-							() => {},
-							() => {},
-						);
-					} catch (error) {}
-				})
-				.catch(() => {});
-		}
+		audio
+			.play()
+			.then(() => {
+				window.starlPlaybackState.shouldBePlaying = true;
+				setPlayIconState(true);
+				updateStoredState({isPlaying: true});
+				try {
+					window.MusicControls.updateIsPlaying(
+						true,
+						() => {},
+						() => {},
+					);
+				} catch (error) {}
+			})
+			.catch(() => {});
 		return;
 	}
 
 	if (message === 'music-controls-pause') {
-		if (nativePlaybackActive) {
-			try {
-				window.MusicControls.pauseNative(
-					() => {},
-					() => {},
-				);
-			} catch (error) {}
-			setPlayIconState(false);
-			updateStoredState({isPlaying: false});
-			try {
-				window.MusicControls.updateIsPlaying(
-					false,
-					() => {},
-					() => {},
-				);
-			} catch (error) {}
-		} else {
-			try {
-				audio.pause();
-			} catch (error) {}
-			setPlayIconState(false);
-			updateStoredState({isPlaying: false});
-			try {
-				window.MusicControls.updateIsPlaying(
-					false,
-					() => {},
-					() => {},
-				);
-			} catch (error) {}
-		}
+		try {
+			audio.pause();
+		} catch (error) {}
+		window.starlPlaybackState.shouldBePlaying = false;
+		setPlayIconState(false);
+		updateStoredState({isPlaying: false});
+		try {
+			window.MusicControls.updateIsPlaying(
+				false,
+				() => {},
+				() => {},
+			);
+		} catch (error) {}
 		return;
 	}
 
@@ -115,10 +93,14 @@ function handleNativeMusicControlMessage(raw) {
 	if (message === 'music-controls-next') {
 		const queueApi = window.starlPlaybackQueue;
 		if (queueApi && queueApi.getQueueLength() > 1) {
-			const next = queueApi.nextTrack();
-			if (next && window.starlPlayer && typeof trackToPlayItem === 'function') {
-				window.starlPlayer.playFromSearch(trackToPlayItem(next), {keepPlayerState: true});
-			}
+			if (window.starlPlaybackState) window.starlPlaybackState.lastNavDirection = 1;
+			smartQueueHandledNativeSkip(1).then((handled) => {
+				if (handled) return;
+				const next = queueApi.nextTrack();
+				if (next && window.starlPlayer && typeof trackToPlayItem === 'function') {
+					window.starlPlayer.playFromSearch(trackToPlayItem(next), {keepPlayerState: true});
+				}
+			});
 		}
 		return;
 	}
@@ -126,10 +108,14 @@ function handleNativeMusicControlMessage(raw) {
 	if (message === 'music-controls-previous') {
 		const queueApi = window.starlPlaybackQueue;
 		if (queueApi && queueApi.getQueueLength() > 1) {
-			const prev = queueApi.previousTrack();
-			if (prev && window.starlPlayer && typeof trackToPlayItem === 'function') {
-				window.starlPlayer.playFromSearch(trackToPlayItem(prev), {keepPlayerState: true});
-			}
+			if (window.starlPlaybackState) window.starlPlaybackState.lastNavDirection = -1;
+			smartQueueHandledNativeSkip(-1).then((handled) => {
+				if (handled) return;
+				const prev = queueApi.previousTrack();
+				if (prev && window.starlPlayer && typeof trackToPlayItem === 'function') {
+					window.starlPlayer.playFromSearch(trackToPlayItem(prev), {keepPlayerState: true});
+				}
+			});
 		}
 		return;
 	}
@@ -152,6 +138,13 @@ function handleNativeMusicControlMessage(raw) {
 				() => {},
 			);
 		} catch (error) {}
+		return;
+	}
+
+	if (message === 'music-controls-open-player') {
+		if (typeof setPlayerOpen === 'function') {
+			setPlayerOpen(true);
+		}
 		return;
 	}
 }

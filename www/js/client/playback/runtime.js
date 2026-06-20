@@ -1,67 +1,50 @@
 /**
  * ☆=========================================☆
- * Runtime - audio element, state, and playback controls
- * Declares the global <audio> element, playback state variables, repeat mode,
- * and the play/pause button state. Blob fallback lives here too.
+ * Runtime - audio wiring, play/repeat controls, blob fallback
+ * The shared playback STATE now lives in playback-state.js (loaded first); this
+ * file wires behavior on top of it: the play/pause icon sync, repeat mode, and
+ * the stale-blob fallback. The <audio> element is owned by starlPlaybackState;
+ * Keeping a global `audio` alias here so existing bare `audio` references keep working.
  * Android notification + media session live in runtime-notifications.js (loaded after).
  *
  * --- What this file does? ---
- * - Creates and owns the <audio> element (used by engine.js and notifications)
- * - Declares global state: currentTrackKey, currentStreamUrl, repeatEnabled
+ * - Aliases the shared <audio> element as a global `audio` (back-compat)
  * - setPlayIconState(): syncs all play/pause icon buttons to the current state
  * - setRepeatEnabled(): toggles repeat mode and persists it to localStorage
  * - Blob fallback: if a cached blob URL is revoked, switches to the stream URL
- * - Owns repeat mode and player state storage keys
  *
  * --- Dictionary / Terms / Extra details ---
  * - "blob fallback" = when a cached audio blob is revoked, switches to stream URL
- * - Notification vars (nativeMusicControlsReady etc.) declared here for file ordering
+ * - All mutable state (currentTrackKey, repeatEnabled, native flags...) is read
+ *   and written through window.starlPlaybackState - this file owns no state of its own.
  * ☆=========================================☆
  */
 
-/* ☆======= Audio element =======☆ */
+/* ☆======= Audio element (alias of the owned instance) =======☆ */
 
-const audio = new Audio();
-audio.preload = 'metadata';
+const audio = window.starlPlaybackState.audio;
 
-/* ☆=== Native music controls state (used by runtime-notifications.js) ===☆ */
-
-let nativeMusicControlsReady = false;
-let lastNativeElapsedUpdateMs = 0;
-let lastTrackMeta = null;
-let lastNativeElapsedSeconds = 0;
-let lastNativeTrackKey = '';
-let cordovaDeviceReady = false;
-let notificationsPermissionKnown = false;
-let notificationsPermissionGranted = true;
-let nativePlaybackActive = false;
-let lastNativeArtworkUrl = '';
-
-/* ☆======= Playback state + blob fallback =======☆ */
-
-let isLoadingTrack = false;
-let isLoadingSince = 0;
-let currentTrackKey = '';
-let currentStreamUrl = '';
-let repeatEnabled = false;
+/* ☆======= Blob fallback =======☆ */
 
 // if a blob URL fails (stale/revoked), switch to the network stream URL.
 // Mobile browsers can aggressively revoke blobs, so this prevents a silent crash-restart loop.
-let blobFallbackInProgress = false;
 audio.addEventListener('error', () => {
-	if (blobFallbackInProgress) return;
+	const state = window.starlPlaybackState;
+	if (state.blobFallbackInProgress) return;
 	const src = audio.src || '';
 	if (!/^blob:/i.test(src)) return;
-	if (!currentStreamUrl || /^blob:/i.test(currentStreamUrl)) return;
+	if (!state.currentStreamUrl || /^blob:/i.test(state.currentStreamUrl)) return;
 
-	blobFallbackInProgress = true;
+	state.blobFallbackInProgress = true;
 	console.warn('Stale blob URL detected, falling back to stream URL');
 
 	const savedPosition = Number(audio.currentTime) || 0;
 
 	const token = typeof getAccessToken === 'function' ? getAccessToken() : localStorage.getItem('starl_access_token');
-	const sep = currentStreamUrl.includes('?') ? '&' : '?';
-	const fallback = token ? currentStreamUrl + sep + 'token=' + encodeURIComponent(token) : currentStreamUrl;
+	const sep = state.currentStreamUrl.includes('?') ? '&' : '?';
+	const fallback = token
+		? state.currentStreamUrl + sep + 'token=' + encodeURIComponent(token)
+		: state.currentStreamUrl;
 
 	audio.src = fallback;
 	audio.load();
@@ -78,17 +61,11 @@ audio.addEventListener('error', () => {
 		.play()
 		.catch(() => {})
 		.finally(() => {
-			blobFallbackInProgress = false;
+			state.blobFallbackInProgress = false;
 		});
 });
 
-/* ☆======= Storage keys + play buttons =======☆ */
-
-const PLAYER_STATE_KEY =
-	window.starlShared && window.starlShared.keys ? window.starlShared.keys.playerState : 'starl_player_state';
-const REPEAT_STATE_KEY =
-	window.starlShared && window.starlShared.keys ? window.starlShared.keys.repeatState : 'starl_player_repeat';
-let lastStateSaveMs = 0;
+/* ☆======= Play buttons + repeat =======☆ */
 
 // only the actual pause/play toggle buttons, not shuffle/repeat/nav
 function getPlayButtons() {
@@ -128,22 +105,23 @@ function setPlayIconState(isPlaying) {
 
 function readRepeatState() {
 	try {
-		return localStorage.getItem(REPEAT_STATE_KEY) === 'true';
+		return localStorage.getItem(window.starlPlaybackState.REPEAT_STATE_KEY) === 'true';
 	} catch (error) {
 		return false;
 	}
 }
 
 function setRepeatEnabled(enabled, persist = true) {
-	repeatEnabled = Boolean(enabled);
-	audio.loop = repeatEnabled;
+	const state = window.starlPlaybackState;
+	state.repeatEnabled = Boolean(enabled);
+	audio.loop = state.repeatEnabled;
 	if (repeatButton) {
-		repeatButton.classList.toggle('active', repeatEnabled);
-		repeatButton.setAttribute('aria-pressed', repeatEnabled ? 'true' : 'false');
+		repeatButton.classList.toggle('active', state.repeatEnabled);
+		repeatButton.setAttribute('aria-pressed', state.repeatEnabled ? 'true' : 'false');
 	}
 	if (persist) {
 		try {
-			localStorage.setItem(REPEAT_STATE_KEY, repeatEnabled ? 'true' : 'false');
+			localStorage.setItem(state.REPEAT_STATE_KEY, state.repeatEnabled ? 'true' : 'false');
 		} catch (error) {
 			console.warn('Failed to save repeat state', error);
 		}

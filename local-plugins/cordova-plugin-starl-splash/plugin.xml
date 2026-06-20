@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-starl-splash" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="cordova-plugin-starl-splash" version="1.0.2" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>StarlSplash</name>
-    <description>Puts the starl app icon on the Android 12+ splash screen</description>
+    <description>puts the starl app icon on the Android 12+ splash screen</description>
 
     <js-module src="www/StarlSplash.js" name="StarlSplash">
         <clobbers target="StarlSplash" />

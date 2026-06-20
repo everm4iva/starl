@@ -186,6 +186,12 @@
 	}
 
 	function createTrackItem(track, index) {
+		const trackKey = track.trackKey || '';
+		const canSwipeRemove = !!(currentContext && currentContext.canEdit && currentContext.id && !isReorderMode);
+
+		const row = document.createElement('div');
+		row.className = canSwipeRemove ? 'item-row swipeable' : 'item-row';
+
 		const item = document.createElement('div');
 		item.className = 'item';
 
@@ -211,6 +217,10 @@
 
 		const actions = document.createElement('div');
 		actions.className = 'item-actions';
+
+		const nowPlayingIcon = document.createElement('div');
+		nowPlayingIcon.className = 'item-now-playing-icon';
+		actions.appendChild(nowPlayingIcon);
 
 		if (currentContext && currentContext.canReorder && isReorderMode) {
 			const upBtn = document.createElement('div');
@@ -256,7 +266,35 @@
 		item.appendChild(actions);
 
 		item.addEventListener('click', () => playFrom(index, false));
-		return item;
+		// alias keys so offline-availability can match cached tracks stored under
+		// sourceUrl/streamUrl rather than trackKey.
+		item.dataset.cacheKeys = [track.sourceUrl, track.streamUrl].filter(Boolean).join('\n');
+		if (window.starlNowPlaying) {
+			window.starlNowPlaying.markTrackRow(item, trackKey);
+		}
+
+		if (!canSwipeRemove) {
+			return item;
+		}
+
+		const removeBg = document.createElement('div');
+		removeBg.className = 'item-remove-bg';
+		const removeIcon = document.createElement('div');
+		removeIcon.className = 'item-remove-icon';
+		removeBg.appendChild(removeIcon);
+
+		row.appendChild(removeBg);
+		row.appendChild(item);
+
+		if (window.starlGestures && typeof window.starlGestures.setupSwipeToRemove === 'function') {
+			window.starlGestures.setupSwipeToRemove(row, item, () => {
+				if (window.starlPlaylists) {
+					window.starlPlaylists.removeTrackFromPlaylist(currentContext.id, trackKey);
+				}
+			});
+		}
+
+		return row;
 	}
 
 	function populateBody(tracks) {
@@ -363,6 +401,25 @@
 			refresh();
 		}
 	});
+
+	function refreshFromLibraryNative() {
+		if (!currentContext || !window.starlLibraryNative) return;
+		if (!['history', 'favorites', 'music'].includes(currentContext.type)) return;
+		let tracks;
+		if (currentContext.type === 'history') tracks = window.starlLibraryNative.getHistoryTracks();
+		else if (currentContext.type === 'favorites') tracks = window.starlLibraryNative.getFavoritesTracks();
+		else tracks = window.starlLibraryNative.getAllTracks();
+		currentContext = {...currentContext, tracks};
+		populateBody(tracks);
+		if (detailsEl) {
+			const count = tracks.length;
+			const total = getTotalDuration(tracks);
+			detailsEl.textContent = count + ' songs • ' + formatTotalDuration(total);
+		}
+	}
+
+	window.addEventListener('starl-history-updated', refreshFromLibraryNative);
+	window.addEventListener('starl-favorites-updated', refreshFromLibraryNative);
 
 	if (document.readyState !== 'loading') {
 		init();

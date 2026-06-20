@@ -1,6 +1,6 @@
 /**
  * ☆=========================================☆
- * BackgroundManager - manage Android battery optimization settings.
+ * BackgroundManager - pass android's battery optimization settings.
  * Actions:
  * - isIgnoringBatteryOptimizations,
  * - requestIgnoreBatteryOptimizations,

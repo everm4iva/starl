@@ -50,7 +50,7 @@
 				const current = (typeof state.getState === 'function') ? (state.getState() || {}) : {};
 				state.setState({...current, [SECTION_KEY]: next});
 			}
-			state.setSection(SECTION_KEY, next);
+			state.setSection(SECTION_KEY, next, {skipRefresh: true});
 		}
 		try { localStorage.setItem('starl_follows', JSON.stringify(next)); } catch (e) {}
 		try { window.dispatchEvent(new CustomEvent(UPDATE_EVENT, {detail: {follows: next}})); } catch (e) {}

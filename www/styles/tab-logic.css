@@ -16,6 +16,7 @@
 	overflow: hidden;
 	scroll-behavior: smooth;
 	padding: 0;
+	transition: var(--anim-page-openclose);
 }
 
 .tab {
@@ -26,14 +27,11 @@
 	left: 0;
 	opacity: 1;
 	transform: translateY(0);
-	transition:
-		transform 220ms ease,
-		opacity 220ms ease;
+	transition: var(--anim-page-openclose);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding: 0;
-	/* space for floating bottom bar so last elements are reachable */
 	padding-bottom: 22vh;
 }
 

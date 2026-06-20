@@ -1,21 +1,19 @@
 <div align="center">
 
-<img src="www/shc/StarIcon.png" width="96" alt="Starl icon" />
+<img src="www/shc/PixelMadness.png" width="96" alt="Starl icon" />
 
 # starl
 
-**art of sound for free**
-
 *An open music client for Android ♡*
 
-[![version](https://img.shields.io/badge/version-0.1.1--alpha-blueviolet?style=flat-square)](https://github.com/everm4iva/starl/releases)
+[![version](https://img.shields.io/badge/version-1.2--alpha-blueviolet?style=flat-square)](https://github.com/everm4iva/starl/releases)
 [![platform](https://img.shields.io/badge/platform-Android-green?style=flat-square&logo=android)](https://github.com/everm4iva/starl)
 [![license](https://img.shields.io/badge/license-PFF-lightgrey?style=flat-square)](./LICENSE)
 [![status](https://img.shields.io/badge/status-open%20alpha-orange?style=flat-square)]()
 
 ---
 
-[User Guide](docs/user-guide.md) · [Developer Guide](docs/dev-guide.md) · [Roadmap](docs/roadmap.md) · [License](./LICENSE)
+[User Guide](docs/user-guide.md) · [Developer Guide](docs/dev-guide.md) · [Roadmap](docs/roadmap.md) · [FAQ](docs/faq.md) · [Changelog](./changelog.md) · [License](./LICENSE)
 
 </div>
 
@@ -23,9 +21,10 @@
 
 ## What is this awesome looking thing?
 
-Starl is a **free and open-source music client** — no ads, no algorithms you don't control, no subscriptions. You own your music and your data.
+Starl is a **free and open-source music client** - no ads, no algorithms you don't control, no subscriptions. You own your music and your data.
+Also this is offline focused, so you can listen to your music without an internet connection smoothly.
 
-> **Alpha notice:** This is the first public release. The self-hosted backend is still in development — compiled releases connect to a public server in the meantime. Things may break. Feedback and contributions are welcome.
+> **Alpha notice:** This is the first public release. The self-hosted backend is still in development - compiled releases connect to a public server in the meantime. Things may break. Feedback and contributions are welcome.
 
 ---
 
@@ -40,24 +39,24 @@ Starl is a **free and open-source music client** — no ads, no algorithms you d
 
 ---
 
-## Features (v0.1.1)
+## Features (v0.1.2)
 
-- Full music player with queue management
+- Full music player with smart queue management
 - Shuffle, repeat, skip
-- Background playback
-- Native music notification with playback controls
+- Themes, fonts, animations and other customizations
+- Background playback / native music notification with playback controls
 - Song and image caching - cached songs play offline automatically
-- Library with playlists, favorites, and listening history
-- Artist and album pages
+- Library with playlists, favorites, artists, albums and listening history
 - Track context menu (add to playlist, view album/artist, etc.)
 - Search with recent history
 - Account sync - your data follows you across devices
+- Super fast streaming
 
 ---
 
 ## Contributing
 
-Open an issue before sending a PR - just to align on the direction first. No formal process yet.
+Open an issue or submit a pull request. All contributions are welcome, from bug fixes to new features.
 
 ---
 

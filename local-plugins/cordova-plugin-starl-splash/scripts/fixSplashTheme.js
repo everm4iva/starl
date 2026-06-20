@@ -10,6 +10,7 @@
  *
  * This hook removes the cordova default line, leaving only the starl icon.
  */
+
 const fs = require('fs');
 const path = require('path');
 
@@ -23,7 +24,7 @@ module.exports = function (context) {
 
     let xml = fs.readFileSync(themePath, 'utf8');
 
-    // Drop the cordova-default animated-icon line if our starl line is present.
+    // drop the cordova-default animated-icon line if our starl line is present.
     const hasStarl = xml.includes('@drawable/ic_starl_splashscreen');
     if (hasStarl) {
         const before = xml;

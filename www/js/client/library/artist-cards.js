@@ -18,6 +18,20 @@
  */
 
 (function () {
+	/* ☆======= Name normalization =======☆ */
+
+	// Strips accents, punctuation, and extra whitespace so "AC/DC" == "AC DC",
+	// "bôa" == "boa" and on..
+	function normalizeName(s) {
+		return String(s)
+			.normalize('NFD')
+			.replace(/[̀-ͯ]/g, '')
+			.toLowerCase()
+			.replace(/[^a-z0-9\s]/g, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+	}
+
 	/* ☆======= Image helper =======☆ */
 
 	function setImageAsync(el, imageUrl, opts) {
@@ -48,85 +62,204 @@
 		return h > 0 ? h + 'h ' + String(m).padStart(2, '0') + 'm' : m + ' min';
 	}
 
+	/* ☆======= Shared bottom-sheet helpers =======☆ */
+
+	function buildSheetHeader(body, imageUrl, title, sub, roundCover) {
+		const header = document.createElement('div');
+		header.className = 'bsc-track-header';
+		const cover = document.createElement('div');
+		cover.className = 'bsc-track-cover';
+		if (roundCover) cover.style.borderRadius = '50%';
+		if (imageUrl) setImageAsync(cover, imageUrl, {variant: 'low'});
+		const info = document.createElement('div');
+		info.className = 'bsc-track-info';
+		const titleEl = document.createElement('div');
+		titleEl.className = 'bsc-track-title';
+		titleEl.textContent = title;
+		const subEl = document.createElement('div');
+		subEl.className = 'bsc-track-sub';
+		subEl.textContent = sub;
+		info.appendChild(titleEl);
+		info.appendChild(subEl);
+		header.appendChild(cover);
+		header.appendChild(info);
+		body.appendChild(header);
+	}
+
+	function buildSheetAction(body, bs, label, iconClass, handler, danger) {
+		const row = document.createElement('div');
+		row.className = 'bsc-action' + (danger ? ' danger' : '');
+		const icon = document.createElement('div');
+		icon.className = 'bsc-action-icon ' + iconClass;
+		const text = document.createElement('span');
+		text.textContent = label;
+		row.appendChild(icon);
+		row.appendChild(text);
+		row.addEventListener('click', () => {
+			bs.close();
+			setTimeout(handler, 50);
+		});
+		body.appendChild(row);
+	}
+
+	function buildSheetSep(body) {
+		const d = document.createElement('div');
+		d.className = 'bsc-separator';
+		body.appendChild(d);
+	}
+
 	/* ☆======= Artist context menu =======☆ */
 
-	function openArtistContextMenu(artist) {
+	// getArtistList() merges history + favorites + follows, so all three must be
+	// cleared or the artist just reappears
+	function removeArtistFromLibrary(artist) {
+		const trackCount = (artist.tracks && artist.tracks.length) || 0;
+		const hist = window.starlHistory;
+		const favs = window.starlFavorites;
+		const follows = window.starlFollows;
+		if (trackCount > 0) {
+			artist.tracks.forEach((t) => {
+				const key = t.trackKey || t.sourceUrl || '';
+				if (hist && typeof hist.remove === 'function') hist.remove(key);
+				if (favs && typeof favs.removeFavorite === 'function') favs.removeFavorite(key);
+			});
+		}
+		if (follows && typeof follows.unfollowArtist === 'function') {
+			follows.unfollowArtist(artist.name);
+		}
+	}
+
+	function openArtistContextMenu(artist, el) {
 		const bs = window.starlBottomSheet;
 		if (!bs) return;
 		bs.open({
 			render(body) {
-				const header = document.createElement('div');
-				header.className = 'bsc-track-header';
-				const cover = document.createElement('div');
-				cover.className = 'bsc-track-cover';
-				cover.style.borderRadius = '50%';
-				if (artist.imageUrl) setImageAsync(cover, artist.imageUrl, {variant: 'low'});
-				const info = document.createElement('div');
-				info.className = 'bsc-track-info';
-				const titleEl = document.createElement('div');
-				titleEl.className = 'bsc-track-title';
-				titleEl.textContent = artist.name;
-				const subEl = document.createElement('div');
-				subEl.className = 'bsc-track-sub';
-				subEl.textContent = artist.tracks.length + ' songs in library';
-				info.appendChild(titleEl);
-				info.appendChild(subEl);
-				header.appendChild(cover);
-				header.appendChild(info);
-				body.appendChild(header);
-
-				function action(label, iconClass, handler, danger) {
-					const row = document.createElement('div');
-					row.className = 'bsc-action' + (danger ? ' danger' : '');
-					const icon = document.createElement('div');
-					icon.className = 'bsc-action-icon ' + iconClass;
-					const text = document.createElement('span');
-					text.textContent = label;
-					row.appendChild(icon);
-					row.appendChild(text);
-					row.addEventListener('click', () => {
-						bs.close();
-						setTimeout(handler, 50);
-					});
-					body.appendChild(row);
-				}
-
-				function sep() {
-					const d = document.createElement('div');
-					d.className = 'bsc-separator';
-					body.appendChild(d);
-				}
+				const trackCount = (artist.tracks && artist.tracks.length) || 0;
+				buildSheetHeader(body, artist.imageUrl, artist.name, trackCount + ' songs in library', true);
 
 				const follows = window.starlFollows;
 				const artistId = artist.name;
 				const isFollowing =
 					follows && typeof follows.isFollowingArtist === 'function' && follows.isFollowingArtist(artistId);
-				action(
+
+				// follow / unfollow toggle - does not touch history
+				buildSheetAction(
+					body,
+					bs,
 					isFollowing ? 'Unfollow artist' : 'Follow artist',
 					isFollowing ? 'bsc-icon-remove' : 'bsc-icon-star',
 					() => {
 						if (follows && typeof follows.toggleFollowArtist === 'function') {
 							follows.toggleFollowArtist(artistId, {name: artist.name, imageUrl: artist.imageUrl});
 						}
-						// re-render artists list via artist-page if available
 						if (window.starlArtistPage && typeof window.starlArtistPage._renderArtistsList === 'function') {
 							window.starlArtistPage._renderArtistsList();
 						}
 					},
 				);
 
-				if (artist.tracks && artist.tracks.length > 0) {
-					sep();
-					action(
+				// remove from library - wipes history + favorites tracks and unfollows so the
+				// artist disappears from the list (getArtistList() merges all three.
+				buildSheetSep(body);
+				buildSheetAction(
+					body,
+					bs,
+					'Remove from library',
+					'bsc-icon-remove',
+					() => {
+						const finish = () => {
+							removeArtistFromLibrary(artist);
+							if (
+								window.starlArtistPage &&
+								typeof window.starlArtistPage._renderArtistsList === 'function'
+							) {
+								window.starlArtistPage._renderArtistsList();
+							}
+						};
+						if (el && window.starlExplodeViolently) {
+							window.starlExplodeViolently(el, {onDone: finish});
+						} else {
+							finish();
+						}
+					},
+					true,
+				);
+			},
+		});
+	}
+
+	/* ☆======= Album context menu =======☆ */
+
+	function openAlbumContextMenu(album, el) {
+		const bs = window.starlBottomSheet;
+		if (!bs) return;
+		bs.open({
+			render(body) {
+				const tracks = album.tracks || [];
+				buildSheetHeader(body, album.imageUrl, album.name, album.artist ? album.artist : '', false);
+
+				const follows = window.starlFollows;
+				const albumSaveKey = album.id || album.name || '';
+
+				if (album.followed && albumSaveKey && follows && typeof follows.unfollowAlbum === 'function') {
+					buildSheetAction(
+						body,
+						bs,
+						'Remove from library',
+						'bsc-icon-remove',
+						() => {
+							// this just removes the album from the followed albums list and hides the card from the albums grid.
+							const finish = () => {
+								follows.unfollowAlbum(albumSaveKey);
+								if (
+									window.starlArtistPage &&
+									typeof window.starlArtistPage.openAlbumsList === 'function'
+								) {
+									window.starlArtistPage.openAlbumsList();
+								}
+							};
+							if (el && window.starlExplodeViolently) {
+								window.starlExplodeViolently(el, {onDone: finish});
+							} else {
+								finish();
+							}
+						},
+						true,
+					);
+				}
+
+				if (tracks.length > 0) {
+					buildSheetSep(body);
+					buildSheetAction(
+						body,
+						bs,
 						'Remove all songs from history',
 						'bsc-icon-remove',
 						() => {
-							const hist = window.starlHistory;
-							if (!hist || typeof hist.remove !== 'function') return;
-							if (!window.confirm('Remove all songs by ' + artist.name + ' from history?')) return;
-							artist.tracks.forEach((t) => hist.remove(t.trackKey || t.sourceUrl || ''));
-							if (window.starlArtistPage && typeof window.starlArtistPage._renderArtistsList === 'function') {
-								window.starlArtistPage._renderArtistsList();
+							const finish = () => {
+								const hist = window.starlHistory;
+								if (hist && typeof hist.remove === 'function') {
+									tracks.forEach((t) => hist.remove(t.trackKey || t.sourceUrl || ''));
+								}
+								if (
+									album.followed &&
+									albumSaveKey &&
+									follows &&
+									typeof follows.unfollowAlbum === 'function'
+								) {
+									follows.unfollowAlbum(albumSaveKey);
+								}
+								if (
+									window.starlArtistPage &&
+									typeof window.starlArtistPage.openAlbumsList === 'function'
+								) {
+									window.starlArtistPage.openAlbumsList();
+								}
+							};
+							if (el && window.starlExplodeViolently) {
+								window.starlExplodeViolently(el, {onDone: finish});
+							} else {
+								finish();
 							}
 						},
 						true,
@@ -149,7 +282,7 @@
 		name.textContent = artist.name;
 		const meta = document.createElement('div');
 		meta.className = 'ap-card-meta';
-		meta.textContent = artist.tracks.length + ' songs';
+		meta.textContent = '';
 		card.appendChild(cover);
 		card.appendChild(name);
 		card.appendChild(meta);
@@ -158,13 +291,14 @@
 		});
 		card.addEventListener('contextmenu', (e) => {
 			e.preventDefault();
-			openArtistContextMenu(artist);
+			openArtistContextMenu(artist, card);
 		});
+		// long-press support for context menu on touch devices
 		let longPressTimer = null;
 		card.addEventListener('pointerdown', () => {
 			longPressTimer = setTimeout(() => {
 				longPressTimer = null;
-				openArtistContextMenu(artist);
+				openArtistContextMenu(artist, card);
 			}, 600);
 		});
 		['pointerup', 'pointercancel', 'pointermove'].forEach((ev) =>
@@ -175,6 +309,15 @@
 				}
 			}),
 		);
+		// pinch-explode gesture for quick removal
+		if (window.starlPinchExplode) {
+			window.starlPinchExplode.bind(card, () => {
+				removeArtistFromLibrary(artist);
+				if (window.starlArtistPage && typeof window.starlArtistPage._renderArtistsList === 'function') {
+					window.starlArtistPage._renderArtistsList();
+				}
+			});
+		}
 		return card;
 	}
 
@@ -192,9 +335,7 @@
 		const meta = document.createElement('div');
 		meta.className = 'ap-card-meta';
 		const tracks = album.tracks || [];
-		meta.textContent =
-			(album.artist ? album.artist + ' • ' : '') +
-			(tracks.length ? tracks.length + ' songs' : album.followed ? 'Saved' : '');
+		meta.textContent = album.artist || '';
 		card.appendChild(cover);
 		card.appendChild(name);
 		card.appendChild(meta);
@@ -215,6 +356,25 @@
 				);
 			}
 		});
+		card.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			openAlbumContextMenu(album, card);
+		});
+		let albumLongPressTimer = null;
+		card.addEventListener('pointerdown', () => {
+			albumLongPressTimer = setTimeout(() => {
+				albumLongPressTimer = null;
+				openAlbumContextMenu(album, card);
+			}, 600);
+		});
+		['pointerup', 'pointercancel', 'pointermove'].forEach((ev) =>
+			card.addEventListener(ev, () => {
+				if (albumLongPressTimer) {
+					clearTimeout(albumLongPressTimer);
+					albumLongPressTimer = null;
+				}
+			}),
+		);
 		return card;
 	}
 
@@ -238,6 +398,7 @@
 	function createTrackRow(track, index, allTracks, contextSource) {
 		const row = document.createElement('div');
 		row.className = 'ap-track-row';
+		const trackKey = track.trackKey || track.id || '';
 		const cover = document.createElement('div');
 		cover.className = 'ap-track-cover';
 		if (track.imageUrl || track.thumbnail)
@@ -272,6 +433,13 @@
 				player.playWithQueue(items, index);
 			}
 		});
+		// alias keys so offline-availability can match cached tracks stored under
+		// sourceUrl/streamUrl rather than trackKey.
+		// side note: trackKey doesn't match urls for cached tracks created from sourceUrl/streamUrl, but those tracks should still be marked as available.
+		row.dataset.cacheKeys = [track.sourceUrl, track.url, track.streamUrl].filter(Boolean).join('\n');
+		if (window.starlNowPlaying) {
+			window.starlNowPlaying.markTrackRow(row, trackKey);
+		}
 		return row;
 	}
 
@@ -313,7 +481,13 @@
 			// try local library first
 			if (window.starlLibraryNative) {
 				const albums = window.starlLibraryNative.getAlbumList();
-				const found = albums.find((a) => a.name === item.title);
+				const found = albums.find((a) => {
+					if (normalizeName(a.name) !== normalizeName(item.title)) return false;
+					// also require artist match when both sides have one, to avoid
+					// "supa cool album" by Artist A being shown for Artist B's album
+					if (item.artist && a.artist && normalizeName(a.artist) !== normalizeName(item.artist)) return false;
+					return true;
+				});
 				if (found && found.tracks && found.tracks.length) {
 					window.starlArtistPage._pushAlbumDetail(found);
 					return;
@@ -321,6 +495,8 @@
 			}
 			meta.textContent = 'Loading…';
 			const remote = item.id ? await fetchAlbumFromServer(item.id) : null;
+			// guard: bail if the card was removed from the DOM while the fetch was in flight
+			if (!card.isConnected) return;
 			if (remote && remote.tracks && remote.tracks.length) {
 				const albumObj = {
 					id: item.id || '',

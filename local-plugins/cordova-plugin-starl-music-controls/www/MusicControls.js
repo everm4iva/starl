@@ -52,10 +52,10 @@
 		},
 
 		listen: function () {
-			// no-op for compatibility with cordova-plugin-music-controls2 :3
+			// no-op for compatibility with cordova-plugin-music-controls
 		},
 
-		// Native playback helpers: start a native foreground playback of a stream URL
+		// native playback helpers: start a native foreground playback of a stream URL
 		startNative: function (url, success, error) {
 			exec(success, error, 'startNative', [{url: url}]);
 		},
@@ -70,6 +70,12 @@
 
 		stopNative: function (success, error) {
 			exec(success, error, 'stopNative', []);
+		},
+
+		// returns 1 if the app was cold-started by tapping the notification (open-player flag),
+		// 0 otherwise. Clears the flag on read so it fires only once per ice cold-start.
+		getAndClearPendingOpenPlayer: function (success, error) {
+			exec(success, error, 'getAndClearPendingOpenPlayer', []);
 		},
 	};
 

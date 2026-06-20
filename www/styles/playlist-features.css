@@ -1,12 +1,11 @@
-/* Playlist detail view styles */
-
 .library-playlist-detail {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	background: var(--app-background, #0a0a0a);
+	background: var(--app-background, #0a0a0a9a);
+	backdrop-filter: blur(10px);
 }
 
 .library-playlist-detail.hidden {
@@ -20,7 +19,8 @@
 	align-items: center;
 	gap: 12px;
 	padding: 12px 16px;
-	background: var(--app-background, #0a0a0a);
+	background: var(--app-background, #0a0a0a9a);
+	backdrop-filter: blur(10px);
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	flex-shrink: 0;
 }
@@ -36,11 +36,11 @@
 	align-items: center;
 	justify-content: center;
 	border-radius: 4px;
-	transition: background 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .library-playlist-back-btn:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .library-playlist-back-btn .icon {
@@ -77,17 +77,17 @@
 	width: 36px;
 	height: 36px;
 	border: none;
-	background: transparent;
+	background-color: transparent;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 4px;
-	transition: all 0.2s ease;
+	transition: var(--anim-general-button);
 }
 
 .library-playlist-options-btn:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .library-playlist-options-btn .icon {
@@ -115,7 +115,8 @@
 	gap: 8px;
 	padding: 16px;
 	flex-wrap: wrap;
-	background: var(--app-background, #0a0a0a);
+	background: var(--app-background, #0a0a0a9a);
+	backdrop-filter: blur(10px);
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	flex-shrink: 0;
 }
@@ -124,7 +125,7 @@
 	min-width: 80px;
 	height: 40px;
 	border: 1px solid rgba(255, 255, 255, 0.2);
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	border-radius: 4px;
 	cursor: pointer;
 	color: rgba(255, 255, 255, 0.8);
@@ -134,16 +135,16 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .library-playlist-action-btn:hover:not(:disabled) {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	border-color: rgba(255, 255, 255, 0.3);
 }
 
 .library-playlist-action-btn:active:not(:disabled) {
-	background: rgba(255, 255, 255, 0.15);
+	background-color: rgba(255, 255, 255, 0.15);
 }
 
 .library-playlist-action-btn .icon {
@@ -160,7 +161,8 @@
 	display: flex;
 	align-items: center;
 	padding: 12px 16px;
-	background: var(--app-background, #0a0a0a);
+	background: var(--app-background, #0a0a0a9a);
+	backdrop-filter: blur(10px);
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	flex-shrink: 0;
 }
@@ -168,7 +170,7 @@
 .library-playlist-view-mode-switcher {
 	display: flex;
 	gap: 4px;
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	border-radius: 4px;
 	padding: 4px;
 	margin-left: auto;
@@ -178,14 +180,14 @@
 	width: 32px;
 	height: 32px;
 	border: none;
-	background: transparent;
+	background-color: transparent;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 2px;
 	color: rgba(255, 255, 255, 0.6);
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .library-playlist-view-btn:hover {
@@ -193,7 +195,7 @@
 }
 
 .library-playlist-view-btn.active {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	color: rgba(255, 255, 255, 0.9);
 }
 
@@ -224,11 +226,11 @@
 	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 	cursor: pointer;
 	gap: 12px;
-	transition: background 0.2s;
+	transition: var(--anim-general-element-generate);
 }
 
 .track-row:hover {
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 }
 
 .track-row.dragging {
@@ -285,7 +287,45 @@
 	text-align: right;
 }
 
-/* ---- Playlist Tiles (Grid View) ---- */
+/* ---- track Row: now-playing state ---- */
+
+.track-row.is-current {
+	background-color: var(--user-accentcolor-transparent-2);
+}
+
+.track-row.is-current .track-row-title {
+	color: var(--user-accentcolor);
+}
+
+.track-row.is-playing .track-row-duration {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.track-row.is-playing .track-row-duration::before {
+	content: '';
+	display: inline-block;
+	width: 14px;
+	height: 12px;
+	margin-right: 6px;
+	background:
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 0 100%/3px 40% no-repeat,
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 5.5px 100%/3px 100% no-repeat,
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 11px 100%/3px 70% no-repeat;
+	animation: track-row-eq 0.9s ease-in-out infinite;
+}
+
+@keyframes track-row-eq {
+	0%, 100% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+/* ---- playlist Tiles (Grid View) ---- */
 
 .library-playlist-grid {
 	display: grid;
@@ -298,12 +338,12 @@
 	cursor: pointer;
 	border-radius: 4px;
 	overflow: hidden;
-	background: rgba(255, 255, 255, 0.05);
-	transition: all 0.2s;
+	background-color: rgba(255, 255, 255, 0.05);
+	transition: var(--anim-general-button);
 }
 
 .playlist-tile:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	transform: translateY(-2px);
 }
 
@@ -346,7 +386,7 @@
 	right: 0;
 	bottom: 0;
 	z-index: 1000;
-	background: rgba(0, 0, 0, 0.5);
+	background-color: rgba(0, 0, 0, 0.5);
 	display: flex;
 	align-items: flex-end;
 }
@@ -361,7 +401,7 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, 0.6);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -378,7 +418,7 @@
 	flex-direction: column;
 	overflow: hidden;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-	animation: slideUp 0.3s ease-out;
+	animation: var(--anim-general-element-slideinout, slideUp 0.3s ease-out);
 }
 
 @keyframes slideUp {
@@ -410,17 +450,17 @@
 
 .playlist-settings-close-btn {
 	border: none;
-	background: transparent;
+	background-color: transparent;
 	cursor: pointer;
 	color: rgba(255, 255, 255, 0.6);
 	font-size: 14px;
 	padding: 4px 8px;
 	border-radius: 4px;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .playlist-settings-close-btn:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	color: rgba(255, 255, 255, 0.9);
 }
 
@@ -445,20 +485,20 @@
 .playlist-settings-name-input {
 	width: 100%;
 	height: 40px;
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 4px;
 	color: rgba(255, 255, 255, 0.9);
 	padding: 8px 12px;
 	font-size: 14px;
-	font-family: inherit;
+	font-family: var(--default-font);
 	box-sizing: border-box;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .playlist-settings-name-input:focus {
 	outline: none;
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 	border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -502,7 +542,7 @@
 	background-color: #1a1a1a;
 	border: 2px solid rgba(255, 255, 255, 0.1);
 	border-radius: 2px;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .playlist-settings-track-checkbox:checked ~ .playlist-settings-track-cover {
@@ -514,7 +554,7 @@
 	display: flex;
 	gap: 8px;
 	padding: 16px;
-	background: rgba(255, 255, 255, 0.02);
+	background-color: rgba(255, 255, 255, 0.02);
 	border-top: 1px solid rgba(255, 255, 255, 0.1);
 	flex-shrink: 0;
 }
@@ -527,28 +567,28 @@
 	cursor: pointer;
 	font-size: 14px;
 	font-weight: 600;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .playlist-settings-button-cancel {
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	color: rgba(255, 255, 255, 0.7);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .playlist-settings-button-cancel:hover {
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 	color: rgba(255, 255, 255, 0.9);
 }
 
 .playlist-settings-button-save {
-	background: rgba(255, 255, 255, 0.15);
+	background-color: rgba(255, 255, 255, 0.15);
 	color: rgba(255, 255, 255, 0.9);
 	border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .playlist-settings-button-save:hover {
-	background: rgba(255, 255, 255, 0.2);
+	background-color: rgba(255, 255, 255, 0.2);
 	color: rgba(255, 255, 255, 1);
 }
 
@@ -581,14 +621,14 @@
 	width: 100%;
 	padding: 12px 16px;
 	border: none;
-	background: transparent;
+	background-color: transparent;
 	color: rgba(255, 255, 255, 0.8);
 	text-align: left;
 	cursor: pointer;
 	font-size: 14px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-	transition: all 0.2s;
-	font-family: inherit;
+	transition: var(--anim-general-button);
+	font-family: var(--default-font);
 }
 
 .context-menu-button:last-child {
@@ -617,7 +657,7 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(0, 0, 0, 0.8);
+	background-color: rgba(0, 0, 0, 0.8);
 	z-index: 900;
 	display: flex;
 	flex-direction: column;
@@ -658,14 +698,14 @@
 	align-items: center;
 	gap: 12px;
 	padding: 8px 12px;
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 	border-radius: 4px;
 	cursor: pointer;
-	transition: all 0.2s;
+	transition: var(--anim-general-button);
 }
 
 .library-search-result-item:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .library-search-result-cover {
@@ -717,13 +757,12 @@
 	transform: translateY(-50%);
 	width: 20px;
 	height: 20px;
-	background: url('../media/common-icons/light/reorder.svg')
-		center / contain no-repeat;
+	background-color: url('../media/common-icons/light/reorder.svg') center / contain no-repeat;
 	cursor: grab;
 }
 
 .library-playlist-tracks.reorder-mode .track-row.dragging {
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 	opacity: 0.8;
 }
 

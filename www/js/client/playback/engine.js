@@ -25,8 +25,8 @@ function savePlayerState(partial) {
 		const now = Date.now();
 		const data = partial || {};
 		const serialized = JSON.stringify(data);
-		localStorage.setItem(PLAYER_STATE_KEY, serialized);
-		lastStateSaveMs = now;
+		localStorage.setItem(window.starlPlaybackState.PLAYER_STATE_KEY, serialized);
+		window.starlPlaybackState.lastStateSaveMs = now;
 	} catch (error) {
 		console.warn('Failed to save player state', error);
 	}
@@ -34,7 +34,7 @@ function savePlayerState(partial) {
 
 function readPlayerState() {
 	try {
-		const raw = localStorage.getItem(PLAYER_STATE_KEY);
+		const raw = localStorage.getItem(window.starlPlaybackState.PLAYER_STATE_KEY);
 		if (!raw) {
 			return null;
 		}
@@ -55,24 +55,95 @@ function updateStoredState(overrides) {
 
 function getCanonicalArtworkUrl(item, downloadData = null) {
 	const apiBase = getApiBase();
-	const apiArtwork = downloadData && downloadData.image_url ? toAbsoluteUrl(apiBase, downloadData.image_url) : '';
+	const apiArtwork = downloadData
+		? downloadData.image_url
+			? toAbsoluteUrl(apiBase, downloadData.image_url)
+			: downloadData.thumbnail || ''
+		: '';
 	const itemArtwork = String((item && (item.imageUrl || item.thumbnail)) || '').trim();
 	const rawArtwork = apiArtwork || itemArtwork;
 	return rawArtwork ? upgradeArtworkUrl(rawArtwork) : '';
+}
+
+// retry-after-failure bookkeeping for playStream(). the token guards against a
+// newer playStream() call (a real track change) being "glubglublgub" by a stale retry
+// chain that was still waiting to fire for a previous track.
+let _playRetryTimer = null;
+let _playRetryAttemptToken = 0;
+const PLAY_RETRY_DELAYS_MS = [2000, 2000, 3000, 3000, 5000];
+
+function clearPlayRetries() {
+	if (_playRetryTimer) {
+		clearTimeout(_playRetryTimer);
+		_playRetryTimer = null;
+	}
+}
+
+function schedulePlayRetries(streamUrl, attemptToken, delays) {
+	if (!delays.length) return;
+	const [delay, ...rest] = delays;
+	_playRetryTimer = setTimeout(async () => {
+		_playRetryTimer = null;
+		const pb = window.starlPlaybackState;
+		// bail if a newer playStream() call overcalled this one, the user/another
+		// path deliberately paused, the src changed, or it's already playing again.
+		// overcalled = a new playStream() started for a different track or the same track again, so this retry is not important
+		if (
+			attemptToken !== _playRetryAttemptToken ||
+			!pb.shouldBePlaying ||
+			audio.src !== streamUrl ||
+			!audio.paused
+		) {
+			return;
+		}
+		try {
+			await audio.play();
+			setPlayIconState(true);
+			updateStoredState({isPlaying: true});
+			updateMediaSessionPlaybackState();
+			updateNativePlayingState();
+		} catch (error) {
+			schedulePlayRetries(streamUrl, attemptToken, rest);
+		}
+	}, delay);
 }
 
 async function playStream(streamUrl, token) {
 	if (!streamUrl) {
 		return;
 	}
+	clearPlayRetries();
+	const attemptToken = ++_playRetryAttemptToken;
 	const isLocalSource = /^blob:|^data:|^file:/i.test(streamUrl);
 	const separator = streamUrl.includes('?') ? '&' : '?';
 	audio.pause();
 	audio.currentTime = 0;
-	currentStreamUrl = streamUrl;
-	audio.src = isLocalSource || !token ? streamUrl : streamUrl + separator + 'token=' + encodeURIComponent(token);
+	window.starlPlaybackState.currentStreamUrl = streamUrl;
+	const finalSrc = isLocalSource || !token ? streamUrl : streamUrl + separator + 'token=' + encodeURIComponent(token);
+	audio.src = finalSrc;
 	audio.load();
-	await audio.play();
+	try {
+		await audio.play();
+	} catch (error) {
+		// auto-advance (queue 'ended'/'error' handlers) calls this without a direct user
+		// gesture, which some Android WebView builds reject with NotAllowedError when the
+		// app is backgrounded - even though the track loaded fine. one retry recovers it.
+		try {
+			await audio.play();
+		} catch (retryError) {
+			// still rejected - the track is loaded and ready, but actually paused. (android notification handle)
+			// mark it as "should be playing" so the play button and notifications show the correct state,
+			// even though the audio element is paused and won't start until the user explicitly hits play. - have to fix
+			window.starlPlaybackState.shouldBePlaying = true;
+			setPlayIconState(false);
+			updateStoredState({isPlaying: false});
+			updateMediaSessionPlaybackState();
+			updateNativePlayingState();
+			schedulePlayRetries(finalSrc, attemptToken, PLAY_RETRY_DELAYS_MS);
+			return;
+		}
+	}
+	window.starlPlaybackState.shouldBePlaying = true;
 	setPlayIconState(true);
 }
 
@@ -97,7 +168,7 @@ async function getCachedPlayableTrackUrl(cache, itemOrState) {
 		try {
 			const cachedUrl = await cache.getTrackUrl(candidateKey);
 			if (cachedUrl) {
-				// verify the blob URL is still alive - the browser may have revoked it
+				// verify the blob URL is still alive - the browser may have revoked it to save mem
 				if (await probeBlobUrl(cachedUrl)) {
 					return cachedUrl;
 				}
@@ -121,14 +192,17 @@ async function getCachedPlayableTrackUrl(cache, itemOrState) {
 
 audio.addEventListener('loadedmetadata', () => {
 	const streamDuration = Number(audio.duration) || 0;
+	const lastTrackMeta = window.starlPlaybackState.lastTrackMeta;
 	const metaDuration = Number(lastTrackMeta && lastTrackMeta.duration) || 0;
 	// trust the API-provided duration when it's longer than what the stream header
 	// reports - stream metadata can be slightly shorter due to encoding/container
-	// issues, which would otherwise make the slider max too short.
+	// issues, which would otherwise make the slider max too short
 	const duration = metaDuration > streamDuration ? metaDuration : streamDuration;
 	if (playerTime) {
 		playerTime.min = '0';
 		playerTime.max = duration ? String(Math.floor(duration)) : '0';
+		// reset value so updateSliderProgress doesn't inherit the previous track's position
+		playerTime.value = '0';
 	}
 	setTimeVars(0, duration);
 	updateSliderProgress();
@@ -143,22 +217,29 @@ audio.addEventListener('timeupdate', () => {
 	setTimeVars(current, duration);
 	if (playerTime && !isScrubbing) {
 		playerTime.value = String(Math.floor(current));
-		updateSliderProgress();
+		// use the raw float for the visual bar so it glides instead of stepping per second
+		const max = Number(playerTime.max) || duration;
+		if (sliderProgress && max > 0) {
+			sliderProgress.style.width = Math.min(100, (current / max) * 100).toFixed(3) + '%';
+		} else {
+			updateSliderProgress();
+		}
 	}
 	const now = Date.now();
-	if (now - lastStateSaveMs > 900) {
+	if (now - window.starlPlaybackState.lastStateSaveMs > 900) {
 		updateStoredState({position: current, isPlaying: !audio.paused});
-		lastStateSaveMs = now;
+		window.starlPlaybackState.lastStateSaveMs = now;
 	}
 	updateMediaSessionPositionState();
 	updateNativeElapsedState();
 });
 
 audio.addEventListener('ended', () => {
+	const pb = window.starlPlaybackState;
 	setPlayIconState(false);
 	const duration = Number(audio.duration) || 0;
 	const position = Math.max(0, Number(audio.currentTime) || 0);
-	const trackDuration = Number(lastTrackMeta && lastTrackMeta.duration) || 0;
+	const trackDuration = Number(pb.lastTrackMeta && pb.lastTrackMeta.duration) || 0;
 	const endedEarly = trackDuration > 0 && position + 2 < trackDuration;
 	setTimeVars(endedEarly ? position : duration, endedEarly ? trackDuration : duration || position);
 	if (playerTime) {
@@ -171,17 +252,38 @@ audio.addEventListener('ended', () => {
 	updateNativePlayingState();
 	updateNativeElapsedState(true);
 
-	if (endedEarly && currentStreamUrl) {
+	if (endedEarly && pb.currentStreamUrl) {
 		const queueApi = window.starlPlaybackQueue;
 		const hasNextTrack = queueApi && queueApi.getQueueLength() > 1;
 		if (!hasNextTrack) {
+			// a blob URL here means the cached file was partial/truncated
+			// evict it so the next play re-downloads a complete copy
+			if (/^blob:/i.test(pb.currentStreamUrl)) {
+				try {
+					const cache = getMediaCache();
+					if (cache && typeof cache.removeTrack === 'function' && pb.currentTrackKey) {
+						cache.removeTrack(pb.currentTrackKey).catch(() => {});
+					}
+				} catch (e) {}
+			}
 			const resumePos = position;
 			setTimeout(() => {
 				const token = typeof getAccessToken === 'function' ? getAccessToken() : '';
-				const sep = currentStreamUrl.includes('?') ? '&' : '?';
+				// blob URLs are truncated cached files - resolve the server stream URL instead
+				let networkStreamUrl = pb.currentStreamUrl;
+				if (/^blob:/i.test(networkStreamUrl)) {
+					try {
+						const state = typeof readPlayerState === 'function' ? readPlayerState() : null;
+						if (state && state.streamUrl && !/^blob:/i.test(state.streamUrl)) {
+							networkStreamUrl = state.streamUrl;
+						}
+					} catch (e) {}
+				}
+				if (!networkStreamUrl || /^blob:/i.test(networkStreamUrl)) return;
+				const sep = networkStreamUrl.includes('?') ? '&' : '?';
 				const resumeUrl = token
-					? currentStreamUrl + sep + 'token=' + encodeURIComponent(token)
-					: currentStreamUrl;
+					? networkStreamUrl + sep + 'token=' + encodeURIComponent(token)
+					: networkStreamUrl;
 				audio.src = resumeUrl;
 				audio.load();
 				const onReady = () => {
@@ -200,7 +302,9 @@ audio.addEventListener('ended', () => {
 function dispatchPlaybackState() {
 	try {
 		window.dispatchEvent(
-			new CustomEvent('starl-playback-changed', {detail: {trackKey: currentTrackKey, isPlaying: !audio.paused}}),
+			new CustomEvent('starl-playback-changed', {
+				detail: {trackKey: window.starlPlaybackState.currentTrackKey, isPlaying: !audio.paused},
+			}),
 		);
 	} catch (e) {}
 }
@@ -220,11 +324,22 @@ audio.addEventListener('pause', () => {
 getPlayButtons().forEach((button) => {
 	button.addEventListener('click', async () => {
 		if (!audio.src) {
+			// resume after app restart: restorePlayerState() couldn't find a cached
+			// blob or valid server stream URL, so audio.src was never set. Re-resolve
+			// the current queue track from scratch (its sourceUrl survives in the
+			// queue's own localStorage, unlike the player-state snapshot)
+			const queueApi = window.starlPlaybackQueue;
+			const current =
+				queueApi && typeof queueApi.getCurrentTrack === 'function' ? queueApi.getCurrentTrack() : null;
+			if (current && window.starlPlayer && typeof window.starlPlayer.playFromSearch === 'function') {
+				window.starlPlayer.playFromSearch(current, {queueAlreadySet: true, keepPlayerState: true});
+			}
 			return;
 		}
 		if (audio.paused) {
 			try {
 				await audio.play();
+				window.starlPlaybackState.shouldBePlaying = true;
 				setPlayIconState(true);
 				updateStoredState({isPlaying: true});
 			} catch (error) {
@@ -232,6 +347,7 @@ getPlayButtons().forEach((button) => {
 			}
 		} else {
 			audio.pause();
+			window.starlPlaybackState.shouldBePlaying = false;
 			setPlayIconState(false);
 			updateStoredState({isPlaying: false});
 		}

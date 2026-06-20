@@ -43,7 +43,7 @@
 	function writeHistory(entries) {
 		const state = getAccountState();
 		if (state && typeof state.setSection === 'function') {
-			state.setSection(SECTION_KEY, entries);
+			state.setSection(SECTION_KEY, entries, {skipRefresh: true});
 		} else {
 			try {
 				localStorage.setItem(LEGACY_KEY, JSON.stringify(entries));
@@ -71,7 +71,10 @@
 		const duration = Number(meta.duration || 0) || 0;
 		const trackKey = String(meta.trackKey || sourceUrl || streamUrl || title + '|' + artist).trim();
 		if (!trackKey) return null;
-		return {title, artist, album, imageUrl, sourceUrl, streamUrl, duration, trackKey};
+		const artistChannelId = String(meta.artistChannelId || '').trim();
+		const entry = {title, artist, album, imageUrl, sourceUrl, streamUrl, duration, trackKey};
+		if (artistChannelId) entry.artistChannelId = artistChannelId;
+		return entry;
 	}
 
 	// ----- Migration from old per-device key -----

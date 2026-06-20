@@ -95,6 +95,14 @@
 		try {
 			localStorage.setItem(FALLBACK_KEY, JSON.stringify(currentFavorites));
 		} catch (error) {}
+		const accountState = getAccountState();
+		if (accountState && typeof accountState.getState === 'function' && typeof accountState.setState === 'function') {
+			const current = accountState.getState() || {};
+			const serialized = JSON.stringify(currentFavorites);
+			if (JSON.stringify(current[FAVORITES_SECTION] || {}) !== serialized) {
+				accountState.setState({...current, [FAVORITES_SECTION]: currentFavorites});
+			}
+		}
 		try {
 			window.dispatchEvent(new CustomEvent(UPDATE_EVENT, {detail: {favorites: currentFavorites}}));
 		} catch (error) {}
@@ -111,6 +119,10 @@
 	}
 
 	async function flushFavoritesToServer() {
+		const _auth = window.starlAuth;
+		if (_auth && typeof _auth.isCacheMode === 'function' && _auth.isCacheMode()) {
+			return false;
+		}
 		const token = getAccessToken();
 		if (!token) {
 			return false;
@@ -125,6 +137,10 @@
 					headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
 					body: JSON.stringify({state: {[FAVORITES_SECTION]: currentFavorites}, replace: false}),
 				});
+				const auth = window.starlAuth;
+				if (auth && typeof auth.handleAuthFailure === 'function' && auth.handleAuthFailure(response)) {
+					return false;
+				}
 				if (!response.ok) {
 					notifyServerFailure();
 					return false;
@@ -243,21 +259,11 @@
 	}
 
 	function resolveCurrentTrackKey() {
-		try {
-			if (typeof currentTrackKey !== 'undefined' && currentTrackKey) {
-				return String(currentTrackKey);
-			}
-		} catch (error) {}
-		return String(window.currentTrackKey || '').trim();
+		return String((window.starlPlaybackState && window.starlPlaybackState.currentTrackKey) || '').trim();
 	}
 
 	function resolveCurrentTrackMeta() {
-		try {
-			if (typeof lastTrackMeta !== 'undefined' && lastTrackMeta) {
-				return lastTrackMeta;
-			}
-		} catch (error) {}
-		return window.lastTrackMeta || {};
+		return (window.starlPlaybackState && window.starlPlaybackState.lastTrackMeta) || {};
 	}
 
 	// player star wiring: reflects favorite state for the actual current track and toggles on click.

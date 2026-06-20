@@ -11,10 +11,8 @@
 	z-index: 4;
 	overflow-x: hidden;
 	overflow-y: auto;
-	/* Horizontal drill-in: slides in from the right edge, slides back out to the
-	   right on close. Pairs with the swipe-right-to-go-back header gesture. */
 	transform: translateX(100%);
-	transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+	transition: var(--anim-page-openclose);
 	will-change: transform;
 }
 
@@ -30,24 +28,25 @@
 	width: 100% !important;
 }
 
-/* --------- Inside Playlist - Header --------- */
+/* --------- inside playlist - header --------- */
 .inside-playlist .header {
-position: relative;
-    width: 100%;
-    border-radius: 0px 0px 20px 20px;
-    background-color: #000000fb;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    z-index: 7;
-    touch-action: pan-y;
-    margin-bottom: 7%;
-    min-height: 25%;
-    overflow: hidden;
+	position: relative;
+	width: 100%;
+	border-radius: 0px 0px 20px 20px;
+	background-color: #000000fb;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	z-index: 7;
+	touch-action: pan-y;
+	margin-bottom: 7%;
+	min-height: 25%;
+	overflow: hidden;
 }
 
-.artist-page .header {
+.artist-page .header,
+.artist-page .header * {
 	touch-action: pan-y;
 }
 
@@ -97,17 +96,17 @@ position: relative;
 }
 
 .inside-playlist .header .playlist-info {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: row;
-    padding-left: 4%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 15%;
-    justify-content: center;
-    width: 55%;
+	position: relative;
+	z-index: 2;
+	display: flex;
+	flex-direction: row;
+	padding-left: 4%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-top: 15%;
+	justify-content: center;
+	width: 55%;
 }
 
 .inside-playlist .header .playlist-info .playlist-title {
@@ -130,8 +129,6 @@ position: relative;
 .inside-playlist .header .playlist-actions {
 	position: relative;
 	z-index: 2;
-	/* right: 0%; */
-	/* top: 70%; */
 	display: flex;
 	flex-direction: row;
 	justify-content: flex-start;
@@ -150,17 +147,13 @@ position: relative;
 	border-radius: 5px;
 	margin-left: 4%;
 	background-color: #ffffff6e;
-	transition: all 0.2s ease;
+	transition: var(--anim-general-button);
 }
 
 .playlist-actions .playlist-btn:hover {
-	/* transform: scale(1.2); */
-	transition: all 0.2s ease;
+	transition: var(--anim-general-button);
 	background-size: 100%;
-}
-
-.playlist-actions .playlist-btn.active {
-	background-color: #ffffff;
+	background-color: var(--user-accentcolor);
 }
 
 .playlist-actions .playlist-btn.play {
@@ -175,24 +168,25 @@ position: relative;
 	background-image: url('../../media/common-icons/dark/more_vert.svg');
 }
 
-/* --------- Inside Playlist - Body --------- */
+/* --------- inside playlist - body --------- */
 
 .inside-playlist .body {
-    position: relative;
-    width: 100%;
-    height: max-content;
-    display: flex;
-    flex-direction: column;
-    padding: 1%;
-    overflow: unset;
-    z-index: 2;
-    gap: 5px;
-    padding-left: 4%;
-    padding-right: 4%;
+	position: relative;
+	width: 100%;
+	height: max-content;
+	display: flex;
+	flex-direction: column;
+	padding: 1%;
+	overflow: unset;
+	z-index: 2;
+	gap: 5px;
+	padding-left: 4%;
+	padding-right: 4%;
 }
 
 .tab.library:last-child,
-.inside-playlist .body .item:last-child,
+.inside-playlist .body > .item:last-child,
+.inside-playlist .body > .item-row:last-child,
 .artist-page .body:last-child,
 .playlists.list:last-child {
 	margin-bottom: 30%;
@@ -209,15 +203,15 @@ position: relative;
 	flex-shrink: 0;
 }
 
-/* --------- Inside Playlist - Covers --------- */
+/* --------- inside playlist - covers --------- */
 
 .inside-playlist .header .playlist-cover {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    overflow: hidden;
-    background-image: none !important;
-    margin-top: 4%;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 1fr;
+	overflow: hidden;
+	background-image: none !important;
+	margin-top: 4%;
 }
 
 .inside-playlist .header .playlist-cover.count-0,
@@ -256,7 +250,68 @@ position: relative;
 	padding: 40px 20px;
 }
 
-/* --------- Buttons --------- */
+/* --------- swipe-to-remove track row --------- */
+
+.item-row {
+	position: relative;
+	display: block;
+	min-width: 100%;
+}
+
+.item-row.swipeable .item {
+	position: relative;
+	z-index: 1;
+	background-color: #161616;
+	will-change: transform;
+	transition: transform 0.25s ease;
+}
+
+.item-remove-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 100%;
+	max-height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	border-radius: 10px;
+	background-color: rgba(220, 60, 60, 0.9);
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.item-row.swipe-active .item-remove-bg {
+	opacity: 1;
+}
+
+.item-remove-icon {
+	width: 1.4rem;
+	height: 1.4rem;
+	margin-right: 24px;
+	flex-shrink: 0;
+	background-color: white;
+	-webkit-mask-image: url('../../media/common-icons/light/remove.svg');
+	mask-image: url('../../media/common-icons/light/remove.svg');
+	mask-size: contain;
+	mask-repeat: no-repeat;
+	mask-position: center;
+	opacity: 0.4;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
+}
+
+.item-row.swipe-armed .item-remove-icon {
+	opacity: 1;
+	transform: scale(1.15);
+}
+
+/* --------- buttons --------- */
 .item-actions.reorder-up,
 .item-actions.reorder-down {
 	aspect-ratio: 1 / 1;
@@ -280,7 +335,7 @@ position: relative;
 	transform: rotate(90deg);
 }
 
-/* --------- Artist Page --------- */
+/* --------- artist page --------- */
 
 .artist-page {
 	position: fixed;
@@ -295,10 +350,8 @@ position: relative;
 	z-index: 200;
 	overflow-x: hidden;
 	overflow-y: auto;
-	/* Horizontal drill-in: slides in from the right edge, slides back out to the
-	   right on close. Pairs with the swipe-right-to-go-back header gesture. */
 	transform: translateX(100%);
-	transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+	transition: var(--anim-page-openclose);
 	will-change: transform;
 }
 
@@ -317,7 +370,7 @@ position: relative;
 .artist-page .header {
 	position: relative;
 	width: 100%;
-	min-height: 22%;
+	min-height: 26%;
 	border-radius: 0 0 20px 20px;
 	background-color: #000000fb;
 	display: flex;
@@ -383,11 +436,11 @@ position: relative;
 	z-index: 2;
 }
 
-/* --------- Artist/Album Grid --------- */
+/* --------- artist/album grid --------- */
 
 .ap-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(3, 2fr);
 	gap: 12px;
 }
 
@@ -398,7 +451,7 @@ position: relative;
 	cursor: pointer;
 	border-radius: 10px;
 	overflow: hidden;
-	transition: transform 0.15s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .ap-card:hover {
@@ -434,7 +487,7 @@ position: relative;
 	padding: 0 4px;
 }
 
-/* --------- Artist/Album Sections --------- */
+/* --------- artist/album sections --------- */
 
 .ap-section {
 	display: flex;
@@ -457,11 +510,11 @@ position: relative;
 	padding: 8px 4px;
 	border-radius: 8px;
 	cursor: pointer;
-	transition: background 0.15s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .ap-track-row:hover {
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 }
 
 .ap-track-cover {
@@ -498,6 +551,37 @@ position: relative;
 	text-overflow: ellipsis;
 }
 
+/* ---- track row: now-playing state ---- */
+
+.ap-track-row.is-current {
+	background-color: var(--user-accentcolor-transparent-2);
+}
+
+.ap-track-row.is-current .ap-track-title {
+	color: var(--user-accentcolor);
+}
+
+.ap-track-row.is-playing .ap-track-more {
+	position: relative;
+}
+
+.ap-track-row.is-playing .ap-track-more::before {
+	content: '';
+	position: absolute;
+	right: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-right: 6px;
+	display: inline-block;
+	width: 14px;
+	height: 12px;
+	background:
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 0 100%/3px 40% no-repeat,
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 5.5px 100%/3px 100% no-repeat,
+		linear-gradient(var(--user-accentcolor), var(--user-accentcolor)) 11px 100%/3px 70% no-repeat;
+	animation: track-row-eq 0.9s ease-in-out infinite;
+}
+
 .ap-empty {
 	color: rgba(255, 255, 255, 0.4);
 	font-size: 1rem;
@@ -524,7 +608,7 @@ position: relative;
 	color: white;
 }
 
-/* --------- Expandable section header --------- */
+/* --------- section header --------- */
 
 .ap-section-header {
 	display: flex;
@@ -546,19 +630,19 @@ position: relative;
 	font-size: 0.78rem;
 	font-weight: 400;
 	color: rgba(255, 255, 255, 0.45);
-	background: rgba(255, 255, 255, 0.07);
+	background-color: rgba(255, 255, 255, 0.07);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: var(--anim-general-button);
 	white-space: nowrap;
 }
 
 .ap-sort-btn.active {
-	background: rgba(255, 255, 255, 0.18);
+	background-color: rgba(255, 255, 255, 0.18);
 	color: white;
 }
 
 .ap-sort-btn:hover {
-	background: rgba(255, 255, 255, 0.12);
+	background-color: rgba(255, 255, 255, 0.12);
 	color: rgba(255, 255, 255, 0.8);
 }
 
@@ -568,7 +652,7 @@ position: relative;
 	line-height: 1.5;
 	padding: 0 4px 12px 4px;
 	cursor: pointer;
-	transition: max-height 0.3s ease;
+	transition: var(--anim-general-element-generate);
 }
 
 .ap-description.collapsed {
@@ -580,11 +664,11 @@ position: relative;
 	-webkit-box-orient: vertical;
 }
 
-/* --------- Library Global Search --------- */
+/* --------- library global search --------- */
 
 .library.search-results {
 	position: fixed;
-	top: 0; /* overridden by JS to clear the search bar */
+	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
@@ -594,7 +678,7 @@ position: relative;
 	flex-direction: column;
 	overflow: hidden;
 	transform: translateY(100%);
-	transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+	transition: var(--anim-page-openclose);
 	will-change: transform;
 }
 
@@ -633,7 +717,7 @@ position: relative;
 	opacity: 0.7;
 	cursor: pointer;
 	border-radius: 50%;
-	transition: opacity 0.15s ease;
+	transition: var(--anim-general-button);
 }
 
 .lsr-close-btn:hover {
@@ -662,15 +746,15 @@ position: relative;
 	font-size: 0.9rem;
 	font-weight: 400;
 	color: rgba(255, 255, 255, 0.6);
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	cursor: pointer;
 	white-space: nowrap;
-	transition: all 0.15s ease;
+	transition: var(--anim-general-button);
 	flex-shrink: 0;
 }
 
 .lsr-pill.active {
-	background: white;
+	background-color: white;
 	color: black;
 }
 
@@ -693,13 +777,13 @@ position: relative;
 	padding: 10px 4px;
 	border-radius: 10px;
 	cursor: pointer;
-	transition: background 0.15s ease;
+	transition: var(--anim-general-button);
 	overflow: hidden;
 }
 
 .lsr-row:hover,
 .lsr-row:active {
-	background: rgba(255, 255, 255, 0.07);
+	background-color: rgba(255, 255, 255, 0.07);
 }
 
 /* cover shapes by type */
@@ -733,10 +817,14 @@ position: relative;
 	right: 4px;
 	width: 20px;
 	height: 20px;
-	background-image: url('../../media/common-icons/light/playlist_play.svg');
-	background-size: contain;
-	background-repeat: no-repeat;
-	background-position: center;
+	background-image: none;
+	-webkit-mask-image: url('../../media/common-icons/light/playlist_play.svg');
+	mask-image: url('../../media/common-icons/light/playlist_play.svg');
+	fill: var(--user-accentcolor);
+	mask-size: 70%;
+	mask-repeat: no-repeat;
+	mask-position: center;
+	background-color: var(--user-accentcolor);
 	opacity: 0.85;
 }
 
@@ -787,15 +875,15 @@ position: relative;
 	opacity: 1;
 }
 
-/* --------- Bottom Sheet --------- */
+/* --------- bottom sheet --------- */
 
 .bottom-sheet-backdrop {
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.55);
+	background-color: rgba(0, 0, 0, 0.55);
 	z-index: 500;
 	opacity: 0;
-	transition: opacity 0.25s ease;
+	transition: var(--anim-page-openclose);
 	pointer-events: none;
 }
 
@@ -810,13 +898,13 @@ position: relative;
 	left: 0;
 	right: 0;
 	z-index: 501;
-	background: #1c1c1e;
+	background-color: #1c1c1e;
 	border-radius: 20px 20px 0 0;
 	display: flex;
 	flex-direction: column;
 	max-height: 85vh;
 	transform: translateY(110%);
-	transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+	transition: var(--anim-page-openclose);
 	padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -827,7 +915,7 @@ position: relative;
 .bottom-sheet-handle {
 	width: 36px;
 	height: 4px;
-	background: rgba(255, 255, 255, 0.25);
+	background-color: rgba(255, 255, 255, 0.25);
 	border-radius: 2px;
 	margin: 10px auto 6px auto;
 	flex-shrink: 0;
@@ -839,7 +927,7 @@ position: relative;
 	padding: 0 0 16px 0;
 }
 
-/* --------- Bottom Sheet - Queue Section --------- */
+/* --------- bottom sheet - queue section --------- */
 
 .bsc-queue-section {
 	padding: 0;
@@ -866,16 +954,16 @@ position: relative;
 	gap: 12px;
 	padding: 8px 20px;
 	cursor: pointer;
-	transition: background 0.15s;
+	transition: var(--anim-general-button);
 }
 
 .bsc-queue-row:active,
 .bsc-queue-row:hover {
-	background: rgba(255, 255, 255, 0.06);
+	background-color: rgba(255, 255, 255, 0.06);
 }
 
 .bsc-queue-row.current {
-	background: rgba(255, 255, 255, 0.05);
+	background-color: rgba(255, 255, 255, 0.05);
 }
 
 .bsc-queue-cover {
@@ -922,7 +1010,7 @@ position: relative;
 	flex-shrink: 0;
 }
 
-/* --------- Bottom Sheet - Track Header --------- */
+/* --------- bottom sheet - track header --------- */
 .bsc-track-header {
 	display: flex;
 	flex-direction: row;
@@ -966,7 +1054,7 @@ position: relative;
 	text-overflow: ellipsis;
 }
 
-/* --------- Bottom Sheet - Actions --------- */
+/* --------- bottom sheet - actions --------- */
 .bsc-action {
 	display: flex;
 	flex-direction: row;
@@ -974,14 +1062,14 @@ position: relative;
 	gap: 16px;
 	padding: 14px 20px;
 	cursor: pointer;
-	transition: background 0.15s ease;
+	transition: var(--anim-general-button);
 	color: white;
 	font-size: 1rem;
 }
 
 .bsc-action:hover,
 .bsc-action:active {
-	background: rgba(255, 255, 255, 0.06);
+	background-color: rgba(255, 255, 255, 0.06);
 }
 
 .bsc-action-icon {
@@ -1000,7 +1088,7 @@ position: relative;
 
 .bsc-separator {
 	height: 1px;
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 	margin: 4px 20px;
 }
 
@@ -1018,7 +1106,7 @@ position: relative;
 	padding: 12px 16px;
 	border: none;
 	border-radius: 10px;
-	background: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.1);
 	color: white;
 	font-size: 1rem;
 	font-family: var(--default-font);
@@ -1045,8 +1133,8 @@ position: relative;
 	font-family: var(--default-font);
 	cursor: pointer;
 	color: white;
-	background: rgba(255, 255, 255, 0.12);
-	transition: background 0.15s ease;
+	background-color: rgba(255, 255, 255, 0.12);
+	transition: var(--anim-general-button);
 }
 
 .bsc-btn.primary {
@@ -1055,7 +1143,7 @@ position: relative;
 }
 
 .bsc-btn.danger {
-	background: rgba(220, 60, 60, 0.25);
+	background-color: rgba(220, 60, 60, 0.25);
 	color: rgba(220, 60, 60, 0.9);
 	flex: none;
 }
@@ -1116,7 +1204,7 @@ position: relative;
 	background-image: url('../../media/common-icons/light/download.svg');
 }
 
-/* --------- Playlist card cover slots --------- */
+/* --------- playlist card cover slots --------- */
 
 .item-covers[data-count='1'] .cover-slot,
 .item-covers[data-count='0'] .cover-slot {
@@ -1146,17 +1234,17 @@ position: relative;
 	background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* --------- Playlist Settings modal--------- */
+/* --------- playlist settings modal --------- */
 
 .library-playlist-button.danger {
-	background: transparent;
+	background-color: transparent;
 	border: 1px solid rgba(220, 60, 60, 0.6);
 	color: rgba(220, 60, 60, 0.9);
 	margin-top: 12px;
 	width: 100%;
 }
 
-/* --------- Artist page follow buttons --------- */
+/* --------- artist page follow buttons --------- */
 
 .ap-follow-row {
 	display: flex;
@@ -1169,23 +1257,23 @@ position: relative;
 	display: inline-flex;
 	align-items: center;
 	padding: 7px 22px;
-	border-radius: 20px;
+	border-radius: 10px;
 	border: 1.5px solid rgba(255, 255, 255, 0.4);
 	color: white;
 	font-size: 0.88rem;
 	font-weight: 500;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: var(--anim-general-button);
 	background: transparent;
 }
 
 .ap-follow-btn:hover {
 	border-color: white;
-	background: rgba(255, 255, 255, 0.08);
+	background-color: rgba(255, 255, 255, 0.08);
 }
 
 .ap-follow-btn.following {
-	background: rgba(255, 255, 255, 0.15);
+	background-color: rgba(255, 255, 255, 0.15);
 	border-color: rgba(255, 255, 255, 0.6);
 }
 
@@ -1201,23 +1289,23 @@ position: relative;
 	font-size: 1rem;
 	font-weight: 600;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: var(--anim-general-button);
 	background: transparent;
 	margin-top: 2px;
 	align-self: flex-start;
 }
 
 .ap-album-follow-btn:hover {
-	background: rgba(255, 255, 255, 0.12);
+	background-color: rgba(255, 255, 255, 0.12);
 	border-color: white;
 }
 
 .ap-album-follow-btn.following {
-	background: rgba(255, 255, 255, 0.18);
+	background-color: rgba(255, 255, 255, 0.18);
 	border-color: white;
 }
 
-/* --------- Artist page track more button --------- */
+/* --------- artist page track more button --------- */
 
 .ap-track-row {
 	position: relative;
@@ -1234,7 +1322,7 @@ position: relative;
 	opacity: 0.45;
 	cursor: pointer;
 	border-radius: 50%;
-	transition: opacity 0.12s ease;
+	transition: var(--anim-general-button);
 }
 
 .ap-track-more:active,

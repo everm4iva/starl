@@ -293,6 +293,13 @@
 		li.appendChild(info);
 		li.appendChild(duration);
 
+		// alias keys so offline-availability can match cached tracks stored under
+		// sourceUrl/streamUrl rather than trackKey.
+		li.dataset.cacheKeys = [track && track.sourceUrl, track && track.streamUrl].filter(Boolean).join('\n');
+		if (window.starlNowPlaying) {
+			window.starlNowPlaying.markTrackRow(li, li.dataset.trackKey);
+		}
+
 		return li;
 	}
 

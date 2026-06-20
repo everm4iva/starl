@@ -25,7 +25,9 @@
 	/* ☆======= Version comparison =======☆ */
 
 	function parseVersion(v) {
-		return String(v || '0').split('.').map((p) => parseInt(p, 10) || 0);
+		return String(v || '0')
+			.split('.')
+			.map((p) => parseInt(p, 10) || 0);
 	}
 
 	function isOlderThan(clientVer, serverVer) {
@@ -47,15 +49,21 @@
 		try {
 			const raw = localStorage.getItem(CACHE_KEY);
 			return raw ? JSON.parse(raw) : null;
-		} catch (e) { return null; }
+		} catch (e) {
+			return null;
+		}
 	}
 
 	function writeCache(data) {
-		try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+		try {
+			localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+		} catch (e) {}
 	}
 
 	function clearCache() {
-		try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+		try {
+			localStorage.removeItem(CACHE_KEY);
+		} catch (e) {}
 	}
 
 	/* ☆======= State =======☆ */
@@ -68,7 +76,7 @@
 		_updateInfo = _outdated ? info : null;
 		if (_outdated) {
 			writeCache(info);
-			window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: info }));
+			window.dispatchEvent(new CustomEvent(UPDATE_EVENT, {detail: info}));
 		} else {
 			window.dispatchEvent(new CustomEvent(UP_TO_DATE_EVENT));
 		}
@@ -77,12 +85,19 @@
 	/* ☆======= Fetch + compare =======☆ */
 
 	async function check() {
+		// offline = no point checking, and no point showing a stale "outdated"
+		// banner either - treat it like airplane mode (no update UI at all)
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+			applyState({outdated: false});
+			return;
+		}
+
 		const base = typeof getApiBase === 'function' ? getApiBase() : window.STARL_API_BASE || '';
 		if (!base) return;
 
 		let clientVersion = '0';
 		try {
-			const localRes = await fetch('./point.json', { cache: 'no-store' });
+			const localRes = await fetch('./point.json', {cache: 'no-store'});
 			if (localRes.ok) {
 				const local = await localRes.json();
 				clientVersion = local.version || '0';
@@ -91,14 +106,18 @@
 
 		let serverData = null;
 		try {
-			const serverRes = await fetch(base + '/point.json', { cache: 'no-store' });
+			const serverRes = await fetch(base + '/point.json', {cache: 'no-store'});
 			if (serverRes.ok) serverData = await serverRes.json();
 		} catch (e) {}
 
 		if (!serverData) {
-			// server unreachable - restore cached outdated state if any
+			// server unreachable - restore cached outdated state, but only if
+			// it was recorded against the version client is still runnin (otherwise)
+			// it's stale: since client updated and the cache predates that)
 			const cached = readCache();
-			if (cached && cached.outdated) applyState(cached);
+			if (cached && cached.outdated && cached.clientVersion === clientVersion) {
+				applyState(cached);
+			}
 			return;
 		}
 
@@ -114,13 +133,13 @@
 				checkedAt: Date.now(),
 			});
 		} else {
-			applyState({ outdated: false });
+			applyState({outdated: false});
 		}
 	}
 
 	/* ☆======= Client version header injection =======☆ */
 
-	// patches the global fetch so all API requests carry X-Client-Version.
+	// patches the global fetch so all API requests carry "X-Client-Version"
 	// the server uses this to gate image/audio endpoints on outdated clients.
 
 	let _clientVersion = '0';
@@ -131,21 +150,25 @@
 			const url = typeof input === 'string' ? input : (input && input.url) || '';
 			const apiBase = typeof getApiBase === 'function' ? getApiBase() : '';
 			const isApiCall = apiBase && url.startsWith(apiBase);
-			// don't inject on point.json fetches (avoid recursion / version loops)
+			// don't inject on point.json fetches
 			const isPointJson = url.endsWith('/point.json') || url.endsWith('point.json');
 			if (isApiCall && !isPointJson && _clientVersion !== '0') {
 				init = init || {};
-				init.headers = Object.assign({}, init.headers || {}, { 'X-Client-Version': _clientVersion });
+				init.headers = Object.assign({}, init.headers || {}, {'X-Client-Version': _clientVersion});
 			}
 			return _origFetch(input, init);
 		};
 	})();
-
+	// fetching brain
 	/* ☆======= Public API + boot =======☆ */
 
 	window.starlUpdateCheck = {
-		isOutdated() { return _outdated; },
-		getUpdateInfo() { return _updateInfo; },
+		isOutdated() {
+			return _outdated;
+		},
+		getUpdateInfo() {
+			return _updateInfo;
+		},
 		check,
 		clearCache() {
 			clearCache();
@@ -155,14 +178,20 @@
 		},
 	};
 
-	// restore cached outdated state immediately (before network)
-	const cached = readCache();
-	if (cached && cached.outdated) applyState(cached);
-
-	// read local version for header injection
-	fetch('./point.json', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((d) => {
-		if (d && d.version) _clientVersion = d.version;
-	}).catch(() => {});
+	// restore cached outdated state immediately (before network), but only if
+	// it was recorded against the version we're still running
+	fetch('./point.json', {cache: 'no-store'})
+		.then((r) => (r.ok ? r.json() : null))
+		.then((d) => {
+			if (d && d.version) _clientVersion = d.version;
+			const cached = readCache();
+			if (cached && cached.outdated && cached.clientVersion === _clientVersion) {
+				applyState(cached);
+			} else if (cached && cached.outdated) {
+				clearCache();
+			}
+		})
+		.catch(() => {});
 
 	// run check after login/auth ready
 	window.addEventListener('starl-auth-ready', check);
@@ -170,4 +199,9 @@
 	if (typeof getAccessToken === 'function' && getAccessToken()) {
 		check();
 	}
+
+	// airplane mode type shi: hide any update UI the instant connectivity drops,
+	// and re-check once it's back instead of waiting on the cached/stale state
+	window.addEventListener('offline', () => applyState({outdated: false}));
+	window.addEventListener('online', check);
 })();
