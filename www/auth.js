@@ -4,7 +4,7 @@
 	const CACHE_MODE_KEY = 'starl_cache_mode';
 	const LOGIN_PAGE = 'login.html';
 	const RETURN_URL = 'starl://auth';
-	window.STARL_API_BASE = 'https://bangsunsetdream.tail82eddd.ts.net';
+	window.STARL_API_BASE = 'https://your-server-url-here';
 
 	function getApiBase() {
 		if (typeof window.STARL_API_BASE === 'string' && window.STARL_API_BASE.trim()) {
