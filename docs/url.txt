@@ -1,0 +1,32 @@
+readme: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/readme.md
+---
+index: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/index.md
+userguide: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/user-guide.md
+developer-guide: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/dev-guide.md
+roadmap: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/roadmap.md
+FAQ: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/faq.md
+license: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/LICENSE
+changelog: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/changelog.md
+privacy-data: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/privacy&data.md
+---
+starl-server: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/readme.md
+how-it-works: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/how-it-works.md
+config-server: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/config.md
+login-modes: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/login-modes.md
+cache-server: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/cache.md
+web-and-status: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/web-and-status.md
+server-api: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/api.md
+connect-client-server: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/connecting.md
+troubleshooting-server: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/server/troubleshooting.md
+---
+streaming-working: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/how-sys-streaming-works.md
+server-architecture: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/server-architecture.md
+smart-queue: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/smart-queue.md
+action-modes-dev: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/action-modes.md
+how-live-works: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/how-does-live-work.md
+lyrics-system: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/lyrics-system.md
+storage-system: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/storage-system.md
+recommendation-sys: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/recommendation-system.md
+content-preferences: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/content-preferences.md
+content-preferences-math: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/content-preferences-math.md
+how-mix-works: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/mix-system.md
