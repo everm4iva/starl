@@ -1,6 +1,8 @@
 readme: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/readme.md
 ---
 index: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/index.md
+supporters: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/cool-people.md
+update-note: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/update-note.txt
 userguide: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/user-guide.md
 developer-guide: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/dev/dev-guide.md
 roadmap: https://raw.githubusercontent.com/everm4iva/starl/refs/heads/main/!docs/roadmap.md
