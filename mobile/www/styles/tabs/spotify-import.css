@@ -1,0 +1,36 @@
+:root {
+	--spotify-green: #1db954;
+}
+
+/* possible icon for spotify option */
+/* .bsc-action.ipl-action .bsc-action-icon.ipl-icon-spotify {
+	opacity: 1;
+	background-image: url('');
+} */
+
+.spi-import-btn {
+	width: calc(100% - 40px);
+	margin: 0 20px 8px 20px;
+}
+
+/* ☆======= Matching progress =======☆ */
+
+.spi-progress-label {
+	font-variant-numeric: tabular-nums;
+}
+
+.spi-progress-bar {
+	height: 8px;
+	margin: 6px 20px 14px 20px;
+	border-radius: 4px;
+	background-color: rgba(255, 255, 255, 0.12);
+	overflow: hidden;
+}
+
+.spi-progress-fill {
+	height: 100%;
+	width: 0;
+	border-radius: 4px;
+	background-color: var(--spotify-green);
+	transition: width 0.25s ease;
+}

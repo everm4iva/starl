@@ -1,0 +1,160 @@
+/*
+ * ☆ status page styles
+ * -> the little dashboard the page server shows, kept simple and easy to recolor
+ * -> everything hangs off the root vars up top, so you can reskin it without hunting around
+ */
+
+:root {
+	--bg-color: #000000;
+	--font-color: #ffffff;
+	--app-accent: #b039e4;
+	--app-accent-muted: #b139e435;
+	--card-bg: #00000048;
+	--muted: #9a9a9a;
+	--radius: 5px;
+	/* the server picture rides in here from status.js*/
+	--server-picture: url('../img/default.png');
+}
+
+* {
+	box-sizing: border-box;
+}
+::selection {
+	background: var(--app-accent);
+	color: #fff;
+}
+body {
+	margin: 0;
+	min-height: 100vh;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+	background: var(--bg-color);
+	color: var(--font-color);
+	font-family: system-ui, sans-serif;
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	background-image: var(--server-picture);
+	background-size: cover;
+	background-position: center;
+	filter: blur(12px) brightness(0.5);
+	z-index: -1;
+}
+
+.status-card {
+	width: 100%;
+	max-width: 420px;
+	padding: 28px;
+	background: var(--card-bg);
+	border-radius: var(--radius);
+	text-align: center;
+}
+
+.server-pic {
+	width: 96px;
+	height: 96px;
+	margin: 0 auto 16px;
+	border-radius: var(--radius);
+	background-color: var(--app-accent-muted);
+	background-image: var(--server-picture);
+	background-size: cover;
+	background-position: center;
+}
+
+.server-name {
+	margin: 0 0 6px;
+	font-size: 1.5rem;
+}
+.server-desc {
+	margin: 0 0 22px;
+	color: var(--muted);
+}
+
+.connect-box {
+	margin: 0 0 22px;
+	padding: 14px;
+	background: var(--app-accent-muted);
+	border: 1px solid var(--app-accent);
+	border-radius: var(--radius);
+	text-align: left;
+}
+
+.connect-label {
+	display: block;
+	font-size: 0.72rem;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 8px;
+}
+
+.connect-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.connect-chip {
+	font: inherit;
+	font-size: 0.95rem;
+	color: var(--font-color);
+	background: var(--bg-color);
+	border: none;
+	border-radius: var(--radius);
+	padding: 8px 12px;
+	cursor: pointer;
+}
+.connect-chip:hover {
+	background: var(--app-accent);
+}
+
+.connect-chip--other {
+	opacity: 0.6;
+	font-size: 0.82rem;
+}
+.connect-chip--other:hover {
+	opacity: 1;
+}
+
+.stat-grid {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.stat {
+	padding: 12px;
+	background: var(--bg-color);
+	border-radius: var(--radius);
+	text-align: left;
+}
+
+.stat-label {
+	display: block;
+	font-size: 0.72rem;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.stat-value {
+	display: block;
+	margin-top: 4px;
+	font-size: 1.05rem;
+}
+
+.status-foot {
+	margin: 22px 0 0;
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+.status-foot a {
+	color: var(--app-accent);
+}

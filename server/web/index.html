@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Starl Server</title>
+  <link rel="shortcut icon" href="./shc/GlitterMadness.png" type="image/png">
+  <link rel="stylesheet" href="css/status.css" />
+</head>
+<body>
+  <!-- the whole page is this one little card, the status.js fills it in from /status.json -->
+  <main class="status-card">
+    <div class="server-pic" id="serverPic"></div>
+    <h1 class="server-name" id="serverName">-</h1>
+    <p class="server-desc" id="serverDesc">-</p>
+
+    <div class="connect-box" id="connectBox" hidden>
+      <span class="connect-label">connect at</span>
+      <div class="connect-list" id="connectList"></div>
+    </div>
+
+    <ul class="stat-grid">
+      <li class="stat"><span class="stat-label">version</span><span class="stat-value" id="statVersion">-</span></li>
+      <li class="stat"><span class="stat-label">uptime</span><span class="stat-value" id="statUptime">-</span></li>
+      <li class="stat"><span class="stat-label">memory</span><span class="stat-value" id="statMemory">-</span></li>
+      <li class="stat"><span class="stat-label">storage cap</span><span class="stat-value" id="statStorage">-</span></li>
+      <li class="stat"><span class="stat-label">api port</span><span class="stat-value" id="statApi">-</span></li>
+      <li class="stat"><span class="stat-label">page port</span><span class="stat-value" id="statPage">-</span></li>
+      <li class="stat"><span class="stat-label">auth</span><span class="stat-value" id="statAuth">-</span></li>
+      <li class="stat"><span class="stat-label">signups</span><span class="stat-value" id="statSignup">-</span></li>
+    </ul>
+
+    <p class="status-foot">this whole page lives in web/, so go ahead and make it yours - reading from <a href="/status.json">status.json</a></p>
+  </main>
+
+  <script src="js/status.js"></script>
+</body>
+</html>

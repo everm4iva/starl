@@ -1,0 +1,351 @@
+/*
+* Server connect - the "Connect to server" sheet, its 3-dot menus and the connection form
+* -----
+* Leans on the same dark look as the rest of the app's menus (.context-menu / .rec-menu),
+* just laid out as a centered sheet. All the icon art is the light (white) set.
+* Recolor it from the :root vars up top, everything hangs off those.
+*/
+
+:root {
+	--srv-accent: var(--app-accent, #b039e4);
+	--srv-sheet-bg: #181818;
+	--srv-card-bg: #202020;
+	--srv-muted: #9a9a9a;
+	--srv-radius: 14px;
+	/* the default server picture, a saved server can override it per-row from js */
+	--srv-default-pic: url('../media/img/default-cover.png');
+}
+
+/* the dim backdrop, tap outside the sheet to close */
+.srv-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 3000;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	animation: fadeIn 0.18s ease-out;
+	font-family: var(--default-font);
+}
+
+.srv-sheet {
+	width: min(420px, 94vw);
+	max-height: 86vh;
+	overflow-y: auto;
+	background: var(--srv-sheet-bg);
+	border-radius: 20px;
+	padding: 18px 16px 20px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.srv-title {
+	color: #fff;
+	font-size: 1.15rem;
+	font-weight: 500;
+	margin-bottom: 14px;
+}
+
+/* ☆ the server list ☆ */
+
+.srv-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.srv-empty {
+	color: var(--srv-muted);
+	font-size: 0.9rem;
+	padding: 18px 4px;
+	text-align: center;
+}
+
+.srv-item {
+	background: var(--srv-card-bg);
+	border-radius: var(--srv-radius);
+	border: 1px solid transparent;
+	overflow: hidden;
+}
+
+.srv-item.is-open {
+	border-color: var(--app-accent-transparent-4, #b039e444);
+}
+
+.srv-item-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	cursor: pointer;
+}
+
+/* the picture is a background-image so an empty one just falls back to the default */
+.srv-item-pic {
+	width: 36px;
+	height: 36px;
+	flex: none;
+	border-radius: 10px;
+	background-color: var(--app-accent-transparent-4, #b039e444);
+	background-image: var(--srv-pic, var(--srv-default-pic));
+	background-size: cover;
+	background-position: center;
+}
+
+.srv-item-body {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.srv-item-name {
+	color: #fff;
+	font-size: 0.95rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.srv-item-sub {
+	color: var(--srv-muted);
+	font-size: 0.78rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.srv-item-more {
+	flex: none;
+	width: 34px;
+	height: 34px;
+	border: none;
+	background: transparent;
+	border-radius: 9px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: var(--anim-general-button);
+}
+
+.srv-item-more:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+/* ☆ the 3-dot action menu (expands inside the item) ☆ */
+
+.srv-menu {
+	padding: 4px 6px 8px;
+}
+
+.srv-menu-item {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	padding: 10px 10px;
+	border: none;
+	background: transparent;
+	border-radius: 8px;
+	cursor: pointer;
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 0.9rem;
+	font-family: var(--default-font);
+	text-align: left;
+	transition: var(--anim-general-button);
+}
+
+.srv-menu-item:hover,
+.srv-menu-item:active {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+/* ☆ details panel ☆ */
+
+.srv-details {
+	display: none;
+	margin-top: 10px;
+	padding: 12px;
+	background: var(--srv-card-bg);
+	border-radius: var(--srv-radius);
+}
+
+.srv-details.is-open {
+	display: block;
+}
+
+.srv-detail-line {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 0;
+	font-size: 0.85rem;
+}
+
+.srv-detail-key {
+	color: var(--srv-muted);
+}
+
+.srv-detail-val {
+	color: #fff;
+}
+
+.srv-details-back {
+	margin-top: 8px;
+	border: none;
+	background: transparent;
+	color: var(--srv-accent);
+	font-size: 0.85rem;
+	cursor: pointer;
+	font-family: var(--default-font);
+}
+
+/* ☆ status line + create button ☆ */
+
+.srv-status {
+	color: var(--srv-muted);
+	font-size: 0.82rem;
+	min-height: 1.1em;
+	padding: 10px 2px 0;
+}
+
+.srv-create {
+	width: 100%;
+	margin-top: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	padding: 12px;
+	border: none;
+	border-radius: var(--srv-radius);
+	background: var(--srv-accent);
+	color: #fff;
+	font-size: 0.95rem;
+	font-weight: 500;
+	cursor: pointer;
+	font-family: var(--default-font);
+	transition: var(--anim-general-button);
+}
+
+.srv-create:hover {
+	filter: brightness(1.08);
+}
+
+/* ☆ the form ☆ */
+
+.srv-field {
+	display: block;
+	margin-bottom: 11px;
+}
+
+.srv-field-label {
+	display: block;
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 0.82rem;
+	margin-bottom: 5px;
+}
+
+.srv-field-hint {
+	color: #5f5f5f;
+	margin-left: 6px;
+}
+
+.srv-field-note {
+	color: var(--srv-muted);
+	font-size: 0.85rem;
+	padding: 4px 2px 8px;
+}
+
+.srv-input {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	background: var(--srv-card-bg);
+	color: #fff;
+	font-size: 0.9rem;
+	font-family: var(--default-font);
+	outline: none;
+}
+
+.srv-input:focus {
+	border-color: var(--srv-accent);
+}
+
+.srv-creds {
+	margin-top: 2px;
+}
+
+.srv-form-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.srv-btn {
+	flex: 1;
+	padding: 11px;
+	border: none;
+	border-radius: 10px;
+	font-size: 0.9rem;
+	cursor: pointer;
+	font-family: var(--default-font);
+	transition: var(--anim-general-button);
+}
+
+.srv-btn--primary {
+	background: var(--srv-accent);
+	color: #fff;
+	font-weight: 500;
+}
+
+.srv-btn--ghost {
+	background: #2a2a2a;
+	color: #cfcfcf;
+}
+
+.srv-btn:hover {
+	filter: brightness(1.1);
+}
+
+/* ☆ icons - all background-image, swap any of these for your own art ☆ */
+
+.srv-icon {
+	width: 20px;
+	height: 20px;
+	flex: none;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+	opacity: 0.85;
+}
+
+.srv-icon--more { background-image: url('../media/common-icons/light/more_vert.svg'); }
+.srv-icon--copy { background-image: url('../media/common-icons/light/playlist_add.svg'); }
+.srv-icon--edit { background-image: url('../media/common-icons/light/profile-edit.svg'); }
+.srv-icon--delete { background-image: url('../media/common-icons/light/remove.svg'); }
+.srv-icon--ping { background-image: url('../media/common-icons/light/radio_tower.svg'); }
+.srv-icon--details { background-image: url('../media/common-icons/light/data-object.svg'); }
+.srv-icon--add { background-image: url('../media/common-icons/light/add.svg'); }
+
+/* ☆ the "Connect to server" button on the login screen - accent so it reads as its own thing ☆ */
+
+.login-button--connect {
+	background-color: var(--srv-accent);
+	color: #fff;
+	box-shadow: 0 6px #7d1ba3;
+}
+
+.login-icon--connect {
+	width: 22px;
+	height: 22px;
+	flex: none;
+	background-image: url('../media/common-icons/light/radio_tower.svg');
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+}

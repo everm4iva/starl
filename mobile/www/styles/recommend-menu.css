@@ -1,0 +1,98 @@
+/*
+* Recommend menu - the little "Recommend:" popup on home cards
+* -----
+* Built by recommend-menu.js. Leans on the same dark card look as .context-menu, just
+* with an icon in front of every row. All the icon art is the light (white) set, same
+* as the rest of the app's menus.
+*/
+
+.rec-menu {
+	position: fixed;
+	background: var(--app-background, #0a0a0a);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+	min-width: 190px;
+	padding: 6px;
+	z-index: 2200;
+	overflow: hidden;
+	animation: fadeIn 0.18s ease-out;
+}
+
+/* the plain "Recommend:" line at the top - no fuss, just tells you what this is */
+.rec-menu-title {
+	padding: 6px 10px 8px;
+	font-size: 0.78rem;
+	letter-spacing: 0.02em;
+	color: rgba(255, 255, 255, 0.45);
+	font-family: var(--default-font);
+}
+
+.rec-menu-item {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 0.95rem;
+	font-family: var(--default-font);
+	transition: var(--anim-general-button);
+}
+
+.rec-menu-item:hover,
+.rec-menu-item:active {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.rec-menu-icon {
+	width: 20px;
+	height: 20px;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+	opacity: 0.8;
+	flex-shrink: 0;
+}
+
+.rec-menu-label {
+	flex: 1;
+}
+
+/* the line that splits the reco actions from the "just hide it / go configure" pair */
+.rec-menu-sep {
+	height: 1px;
+	background: rgba(255, 255, 255, 0.1);
+	margin: 6px 8px;
+}
+
+/* ---- icon art (shared with the Configure page + the track sheet) ---- */
+
+.rec-ico-more {
+	background-image: url('../media/common-icons/light/music-more.svg');
+}
+.rec-ico-less {
+	background-image: url('../media/common-icons/light/music-less.svg');
+}
+.rec-ico-none {
+	background-image: url('../media/common-icons/light/music-remove.svg');
+}
+.rec-ico-nosee {
+	background-image: url('../media/common-icons/light/music-nosee.svg');
+}
+.rec-ico-config {
+	background-image: url('../media/common-icons/light/music-config.svg');
+}
+.rec-ico-up {
+	background-image: url('../media/common-icons/light/arrow-stack-up.svg');
+}
+.rec-ico-down {
+	background-image: url('../media/common-icons/light/arrow-stack-down.svg');
+}
+
+/* the "Recommend more of this" row that lives inside the track bottom sheet */
+.bsc-icon-recommend-more {
+	background-image: url('../media/common-icons/light/music-more.svg');
+}

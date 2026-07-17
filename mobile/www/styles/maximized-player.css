@@ -1,0 +1,601 @@
+.main-player {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: unset;
+	padding-top: var(--status-bar-space);
+	margin: 0 auto;
+	position: relative;
+	width: 100%;
+	height: 100vh;
+	background-color: black;
+	animation: var(--anim-player-open);
+	animation-fill-mode: none;
+	z-index: 10;
+}
+
+.main-player.hidden {
+	animation: var(--anim-player-close);
+	pointer-events: none;
+}
+
+.mp-bg {
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	filter: blur(10px);
+	opacity: 0.65;
+	touch-action: none;
+	transition: var(--anim-player-bg);
+	will-change: transform, opacity;
+}
+
+/* --------- Player Display --------- */
+
+.mp-display {
+	width: 100%;
+	height: 50%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	margin-top: 10%;
+}
+
+.mp-cover {
+	position: relative;
+	height: 80%;
+	min-width: 150px;
+	min-height: 150px;
+	aspect-ratio: 1/1;
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	border-radius: 15px;
+	touch-action: none;
+	transition: var(--anim-player-bg);
+	will-change: transform;
+}
+
+.mp-track-info {
+	transition: var(--anim-player-info);
+	will-change: transform;
+	touch-action: none;
+}
+
+.mp-album {
+	width: 100%;
+	height: 10%;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-size: 0.9rem;
+	font-weight: lighter;
+	opacity: 0.6;
+	text-align: center;
+	padding: 0 5%;
+}
+
+/* --------- Details --------- */
+
+.mp-details {
+	width: 100%;
+	height: 10%;
+	margin-top: 10%;
+	display: flex;
+	flex-direction: row;
+	z-index: 2;
+	padding-left: 5%;
+	padding-right: 4%;
+}
+
+.mp-track-info {
+	display: flex;
+	flex-direction: column;
+	width: 75%;
+	justify-content: center;
+}
+
+.mp-track-title {
+	width: 100%;
+	color: white;
+	position: relative;
+}
+
+.mp-track-title::before {
+	content: var(--player-song-title);
+	font-size: 1.5rem;
+	font-weight: 400;
+}
+
+.mp-track-artist {
+	width: 100%;
+	color: white;
+	position: relative;
+	cursor: pointer;
+}
+
+.mp-track-artist::before {
+	content: var(--player-song-artist);
+	font-size: 0.9rem;
+	font-weight: 100;
+}
+
+.mp-track-actions {
+	width: 30%;
+	display: flex;
+	flex-direction: row;
+	justify-content: right;
+	align-self: center;
+	gap: 10%;
+}
+
+.mp-track-actions .img-button {
+	height: 32px;
+	min-width: 32px;
+	max-width: 10px;
+	cursor: pointer;
+}
+
+/* --------- Controls--------- */
+.mp-controls {
+	width: 100%;
+	height: 15%;
+	display: flex;
+	flex-direction: column;
+	padding-top: 5%;
+	padding-left: 5%;
+	padding-right: 5%;
+	z-index: 1;
+}
+
+/* scroll shit */
+.slider-wrapper {
+	position: relative;
+	width: 100%;
+	height: 4px;
+	background-color: rgba(255, 255, 255, 0.3);
+	border-radius: 5px;
+	overflow: visible;
+	margin-bottom: 2%;
+	transition: var(--anim-player-slider);
+}
+
+/* --------- live stream --------- */
+.mp-live-indicator {
+	display: none;
+	align-items: center;
+	gap: 7px;
+	color: #fff;
+	font-family: var(--default-font);
+	font-weight: 700;
+	font-size: 0.8rem;
+	letter-spacing: 1.5px;
+	margin-bottom: 2%;
+}
+
+.mp-live-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #ff3b30;
+	box-shadow: 0 0 6px #ff3b30;
+	animation: mp-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes mp-live-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.25;
+	}
+}
+
+/* when live, timebar elements :3 */
+.main-player.is-live .slider-wrapper {
+	display: none;
+}
+
+.main-player.is-live .mp-controls-timeinfo {
+	visibility: hidden;
+}
+
+.main-player.is-live .mp-live-indicator {
+	display: inline-flex;
+}
+
+.slider-wrapper:has(#player-time:active),
+.slider-wrapper:has(#player-time:hover) {
+	height: 10px;
+}
+
+.player-time-cached {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	background: linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 0%, rgba(0, 0, 0, 0) 30%);
+	border-radius: 5px 0 0 5px;
+	z-index: 0;
+	width: 0%;
+	pointer-events: none;
+	transition: var(--anim-player-slider);
+}
+
+.slider-progress {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	background-color: var(--user-accentcolor);
+	border-radius: 5px;
+	pointer-events: none;
+	z-index: 1;
+	width: 0%;
+	transition: var(--anim-player-slider);
+}
+
+#player-time {
+	position: relative;
+	width: 100%;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: transparent;
+	cursor: pointer;
+	z-index: 5;
+	margin: 0;
+	padding: 16px 0;
+	box-sizing: border-box;
+}
+
+#player-time::-webkit-slider-runnable-track {
+	height: 4px;
+	background-color: transparent;
+	border-radius: 5px;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-webkit-slider-runnable-track,
+#player-time:hover::-webkit-slider-runnable-track {
+	height: 15px;
+}
+
+#player-time::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: white;
+	cursor: pointer;
+	margin-top: -5px;
+	transform: scale(0);
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-webkit-slider-thumb,
+#player-time:hover::-webkit-slider-thumb {
+	transform: scale(1);
+	margin-top: -5%;
+}
+
+#player-time::-moz-range-track {
+	height: 4px;
+	background-color: rgba(255, 255, 255, 0.3);
+	border-radius: 5px;
+	border: none;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-track,
+#player-time:hover::-moz-range-track {
+	height: 10px;
+}
+
+#player-time::-moz-range-progress {
+	background-color: var(--user-accentcolor);
+	height: 4px;
+	border-radius: 5px;
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-progress,
+#player-time:hover::-moz-range-progress {
+	height: 10px;
+}
+
+#player-time::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background-color: white;
+	cursor: pointer;
+	border: none;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	transform: scale(0);
+	transition: var(--anim-player-slider);
+}
+
+#player-time:active::-moz-range-thumb,
+#player-time:hover::-moz-range-thumb {
+	transform: scale(1);
+}
+
+/* --------- timeinfo --------- */
+.mp-controls-timeinfo {
+	position: relative;
+	width: 100%;
+	height: 10%;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	color: white;
+	font-weight: 500;
+	font-family: var(--default-font);
+	transition: var(--anim-player-info);
+}
+
+.timeinfo-elapsed::before {
+	content: var(--player-time-elapsed);
+	position: relative;
+	color: white;
+	transition: var(--anim-player-info);
+}
+
+.timeinfo-total::before {
+	content: var(--player-time-total);
+	position: relative;
+	color: white;
+	transition: var(--anim-player-info);
+}
+
+/* --------- More buttons --------- */
+.mp-controls-btncontainer {
+	width: 100%;
+	height: 40%;
+	margin-top: 5%;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	gap: 7%;
+}
+
+.mp-btn {
+	width: 35px;
+	height: 35px;
+	cursor: pointer;
+}
+.mp-btn.shuffle,
+.mp-btn.repeat {
+	width: 30px;
+	height: 30px;
+}
+
+.mp-btn.repeat {
+	opacity: 0.5;
+	transition: var(--anim-general-button);
+}
+
+.mp-btn.repeat.active {
+	opacity: 1;
+}
+.mp-btn:active {
+	transform: scale(0.9);
+}
+
+/* --------- Additional --------- */
+
+.mp-additional {
+	width: 100%;
+	height: 15%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	touch-action: none;
+}
+
+.mp-scrollupindicator {
+	width: 30%;
+	background-color: rgba(255, 255, 255, 0.2);
+	height: 5px;
+	border-radius: 5px;
+}
+
+.mp-add-btn-contain {
+	width: 100%;
+	height: 15%;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	margin-top: 10%;
+	gap: 2%;
+}
+
+.mp-add-btn {
+	color: white;
+	cursor: pointer;
+	width: fit-content;
+	min-width: 50px;
+	padding: 2%;
+	height: 40px;
+	background-size: cover;
+	background-position: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	background-color: rgba(0, 0, 0, 0.5);
+	border-radius: 10px;
+	overflow: hidden;
+	gap: 5%;
+	z-index: 2;
+	text-overflow: ellipsis;
+	word-break: keep-all;
+	word-wrap: nowrap;
+}
+
+.mp-add-btn-text {
+	display: inline-block;
+	white-space: nowrap;
+}
+
+/* --------- Player Context Sheet - Hero --------- */
+
+.pcs-hero {
+	position: relative;
+	width: 100%;
+	min-height: 110px;
+	border-radius: 16px 16px 0 0;
+	overflow: hidden;
+	display: flex;
+	align-items: flex-end;
+	flex-shrink: 0;
+}
+
+.pcs-hero-bg {
+	position: absolute;
+	inset: 0;
+	background-size: cover;
+	background-position: center;
+	filter: blur(12px) brightness(0.55);
+	transform: scale(1.1);
+}
+
+.pcs-hero-content {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 14px;
+	padding: 20px 20px 16px 20px;
+	width: 100%;
+}
+
+.pcs-artist-cover {
+	width: 56px;
+	height: 56px;
+	border-radius: 10px;
+	background-size: cover;
+	background-position: center;
+	background-color: rgba(255, 255, 255, 0.12);
+	flex-shrink: 0;
+}
+
+.pcs-hero-text {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pcs-hero-title {
+	font-size: 1.1rem;
+	font-weight: 500;
+	color: white;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.pcs-hero-sub {
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.6);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.mp-scrollupindicator {
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.mp-scrollupindicator:hover,
+.mp-scrollupindicator:active {
+	background-color: rgba(255, 255, 255, 0.8);
+}
+
+.mp-add-btn:active {
+	transition: var(--anim-general-button);
+	transform: scale(0.9);
+	opacity: 0.9;
+}
+
+.mp-add-btn.active {
+	background-color: var(--user-accentcolor);
+}
+
+.mp-add-btn .icon {
+	width: 30px;
+	height: 30px;
+}
+
+.mp-add-btn .icon.lyrics {
+	width: 25px;
+	height: 25px;
+}
+
+.mp-add-btn .icon.arrow_left {
+	width: 40px;
+	height: 40px;
+}
+
+/*--------- main player - clean styles --------- */
+
+.main-player.clean .mp-add-btn-contain {
+	display: none;
+}
+
+.main-player.clean .mp-display {
+	height: 60%;
+}
+
+.main-player.clean .mp-details {
+	margin-top: 20%;
+}
+
+.main-player.clean .img-button.icon.more_vert {
+	display: none;
+}
+
+.main-player.clean .img-button.icon.star {
+	margin-right: 10%;
+}
+
+/*--------- mp animations --------- */
+@keyframes slideInFromBottom {
+	from {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes slideOutToBottom {
+	from {
+		transform: translateY(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateY(50%);
+		opacity: 0;
+	}
+}

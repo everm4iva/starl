@@ -1,0 +1,15 @@
+# ☆ Starl server (public build)
+*.env
+.env
+node_modules/
+package-lock.json
+worker/__pycache__/
+*.log
+data/
+cache/
+dist/
+build/
+
+# config.yaml is generated fresh per server on first run (and holds your own auth secret),
+# so we never ship one, each operator gets their own
+config.yaml

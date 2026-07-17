@@ -1,19 +1,19 @@
 <div align="center">
 
-<img src="www/shc/PixelMadness.png" width="96" alt="Starl icon" />
+<img src="./!readme-assets/icons/GlitterMadness.png" width="96" alt="starl icon transparent variation" />
 
 # starl
 
-*An open music client for Android ♡*
+*An open, streaming music client ♡*
 
-[![version](https://img.shields.io/badge/version-1.2--alpha-blueviolet?style=flat-square)](https://github.com/everm4iva/starl/releases)
-[![platform](https://img.shields.io/badge/platform-Android-green?style=flat-square&logo=android)](https://github.com/everm4iva/starl)
+[![version](https://img.shields.io/badge/version-1.0--beta-purple?style=flat-square)](https://github.com/everm4iva/starl/releases)
+[![platform](https://img.shields.io/badge/platform-Android-green?style=flat-square&logo=android)](https://cordova.apache.org)
 [![license](https://img.shields.io/badge/license-PFF-lightgrey?style=flat-square)](./LICENSE)
-[![status](https://img.shields.io/badge/status-open%20alpha-orange?style=flat-square)]()
+[![status](https://img.shields.io/badge/status-open%20beta-orange?style=flat-square)](README.md)
 
 ---
 
-[User Guide](docs/user-guide.md) · [Developer Guide](docs/dev-guide.md) · [Roadmap](docs/roadmap.md) · [FAQ](docs/faq.md) · [Changelog](./changelog.md) · [License](./LICENSE)
+[User Guide](docs/user-guide.md) · [Developer Guide](docs/dev/dev-guide.md) · [Privacy & Data](privacy&data.md) · [FAQ](docs/faq.md) · [Changelog](./changelog.md) · [License](./LICENSE) · [Direct download](https://github.com/everm4iva/starl/releases/latest/download/starl-android.apk)
 
 </div>
 
@@ -24,39 +24,44 @@
 Starl is a **free and open-source music client** - no ads, no algorithms you don't control, no subscriptions. You own your music and your data.
 Also this is offline focused, so you can listen to your music without an internet connection smoothly.
 
-> **Alpha notice:** This is the first public release. The self-hosted backend is still in development - compiled releases connect to a public server in the meantime. Things may break. Feedback and contributions are welcome.
-
 ---
 
 ## Screenshots
 
 <div align="center">
-<img src="./readme-assets/player.png" width="200" alt="Full player" />
-<img src="./readme-assets/library-view.png" width="200" alt="Library" />
-<img src="./readme-assets/artist-page.png" width="200" alt="Artist page" />
-<img src="./readme-assets/inside-playlist.png" width="200" alt="Inside playlist" />
+<img src="./!readme-assets/player.png" width="200" alt="Full player" />
+<img src="./!readme-assets/playlist.png" width="200" alt="Library" />
+<img src="./!readme-assets/artist.png" width="200" alt="Artist page" />
+<img src="./!readme-assets/search.png" width="200" alt="Search" />
 </div>
+
+see more screenshots and design descriptions in the [screenshots](!readme-assets/screenshot.md).
 
 ---
 
-## Features (v0.1.2)
+## Features (beta 1.0)
 
 - Full music player with smart queue management
 - Shuffle, repeat, skip
-- Themes, fonts, animations and other customizations
+- Lyrics support with auto-syncing and scrolling
+- Storage management - delete songs, clear cache, and see how much space is used
+- Recommendation system - discover new music based on your listening habits and costumize it fully!
+- Import content from Spotify and Youtube natively!
+- Export your library and playlists to a JSON file, and import it back later.
+- Themes, fonts, animations and other stuff...
 - Background playback / native music notification with playback controls
-- Song and image caching - cached songs play offline automatically
+- Offline mode - works with cached data
 - Library with playlists, favorites, artists, albums and listening history
 - Track context menu (add to playlist, view album/artist, etc.)
 - Search with recent history
 - Account sync - your data follows you across devices
 - Super fast streaming
-
+- Self-hosting server environment - host your own server and stream your music from it, or use the public server provided by the app.
 ---
 
 ## Contributing
 
-Open an issue or submit a pull request. All contributions are welcome, from bug fixes to new features.
+Open an issue or submit a pull request. All contributions are welcome, from bug fixes to new features. I recommend you to read existing issues from the creator to understand the overall structure.
 
 ---
 
@@ -81,5 +86,5 @@ I took inspiration from many music apps, their functions, designs and the way th
 ---
 
 <div align="center">
-  <sub>i love you all! <a href="https://everm4iva.github.io">everm4iva</a></sub>
+  <sub>i love you all! <a href="https://everm4iva.github.io">everm4iva / zoeisrad.af</a> - and i love stars!</sub>
 </div>

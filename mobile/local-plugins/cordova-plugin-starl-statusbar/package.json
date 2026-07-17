@@ -1,0 +1,11 @@
+{
+  "name": "cordova-plugin-starl-statusbar",
+  "version": "1.1.0",
+  "description": "Small plugin to make Android status bar transparent and force light icons (white).",
+  "cordova": {
+    "id": "cordova-plugin-starl-statusbar",
+    "platforms": ["android"]
+  },
+  "keywords": ["cordova", "android", "statusbar"],
+  "author": "everm4iva"
+}

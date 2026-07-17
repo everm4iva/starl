@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.everm4iva.starl" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <name>starl</name>
+    <description>
+        An open, streaming music client ♡
+    </description>
+    <author href="https://everm4iva.github.io">
+        everm4iva
+    </author>
+    <content src="index.html" />
+    <hook type="after_prepare" src="hooks/after_prepare/add_share_intent.js" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="starl://*" />
+
+    <!-- Icons -->
+    <platform name="android">
+        <icon density="ldpi" src="www/shc/GlitterMadness.png" />
+        <icon density="mdpi" src="www/shc/GlitterMadness.png" />
+        <icon density="hdpi" src="www/shc/GlitterMadness.png" />
+        <icon density="xhdpi" src="www/shc/GlitterMadness.png" />
+        <icon density="xxhdpi" src="www/shc/GlitterMadness.png" />
+        <icon density="xxxhdpi" src="www/shc/GlitterMadness.png" />
+
+    <!-- Preferences -->
+        <preference name="KeepRunning" value="true" />
+        <preference name="SplashScreenDelay" value="0" />
+        <preference name="FadeSplashScreen" value="true" />
+        <preference name="ShowSplashScreen" value="true" />
+        <preference name="SplashScreenBackgroundColor" value="#000000" />
+        <preference name="android-debuggable" value="false" />
+        <preference name="Scheme" value="http" />
+        <preference name="Hostname" value="localhost" />
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+        </config-file>
+
+
+        <edit-config target="/manifest/application" file="AndroidManifest.xml" mode="merge">
+            <application android:enableOnBackInvokedCallback="false" android:usesCleartextTraffic="true" />
+        </edit-config>
+        <plugin name="cordova-plugin-starl-background" spec="local-plugins/cordova-plugin-starl-background" />
+        <preference name="BackgroundColor" value="#00000000" />
+
+        <preference name="AndroidEdgeToEdge" value="true" />
+        <preference name="StatusBarOverlaysWebView" value="true" />
+        <preference name="StatusBarBackgroundColor" value="#00000000" />
+        <preference name="StatusBarStyle" value="lightcontent" />
+        <plugin name="cordova-plugin-statusbar" spec="^2.4.3" />
+        <plugin name="cordova-plugin-starl-statusbar" spec="local-plugins/cordova-plugin-starl-statusbar" />
+        <plugin name="cordova-plugin-starl-splash" spec="local-plugins/cordova-plugin-starl-splash" />
+        <plugin name="cordova-plugin-starl-intent" spec="local-plugins/cordova-plugin-starl-intent" />
+        <plugin name="cordova-plugin-starl-storage" spec="local-plugins/cordova-plugin-starl-storage" />
+    </platform>
+</widget>

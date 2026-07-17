@@ -1,0 +1,416 @@
+.cfg-page {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1200;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--bg-color);
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	color: var(--font-color);
+}
+
+.cfg-topbar {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 16px;
+	padding-top: calc(var(--status-bar-space) + 12px);
+	flex-shrink: 0;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(10px);
+}
+
+.cfg-back {
+	width: 26px;
+	height: 26px;
+	flex-shrink: 0;
+	background-image: url('../../media/common-icons/light/chevron-left.svg');
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+	opacity: 0.85;
+	cursor: pointer;
+}
+
+.cfg-back:active {
+	opacity: 1;
+}
+
+.cfg-title {
+	font-size: 1.2rem;
+	font-weight: 500;
+}
+
+/* ---- the tab strip ---- */
+
+.cfg-tabs {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 6%;
+    flex-shrink: 0;
+	background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(30px);
+}
+
+.cfg-tab {
+	padding: 8px 16px;
+	border-radius: 99px;
+	font-size: 0.9rem;
+	color: rgba(255, 255, 255, 0.55);
+	background-color: rgba(255, 255, 255, 0.05);
+	cursor: pointer;
+	transition: var(--anim-general-button);
+}
+
+.cfg-tab:hover {
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.cfg-tab.is-active {
+	color: var(--font-color);
+	background-color: var(--app-accent);
+}
+
+.cfg-body {
+	flex: 1;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(30px);
+}
+
+.cfg-scroll {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 18px 6%;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--app-accent-transparent-8);
+}
+
+/* ---- shared bits ---- */
+
+.cfg-empty,
+.cfg-hint,
+.cfg-ov-empty {
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.9rem;
+	text-align: center;
+	padding: 10px 0;
+}
+
+.cfg-hint {
+	text-align: left;
+}
+
+/* the covers - one shape per kind of thing */
+.cfg-cover {
+	background-size: cover;
+	background-position: center;
+	background-color: rgba(255, 255, 255, 0.08);
+	flex-shrink: 0;
+}
+
+.cfg-cover.shape-track {
+	border-radius: 8px;
+}
+
+.cfg-cover.shape-artist {
+	border-radius: 50%;
+}
+
+.cfg-cover.shape-album {
+	border-radius: 3px;
+}
+
+/* --------- General tab --------- */
+
+.cfg-metric-toggle {
+	display: flex;
+	flex-direction: row;
+	gap: 6px;
+	align-self: center;
+	background-color: rgba(0, 0, 0, 0.25);
+	padding: 4px;
+	border-radius: 99px;
+}
+
+.cfg-metric-btn {
+	padding: 6px 16px;
+	border-radius: 99px;
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.55);
+	cursor: pointer;
+	transition: var(--anim-general-button);
+}
+
+.cfg-metric-btn.is-on {
+	color: var(--font-color);
+	background-color: var(--app-accent);
+}
+
+.cfg-ov-box {
+    border-radius: 5px;
+    padding: 14px 16px;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.cfg-ov-title {
+	font-size: 1rem;
+	font-weight: 600;
+	margin-bottom: 10px;
+	color: var(--cfg-ov-color, var(--font-color));
+}
+
+.cfg-ov-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0;
+}
+
+.cfg-ov-rank {
+	width: 18px;
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.4);
+	flex-shrink: 0;
+	text-align: center;
+}
+
+.cfg-ov-cover {
+	width: 38px;
+	height: 38px;
+}
+
+.cfg-ov-name {
+	flex: 1;
+	font-size: 0.92rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cfg-ov-value {
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.6);
+	flex-shrink: 0;
+}
+
+/* --------- Removed tab --------- */
+
+.cfg-removed-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+	gap: 14px;
+}
+
+.cfg-removed-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	position: relative;
+}
+
+.cfg-removed-cover {
+	width: 72px;
+	height: 72px;
+}
+
+.cfg-removed-name {
+	font-size: 0.78rem;
+	color: rgba(255, 255, 255, 0.75);
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 90px;
+}
+
+.cfg-removed-ring {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 72px;
+	height: 72px;
+	border-radius: 8px;
+	box-shadow: inset 0 0 0 0 var(--app-accent);
+	pointer-events: none;
+	opacity: 0;
+}
+
+.cfg-removed-ring.is-filling {
+	opacity: 1;
+	box-shadow: inset 0 0 0 4px var(--app-accent);
+	transition: box-shadow 4s linear, opacity 0.2s ease;
+}
+
+.cfg-seemore {
+	align-self: center;
+	padding: 8px 20px;
+	border-radius: 99px;
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.7);
+	background-color: rgba(255, 255, 255, 0.06);
+	cursor: pointer;
+}
+
+/* --------- Recommending tab --------- */
+
+.cfg-rec-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.cfg-rec-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	background-color: rgba(0, 0, 0, 0.22);
+	cursor: pointer;
+	transition: var(--anim-general-button);
+}
+
+.cfg-rec-row:hover {
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+.cfg-rec-cover {
+	width: 46px;
+	height: 46px;
+}
+
+.cfg-rec-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.cfg-rec-title {
+	font-size: 0.95rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cfg-rec-sub {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+	margin-top: 3px;
+}
+
+.cfg-rec-badge {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 3px;
+	padding: 2px 8px;
+	font-size: 0.78rem;
+}
+
+.cfg-rec-badge.is-up {
+	background-color: rgba(1, 224, 113, 0.15);
+	color: var(--user-accentcolor-artists);
+}
+
+.cfg-rec-badge.is-down {
+	background-color: rgba(252, 121, 65, 0.15);
+	color: var(--user-accentcolor-history);
+}
+
+.cfg-rec-arrow {
+	width: 14px;
+	height: 14px;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.cfg-rec-artist {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.5);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --------- per-item menu (slider + boost/debuff/remove) --------- */
+
+.cfg-item-menu {
+	position: fixed;
+	z-index: 2300;
+	min-width: 230px;
+	max-width: 280px;
+	padding: 12px;
+	border-radius: 12px;
+	background: var(--app-background, #0a0a0a);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+	animation: fadeIn 0.18s ease-out;
+}
+
+.cfg-item-desc {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.55);
+	line-height: 1.4;
+	margin-bottom: 12px;
+}
+
+.cfg-item-slider-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.cfg-item-slider {
+	flex: 1;
+}
+
+.cfg-item-readout {
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.8);
+	width: 34px;
+	text-align: right;
+	flex-shrink: 0;
+}
+
+.cfg-item-action {
+	padding: 10px 10px;
+	border-radius: 8px;
+	font-size: 0.92rem;
+	color: rgba(255, 255, 255, 0.9);
+	cursor: pointer;
+	transition: var(--anim-general-button);
+}
+
+.cfg-item-action:hover {
+	background-color: rgba(255, 255, 255, 0.08);
+}
+
+.cfg-item-action.danger {
+	color: rgba(220, 60, 60, 0.9);
+}

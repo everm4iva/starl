@@ -1,4 +1,75 @@
-# Changelog for Starl Client
+# Starl - Changelog
+
+# ☆ Beta 1.0 (2026-07-14)
+> "Get your mood on"
+
+Gosh.. it's been a long time (almost 4 weeks lol) since the last update, here is the full thing, and toguether, a new generation of this project. Enjoy.
+
+## New stuff
+- Support to live streams! (YouTube) added!! yuppie!
+- **Import playlist function is HERE!!! (youtube/spotify/json and intent via share)**
+- Playlist types: editable and locked (ready-only)
+- YouTube community playlists now supported (in search results) + you can import them to your library and play them!
+- More search results! 20 -> 32 (server side)
+- Lyrics are officially here! (server side, but client side is ready to show them)
+- New settings section: Appearance - Lyrics
+- Build details & Server Status settings are now available in the account page (bottom of the page)!
+- New settings section: Manage storage (cache size, cache overflow behavior, visual bar)
+- NEW RECOMMENDATION SYSTEM! on home page
+- "MIX" feature is here! customize how it works in the settings and enjoy a comfy way of discovering new stuff via your playlists and your favorite tracks. + if u are offline, uses your library to generate a mix of your own tracks!
+- Remove tracks from the queue by swiping left in the track item (in the queue)
+
+## New Settings!
+- **Added "Appearance - Lyrics":** Font, size, Highlight style, Highlight animation, Edit lyrics fail quotes (colors avaliable on the setting "set colors")
+- **Modified "Set colors":** Lyrics font, Lyrics Highlight Color, Lyrics Highlight block
+- **Added "Playback":** Shuffle and loop action modes
+- **Modified "Fonts":** Barriecito, Unkempt, InstrumentSans and InstrumentSerif
+- **Added "Manage storage":** New storage page with visual bar and settings to cap the caches and decide what happens when they overflow.
+- **Added "Build details":** Shows the current build version, edition, protocol and build date.
+- **Added "Server status":** Shows the current server status when you click.
+- **Added section Recommendation system:** Customize how the recommendation system works, and how it shows in the home page. (Customize mix, Customize home page, Data collection settings, Reset collected data and Export all statistics data and more...)
+
+## Fixed
+- Can't remove search results.
+- Can't remove artists (item) in artist list.
+- Object reference error and escape characters in title and album of most of the songs (css escape issue)
+- Artist Page/Playlist page scroll glitch (css overflow issue)
+- Lists scroll to top when clicked in item
+- Next song playback stops while in background
+- Can't skip to uncached part of the music
+- In case of server error, the app will now show a toast with the error message instead of just stopping the playback and showing nothing.
+- Tap track and it jumps to top of the list.
+- seek specific time in uncached song
+- The whole playlist reloads several times when you remove a track. - fixed also the library playlist view
+
+## Tweaks and optimizations
+- Account tab boxes: now every option row has a different icon representing if it opens a context menu or a new window :3
+- Hover in a queue item to actually open a context menu of them (didn't have that before.. boring and caused a lot of ux issues)
+- Item element has a transparent background now! Ew.. that ungly solid dark color was finnaly removed, now it looks way better and cleaner.
+- Polished some desing inconsistencies: item appearence, hover effects, context menu, mini player, library global search container/bar, etc..
+- Batched the live appends + off-screen skipping rendering, so now the app is way faster and smoother when loading big lists of tracks.
+- Updated roadmap! see here: [Roadmap](!docs/roadmap.md) :3
+- Finnaly got over those age restriction errors! No more restrictions HELL YEAH! (server side)
+- Added a privacy and data policy, check it out: [Your data and privacy](privacy&data.md)
+- Now you can comfortably duplicate a playlist by clicking the "duplicate" option in the playlist options.
+- Multi Support artist! (view artist option in the track context menu) - now you can view the artist page of any of the artists that are credited in a track.
+- Export & Repair playlist functions avaliable in the playlist context menu (export to json, repair missing tracks)
+
+## For developers:
+- Added documentation about how live streaming works in [/docs/dev/how-does-live-work.md](!docs/dev/how-does-live-work.md).
+- Added documentation about how lyrics works in [/docs/dev/lyrics-system.md](!docs/dev/lyrics-system.md).
+- Added documentation about the new shuffle/loop actions settings  [/docs/dev/action-modes.md](!docs/dev/action-modes.md).
+- Added documentation about the new recommendation system and mix feature [/docs/dev/recommendation-system.md](!docs/dev/recommendation-system.md).
+- Updated roadmap! heheh
+- Track list no longer chokes on big libraries, using off-screen row skipping rendering, lazy load for covers and a single reflow instead of N reflows.
+- Fragment batching, lazy covers and MutatinObserver per-card for every image in the document (app)!
+- Added a "privacy & data" document stating what the server stores, what it doesn't store, how long it keeps your data and how to manage it. Check it out: [Your data and privacy](privacy&data.md)
+- Shipped a lil "window.starlMarkdown.toHtml(md) / .render(el, md)." connected to a super simple markdown parser (no external lib, just barebones stuff). Used to display documents or markdown content in the app.
+
+## Server:
+- Added self-hosting server!!!! yuppieee; learn more about it here: [Self-hosting server](!docs/server/readme.md)
+
+---
 
 # ☆ Alpha 0.1.2 (2026-06-19)
 - "The music never stops"
@@ -47,7 +118,7 @@
 - Changed the WHOLE ARCHITECTURE of the server, now instead of full python, it's a Node/Express brain that handles all the requests and a Python worker that resolves the tracks and fetches the data. This makes the server way faster and more stable, and also allows for future features like multi-worker support, better caching and way more!
 
 ## For developers:
-- Added documentation about streaming in `/docs/how-sys-streaming-works.md`.
+- Added documentation about streaming in [How Streaming Works](!docs/how-sys-streaming-works.md).
 - Supa cool command: "npm run rebuild", that just rebuilds the app, clears build cache (aka: old code), installs every plugin again easily.
 - Now server does a really cool stuff with search: vowels and word sounds! that means if you wanna search "cat" but write "kat", it will still find stuff! :O
 - The playback subsystem has only one holdout still using bare globals

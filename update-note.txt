@@ -1,0 +1,29 @@
+## 15 of july, 2026
+Wanna know? Fuck all framework project.. let's not step up too much.
+I will make a simple SIMPLE SIMPLE executable and secure version of the server first, with a customizable page and that's it! beta + server. Good.
+
+## 14 of july, 2026
+So.. on the development side, i started creating a framework in my head, that will both use codebase for desktop and android apps.
+
+Yup.. i complain a lot about frameworks and blah blah blah, now i made my own :3
+But this one, is really custom made for the whole development of starl. Not bloatware or a fit in 100 different scenarios.
+I have a working prototype with node commands, not going to use it so soon. first i will publish this new version, the public deserves.
+
+Im going to use my spare laptop to host the server 24/7 instead of relying on my main that casually turns off. Doesn't have much processing power.. but oh boy, the storage is massive.
+And nodejs + python will work well.. im betting on that.
+
+## 07 of july, 2026
+I found a way, previously i was thinking in hosting all of the public server in a raspberry pi..
+Now i have another way: Publishing the damn server.
+Tho i am still deciding if is going to be desktop player + server or just the server executable and documentation...
+
+Keep a mind open, im not a machine, any option can take a lot of time.
+
+## 09 of june, 2026
+So...
+The server might fail sometimes, be off unpredicable, not the server issue, just hosting. But im actively dedicated to find a not-paid and really good performance solution to keep it always on. And i am a lucky person, so i bet i will find one or make it on my own.
+
+I am not looking for sugestions, i love finding the solution in my own, it's like a puzzle. And also, i wanna keep full control of all, so cloud hosting might not be the absolute option. I want to protect you all in the best way possible without trading it for performance, memory or avaliability.
+
+I am sorry for the issues that might occurr, enjoy the new app (and the offline features i prepared too heheh!) I love you all! :star: :yellow_heart:
+

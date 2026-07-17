@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- storage plugin: reports raw device storage numbers to the WebView.
+     works by reading StatFs on the data partition (total + free) and walking
+     the app's own data dir for its install footprint. read-only, no permissions. -->
+<plugin id="cordova-plugin-starl-storage" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>StarlStorage</name>
+    <description>Reports device storage numbers (total / free / app footprint) for starl</description>
+    <keywords>cordova,android,storage</keywords>
+
+    <js-module src="www/StorageManager.js" name="StorageManager">
+        <clobbers target="StarlStorage" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="StarlStorage">
+                <param name="android-package" value="com.everm4iva.starl.storage.StorageManager" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/StorageManager.java" target-dir="src/com/everm4iva/starl/storage" />
+    </platform>
+</plugin>

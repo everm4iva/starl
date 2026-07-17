@@ -1,0 +1,48 @@
+{
+  "name": "starl-server",
+  "displayName": "Starl Server",
+  "ProductName": "everm4iva.starl-server",
+  "version": "1.0.0",
+  "description": "starl audio server",
+  "author": "everm4iva",
+  "company": "everm4iva",
+  "icon": "web/shc/GlitterMadness.ico",
+  "license": "./LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/everm4iva/starl.git"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "worker": "python worker/worker.py",
+    "dev": "node --watch src/index.js",
+    "test": "node --test",
+    "clean": "rm -rf dist && rm -rf build && rm -rf node_modules && rm package-lock.json && rm -rf cache && rm -rf data",
+    "build:worker:deps": "pip install -r worker/requirements.txt pyinstaller",
+    "build:bundle": "node scripts/build-bundle.mjs",
+    "build:sea": "node scripts/build-sea.mjs",
+    "build:worker": "node scripts/build-worker.mjs",
+    "build:assemble": "node scripts/assemble-dist.mjs",
+    "build": "npm run build:bundle && npm run build:sea && npm run build:worker && npm run build:assemble"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^4.0.1",
+    "multer": "^2.2.0",
+    "sharp": "^0.35.1",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2"
+  }
+}

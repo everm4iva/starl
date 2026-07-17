@@ -1,0 +1,54 @@
+{
+  "name": "everm4iva.starl",
+  "displayName": "starl",
+  "version": "1.0.0",
+  "description": "An open, streaming music client for Android ♡",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cordova run android",
+    "star": "cordova run android",
+    "clean": "rimraf platforms; cordova prepare android",
+    "rebuild": "cordova platform rm android && cordova platform add android && cordova plugin add --force ./local-plugins/cordova-plugin-starl-music-controls && cordova plugin add --force ./local-plugins/cordova-plugin-starl-intent && cordova plugin add --force ./local-plugins/cordova-plugin-starl-storage && cordova run android",
+    "build": "cordova build android --release \"--\" --packageType=apk"
+  },
+  "author": "everm4iva",
+  "license": "PFF",
+  "devDependencies": {
+    "cordova-android": "^15.0.0",
+    "cordova-browser": "^7.0.0",
+    "cordova-plugin-android-permissions": "^1.1.5",
+    "cordova-plugin-customurlscheme": "^5.0.2",
+    "cordova-plugin-starl-background": "file:local-plugins/cordova-plugin-starl-background",
+    "cordova-plugin-starl-intent": "file:local-plugins/cordova-plugin-starl-intent",
+    "cordova-plugin-starl-music-controls": "file:local-plugins/cordova-plugin-starl-music-controls",
+    "cordova-plugin-starl-splash": "file:local-plugins/cordova-plugin-starl-splash",
+    "cordova-plugin-starl-statusbar": "file:local-plugins/cordova-plugin-starl-statusbar",
+    "cordova-plugin-starl-storage": "file:local-plugins/cordova-plugin-starl-storage"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-customurlscheme": {
+        "URL_SCHEME": "starl",
+        "ANDROID_SCHEME": "starl",
+        "ANDROID_HOST": "auth",
+        "IOS_URL_SCHEME": "starl",
+        "ANDROID_PATHPREFIX": "/"
+      },
+      "cordova-plugin-android-permissions": {},
+      "cordova-plugin-starl-background": {},
+      "cordova-plugin-statusbar": {},
+      "cordova-plugin-starl-statusbar": {},
+      "cordova-plugin-starl-splash": {},
+      "cordova-plugin-starl-intent": {},
+      "cordova-plugin-starl-music-controls": {},
+      "cordova-plugin-starl-storage": {}
+    }
+  },
+  "dependencies": {
+    "cordova-plugin-statusbar": "^4.0.0"
+  }
+}

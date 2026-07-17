@@ -1,0 +1,10 @@
+# Netscape HTTP Cookie File
+# ---
+# How to place cookies here?
+## 1.  Install the chrome extension "Get cookies.txt LOCALLY"
+## 2. In YouTube, navigate through videos normally, including music ones for a while.
+## 3. Click the extension and download the cookies file in the netscape format
+## 4. Paste all cookies inside that file here, the server will need cookies to get the content, if you request many things without cookies, the YouTube will think this is a bot and will block your connection.
+# ---
+# Tip: Some videos are age restricted, the server cannot get through that content, if you have an verified "+18" account on YouTube, the cookies can help the server fetch that content through without any issue.
+# :3 That's it, have fun

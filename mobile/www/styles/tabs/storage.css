@@ -1,0 +1,275 @@
+/* --------- Manage storage page  --------- */
+
+.storage-page {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1200;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--bg-color);
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	color: var(--font-color);
+}
+
+.storage-topbar {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 16px;
+	padding-top: calc(var(--status-bar-space) + 12px);
+	flex-shrink: 0;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(10px);
+}
+
+.storage-back {
+	width: 26px;
+	height: 26px;
+	flex-shrink: 0;
+	background-image: url('../../media/common-icons/light/chevron-left.svg');
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+	opacity: 0.85;
+	cursor: pointer;
+}
+
+.storage-back:active {
+	opacity: 1;
+}
+
+.storage-title {
+	font-size: 1.2rem;
+	font-weight: 500;
+}
+
+.storage-scroll {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 16px 6%;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(30px);
+	scrollbar-width: thin;
+	scrollbar-color: var(--app-accent-transparent-8);
+}
+
+.storage-view {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+/* --------- the stacked bar + legend  --------- */
+
+.storage-bar-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+	border-radius: 12px;
+	background-color: rgba(0, 0, 0, 0.25);
+}
+
+.storage-bar {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	height: 22px;
+	border-radius: 99px;
+	overflow: hidden;
+	background-color: rgba(0, 0, 0, 0.25);
+}
+
+.storage-seg {
+	width: var(--seg-pct, 0);
+	height: 100%;
+	min-width: 0;
+	transition: width 0.3s ease;
+}
+
+.storage-legend {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+}
+
+.storage-legend-item {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	font-size: 0.8rem;
+}
+
+.storage-legend-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.storage-legend-label {
+	flex: 1;
+	color: rgba(255, 255, 255, 0.75);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.storage-legend-value {
+	color: rgba(255, 255, 255, 0.55);
+	font-variant-numeric: tabular-nums;
+}
+
+/* segment + dot colors, all sourced from the --storage-color-* root vars */
+.storage-seg.music-spent,
+.storage-legend-dot.music-spent {
+	background-color: var(--storage-color-music-spent);
+}
+.storage-seg.image-spent,
+.storage-legend-dot.image-spent {
+	background-color: var(--storage-color-image-spent);
+}
+.storage-seg.music-allow,
+.storage-legend-dot.music-allow {
+	background-color: var(--storage-color-music-allow);
+}
+.storage-seg.image-allow,
+.storage-legend-dot.image-allow {
+	background-color: var(--storage-color-image-allow);
+}
+.storage-seg.user,
+.storage-legend-dot.user {
+	background-color: var(--storage-color-user);
+}
+.storage-seg.color-app,
+.storage-legend-dot.color-app {
+	background-color: var(--storage-color-app);
+}
+.storage-seg.free,
+.storage-legend-dot.free {
+	background-color: var(--storage-color-free);
+}
+
+/* --------- settings list (reuses .box / .item from account.css)  --------- */
+
+.storage-page .section {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	font-size: 1.1rem;
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.storage-page .box {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	border-radius: 12px;
+	margin-top: 2%;
+	scrollbar-color: var(--app-accent-transparent-4);
+	backdrop-filter: blur(5px);
+	overflow: hidden;
+}
+
+.storage-page .item {
+	cursor: pointer;
+}
+
+.storage-page .item-navtype.drop {
+	background-image: url('../../media/common-icons/light/chevron-down.svg');
+	transition: transform 0.2s ease;
+}
+
+.storage-page .item.is-open .item-navtype.drop {
+	transform: rotate(180deg);
+}
+
+.storage-drop-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 4px 16px 16px 16px;
+	background-color: rgba(0, 0, 0, 0.25);
+}
+
+.storage-drop-desc {
+	font-size: 0.85rem;
+	line-height: 1.35;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.storage-slider-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+}
+
+.storage-slider {
+	flex: 1;
+}
+
+.storage-slider-readout {
+	min-width: 96px;
+	text-align: right;
+	font-size: 0.85rem;
+	color: rgba(255, 255, 255, 0.7);
+	font-variant-numeric: tabular-nums;
+}
+
+.storage-action-row.danger.is-selected {
+	border-color: #ff4d5e;
+	background-color: rgba(255, 77, 94, 0.25);
+}
+
+.storage-action-row.warn .sq-mode-note {
+	color: #ffcf8a;
+}
+
+.storage-fixed-wrap {
+	display: flex;
+	flex-direction: column;
+	padding-top: 4px;
+}
+
+/* --------- Total size row (opens a context menu) + its current-mode readout  --------- */
+
+.storage-total-row .item-text {
+	width: auto;
+	flex: 1;
+}
+
+.storage-total-value {
+	color: rgba(255, 255, 255, 0.55);
+	font-size: 0.85rem;
+	white-space: nowrap;
+	margin-left: auto;
+}
+
+/* --------- setting-row icons  --------- */
+
+.storage-page .item-icon.image-cache {
+	background-image: url('../../media/common-icons/light/album.svg');
+}
+
+.storage-page .item-icon.music-cache {
+	background-image: url('../../media/common-icons/light/note-white.svg');
+}
+
+.storage-page .item-icon.image-action {
+	background-image: url('../../media/common-icons/light/image.svg');
+}
+
+.storage-page .item-icon.music-action {
+	background-image: url('../../media/common-icons/light/music-note.svg');
+}

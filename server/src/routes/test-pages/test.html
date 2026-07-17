@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Starl Test</title></head>
+<body>
+  <h1>Starl Test</h1>
+  <p>Paste an access token (grab one from <a href="/login">/login</a>), then search and play audio.</p>
+  <label>Access Token</label><br /><textarea id="token" rows="4" cols="80"></textarea><br /><br />
+  <label>YouTube URL</label><br /><input id="url" size="80" placeholder="https://music.youtube.com/watch?v=..." /><br /><br />
+  <label>Search</label><br /><input id="searchQuery" size="60" placeholder="artist or song" />
+  <select id="searchKind"><option value="all">all</option><option value="music">music</option>
+  <option value="channels">channels</option><option value="playlists">playlists</option></select>
+  <button id="search">Search</button><br /><br />
+  <label>Quality</label><br /><select id="quality"><option value="best">best</option>
+  <option value="high">high</option><option value="medium">medium</option><option value="low">low</option></select><br /><br />
+  <button id="download">Download</button>
+  <pre id="output"></pre><audio id="player" controls></audio>
+  <script>
+    const output = document.getElementById('output');
+    const player = document.getElementById('player');
+    const tokenField = document.getElementById('token');
+    const stored = localStorage.getItem('starl_access_token');
+    if (stored) tokenField.value = stored;
+    document.getElementById('download').addEventListener('click', async () => {
+      output.textContent = '';
+      const token = tokenField.value.trim();
+      const url = document.getElementById('url').value.trim();
+      const quality = document.getElementById('quality').value;
+      if (!token || !url) { output.textContent = 'Token and URL are required.'; return; }
+      const res = await fetch('/download', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ url, quality }) });
+      const data = await res.json();
+      output.textContent = JSON.stringify(data, null, 2);
+      if (res.ok && data.stream_url) {
+        const audioRes = await fetch(data.stream_url, { headers: { 'Authorization': 'Bearer ' + token } });
+        player.src = URL.createObjectURL(await audioRes.blob());
+        player.load();
+      }
+    });
+    document.getElementById('search').addEventListener('click', async () => {
+      output.textContent = '';
+      const token = tokenField.value.trim();
+      const query = document.getElementById('searchQuery').value.trim();
+      const kind = document.getElementById('searchKind').value;
+      if (!token || !query) { output.textContent = 'Token and query are required.'; return; }
+      const res = await fetch('/search', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ query, limit: 5, kind }) });
+      const data = await res.json();
+      output.textContent = JSON.stringify(data, null, 2);
+      if (res.ok && data.items && data.items[0]) document.getElementById('url').value = data.items[0].url;
+    });
+  </script>
+</body></html>

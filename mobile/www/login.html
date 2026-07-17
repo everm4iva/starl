@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>starl - login</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="./styles/root.css" />
+		<link rel="stylesheet" href="./styles/server-connect.css" />
+		<link rel="stylesheet" href="./styles/confirm-dialog.css" />
+		<link rel="stylesheet" href="./styles/public-server-picker.css" />
+		<link rel="shortcut icon" href="./shc/GlitterMadness-t.png" type="image/png" />
+	</head>
+	<body class="login-body">
+		<div class="login-page">
+			<div class="login-card">
+				<img class="login-header-icon" src="./shc/GlitterMadness-t.png" />
+				<div class="login-title">Starl</div>
+				<div class="login-actions">
+					<button class="login-button login-button--google" data-provider="google">
+						<span class="login-icon login-icon--google"></span>
+						<span>Continue with Google</span>
+					</button>
+					<button class="login-button login-button--discord" data-provider="discord">
+						<span class="login-icon login-icon--discord"></span>
+						<span>Continue with Discord</span>
+					</button>
+					<div class="login-divider" id="login-offline-divider">
+						<span>or</span>
+					</div>
+					<button class="login-button login-button--offline" id="login-button-cache">
+						<span class="login-button-offline-content">
+							<span>Continue offline</span>
+							<span class="login-button-offline-sub">Play cached music without signing in</span>
+						</span>
+					</button>
+					<button class="login-button login-button--connect" id="login-button-connect">
+						<span>Connect to server</span>
+					</button>
+				</div>
+				<div class="login-status" id="login-status"></div>
+			</div>
+		</div>
+		<script src="./auth.js"></script>
+		<script src="cordova.js"></script>
+		<!-- connect-to-server: the store first, then the two little ui bits that lean on it -->
+		<script src="./js/client/server/connections.js"></script>
+		<script src="./js/client/ui/components/server-menu.js"></script>
+		<script src="./js/client/ui/function/connection-form.js"></script>
+		<!-- public servers: pick a server, then continue with google/discord on that one -->
+		<script src="./js/client/core/version-compare.js"></script>
+		<script src="./js/client/server/public-servers.js"></script>
+		<script src="./js/client/ui/components/confirm-dialog.js"></script>
+		<script src="./js/client/ui/components/public-server-picker.js"></script>
+		<script src="./login.js"></script>
+	</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "cordova-plugin-starl-splash",
+  "version": "1.0.2",
+  "description": "Shows the starl icon on the Android 12+ splash screen",
+  "author": "everm4iva",
+  "cordova": {
+    "id": "cordova-plugin-starl-splash"
+  },
+  "keywords": [
+    "cordova",
+    "android",
+    "splashscreen",
+    "icon"
+  ]
+}

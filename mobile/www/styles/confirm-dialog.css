@@ -1,0 +1,15 @@
+.confirm-sheet {
+	width: min(340px, 90vw);
+	text-align: center;
+}
+
+.confirm-message {
+	color: #fff;
+	font-size: 0.95rem;
+	line-height: 1.4;
+	padding: 6px 2px 16px;
+}
+
+.confirm-actions {
+	margin-top: 0;
+}

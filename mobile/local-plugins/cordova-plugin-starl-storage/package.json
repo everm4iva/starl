@@ -1,0 +1,11 @@
+{
+  "name": "cordova-plugin-starl-storage",
+  "version": "1.0.0",
+  "description": "Reports device storage numbers (total / free / app footprint) to the WebView.",
+  "cordova": {
+    "id": "cordova-plugin-starl-storage",
+    "platforms": ["android"]
+  },
+  "keywords": ["cordova", "android", "storage"],
+  "author": "everm4iva"
+}

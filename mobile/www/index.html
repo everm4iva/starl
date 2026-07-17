@@ -1,0 +1,667 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>starl</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<link rel="stylesheet" href="./styles/root.css" />
+		<link rel="stylesheet" href="./styles/playlist-features.css" />
+		<link rel="shortcut icon" href="./shc/GlitterMadness.png" type="image/x-icon" />
+	</head>
+	<body>
+		<div class="app">
+			<div class="globalbg"></div>
+			<!-- ---- Main player ---- -->
+			<div class="main-player hidden clean">
+				<div class="mp-bg"></div>
+				<div class="mp-display">
+					<div class="mp-album"></div>
+					<div class="mp-cover"></div>
+				</div>
+				<div class="mp-details">
+					<div class="mp-track-info">
+						<div class="mp-track-title"></div>
+						<div class="mp-track-artist"></div>
+					</div>
+					<div class="mp-track-actions">
+						<div class="img-button icon star light"></div>
+						<div class="img-button icon lyrics light" id="mp-open-lyrics"></div>
+						<div class="img-button icon more_vert light cleanrem"></div>
+					</div>
+				</div>
+				<!-- ---- Lyrics screen (overlays the cover/details) ---- -->
+				<div class="mp-lyrics">
+					<div class="mp-lyrics-scroll"></div>
+					<div class="mp-lyrics-bar">
+						<div class="mp-lyrics-meta">
+							<div class="mp-lyrics-title"></div>
+							<div class="mp-lyrics-artist"></div>
+						</div>
+						<div class="mp-lyrics-actions">
+							<div class="mp-lyrics-toggle icon lyrics-note light"></div>
+							<div class="mp-lyrics-close icon chevron-down light"></div>
+						</div>
+					</div>
+				</div>
+				<div class="mp-controls">
+					<div class="mp-controls-time">
+						<div class="slider-wrapper">
+							<div class="player-time-cached hidden"></div>
+							<div class="slider-progress" id="slider-progress"></div>
+							<input type="range" name="player-time" id="player-time" min="0" max="100" value="0" />
+						</div>
+						<div class="mp-live-indicator"><span class="mp-live-dot"></span>LIVE</div>
+					</div>
+					<div class="mp-controls-timeinfo">
+						<div class="timeinfo-elapsed"></div>
+						<div class="timeinfo-total"></div>
+					</div>
+					<div class="mp-controls-btncontainer">
+						<div class="mp-btn icon shuffle"></div>
+						<div class="mp-btn icon skip-previous active"></div>
+						<div class="mp-btn icon pause active"></div>
+						<div class="mp-btn icon skip-next active"></div>
+						<div class="mp-btn icon repeat active"></div>
+					</div>
+				</div>
+				<div class="mp-additional">
+					<div class="mp-scrollupindicator hidden"></div>
+					<div class="mp-add-btn-contain hidden">
+						<div class="mp-add-btn">
+							<div class="icon arrow_left light active" id="close-player"></div>
+						</div>
+						<div class="mp-add-btn">
+							<div class="icon list light active"></div>
+							<div class="mp-add-btn-text">see track in album</div>
+						</div>
+						<div class="mp-add-btn active" id="open-lyrics">
+							<div class="icon lyrics light active"></div>
+							<div class="mp-add-btn-text">lyrics</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- ---- Artist / Album page overlay (global, above all tabs) ---- -->
+			<div class="artist-page hidden">
+				<div class="header">
+					<div class="header-bg"></div>
+					<div class="artist-cover"></div>
+					<div class="artist-info">
+						<div class="artist-name"></div>
+						<div class="artist-details"></div>
+					</div>
+				</div>
+				<div class="body"></div>
+			</div>
+			<!-- ---- Bottom ---- -->
+			<div class="bottom">
+				<div class="bottom-timeelapsed hidden"></div>
+				<div class="bottom-timetotal hidden"></div>
+				<div class="bottom-container">
+					<div class="bottom-bg hidden"></div>
+					<div class="mini-player hidden">
+						<div class="mini-player-info">
+							<div class="mini-player-cover"></div>
+							<div class="mini-player-text">
+								<div class="mini-player-title"></div>
+								<div class="mini-player-artist"></div>
+							</div>
+						</div>
+						<div class="mini-player-controls">
+							<div class="mini-player-btn icon pause active"></div>
+							<div class="mini-player-btn icon skip-next active"></div>
+						</div>
+					</div>
+					<div class="tabs">
+						<div class="tabs-btn" data-tab="home">
+							<div class="tabs-btn-icon icon home active"></div>
+							<div class="tabs-btn-text">Home</div>
+						</div>
+						<div class="tabs-btn" data-tab="search">
+							<div class="tabs-btn-icon icon search"></div>
+							<div class="tabs-btn-text">Search</div>
+						</div>
+						<div class="tabs-btn" data-tab="library">
+							<div class="tabs-btn-icon icon music_list"></div>
+							<div class="tabs-btn-text">Library</div>
+						</div>
+						<!-- Radio feature is comming when i implement a recommendation system.
+						 update: i already added the radio functions, but im still struggling finding a use case for this.
+						<div class="tabs-btn hidden" data-tab="radio">
+							<div class="tabs-btn-icon icon radio"></div>
+							<div class="tabs-btn-text">Radio</div>
+						</div> -->
+						<div class="tabs-btn" data-tab="account">
+							<div class="tabs-btn-icon icon account"></div>
+							<div class="tabs-btn-text">Me</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- ---- Tabs ---- -->
+			<div class="tab-container">
+				<!-- ---- Home ---- -->
+				<div class="tab home" data-tab="home">
+					<div class="sec-header">
+						<div class="sec-phrase">
+							<div class="welcome-elements">
+								<div class="sec-phrase-icon"></div>
+								<div class="sec-phrase-text welcome-text"></div>
+							</div>
+						</div>
+						<!-- <div class="sec-container">
+							<div class="sh-shortcut">
+								<div class="sh-shortcut-icon favorites"></div>
+								<div class="sh-shortcut-text">Favorites</div>
+							</div>
+							<div class="sh-shortcut">
+								<div class="sh-shortcut-icon playlists"></div>
+								<div class="sh-shortcut-text">Playlists</div>
+							</div>
+						</div> -->
+					</div>
+					<div class="sec-LastTracks">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">Recently played</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by last-tracks.js -->
+						</div>
+					</div>
+					<div class="sec-recommended hidden">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">Recommended</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by home-recommended.js -->
+						</div>
+					</div>
+					<div class="sec-newreleases hidden">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">New releases</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by home-new-releases.js -->
+						</div>
+					</div>
+					<div class="sec-album hidden">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">Albums that you played</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by home-pickup-albums.js -->
+						</div>
+					</div>
+					<div class="sec-artists hidden">
+						<div class="sec-phrase">
+							<div class="sec-phrase-text">Artists that you like</div>
+						</div>
+						<div class="sec-container">
+							<!-- populated by home-pickup-artists.js -->
+						</div>
+					</div>
+				</div>
+				<!-- ---- Search ---- -->
+				<div class="tab search is-hidden" data-tab="search">
+					<div class="searchbar">
+						<div class="icon search active"></div>
+						<input type="search" name="search" id="search" placeholder="search music" />
+					</div>
+					<div class="search-results"></div>
+				</div>
+				<!-- ---- Library ---- -->
+				<div class="tab library is-hidden" data-tab="library">
+					<!-- Search bar -->
+					<div class="library search-container">
+						<div class="search-container icon search"></div>
+						<input
+							type="search"
+							name="search-library"
+							id="search-library"
+							placeholder="Search in library" />
+						<div class="search-container icon add"></div>
+						<div class="search-container icon arrow_left hidden" id="library-search-close"></div>
+					</div>
+					<!-- Library search results (hidden until active) -->
+					<div class="library search-results hidden"></div>
+					<!-- Header tiles + pills -->
+					<div class="library head">
+						<div class="head list-big">
+							<div class="list-big tile artists">
+								<div class="img-frame">
+									<div class="img1"></div>
+									<div class="img2"></div>
+									<div class="img3"></div>
+									<div class="img4"></div>
+									<div class="img5"></div>
+								</div>
+								<div class="icon-s"></div>
+								Artists
+							</div>
+							<div class="list-big tile albums">
+								<div class="img-frame">
+									<div class="img1"></div>
+									<div class="img2"></div>
+								</div>
+								<div class="icon-s"></div>
+								Albums
+							</div>
+						</div>
+						<div class="head list-small">
+							<div class="list-small music">
+								<div class="music icons"></div>
+								All music
+							</div>
+							<div class="list-small history">
+								<div class="history icons"></div>
+								History
+							</div>
+							<div class="list-small favorites">
+								<div class="favorites icons"></div>
+								Starred
+							</div>
+						</div>
+					</div>
+					<!-- Inside-playlist overlay -->
+					<div class="inside-playlist hidden">
+						<div class="header">
+							<div class="header-bg"></div>
+							<div class="playlist-icon"></div>
+							<div class="playlist-cover count-0"></div>
+							<div class="playlist-info">
+								<div class="playlist-title"></div>
+								<div class="playlist-details"></div>
+							</div>
+							<div class="playlist-actions">
+								<div class="playlist-btn play active"></div>
+								<div class="playlist-btn shuffle"></div>
+								<div class="playlist-btn more-vert"></div>
+							</div>
+						</div>
+						<div class="body"></div>
+					</div>
+					<!-- My Playlists -->
+					<div class="playlists">
+						<div class="playlists header">
+							<div class="text">My Playlists</div>
+							<div class="viewtype">
+								<div class="tile"></div>
+								<div class="list active"></div>
+							</div>
+						</div>
+						<div class="playlists list">
+							<!-- populated by library.js -->
+						</div>
+					</div>
+				</div>
+				<!-- ---- Radio ---- -->
+				<div class="tab radio is-hidden" data-tab="radio"></div>
+				<!-- ---- Account ---- -->
+				<div class="tab account is-hidden" data-tab="account">
+					<div class="header">
+						<div class="pf-header"></div>
+						<div class="pf-info">
+							<div class="pf-details">
+								<div class="name"></div>
+								<div class="connection hidden">superawesomehuman@gmail.com</div>
+							</div>
+							<!-- <div class="pf-actions">
+								<div class="pf-btn edit"></div>
+							</div> -->
+						</div>
+					</div>
+					<div class="body">
+						<!-- --- -->
+						<div class="section update section-update-banner" id="update-banner">
+							<div class="box update">
+								<div class="item update">
+									<div class="update-details">
+										<button
+											class="update-button account-button-update"
+											id="update-app-button"
+											type="button">
+											<div class="text">Open Github</div>
+											<div class="item-navtype page"></div>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Profile
+							<div class="box">
+								<div class="item" id="edit-profile" type="button">
+									<div class="item-icon profile-edit"></div>
+									<div class="item-text">Edit picture and name</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="logout-button" type="button">
+									<div class="item-icon signout"></div>
+									<div class="item-text">Sign out</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item danger" id="delete-account-button" type="button">
+									<div class="item-icon account-delete"></div>
+									<div class="item-text">Delete account</div>
+									<div class="item-navtype page"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Appearence & animations
+							<div class="box">
+								<div class="item" id="appearance-colors-item" type="button">
+									<div class="item-icon colors"></div>
+									<div class="item-text">Set colors</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="appearance-transitions-item" type="button">
+									<div class="item-icon transitions"></div>
+									<div class="item-text">Set transitions</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="appearance-font-item" type="button">
+									<div class="item-icon font"></div>
+									<div class="item-text">Set font</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Appearence - Lyrics
+							<div class="box">
+								<div class="item" id="lyrics-font-item" type="button">
+									<div class="item-icon font"></div>
+									<div class="item-text">Lyrics font</div>
+									<div class="item-navtype"></div>
+								</div>
+
+								<div class="item" id="lyrics-size-item" type="button">
+									<div class="item-icon font-size"></div>
+									<div class="item-text">Lyrics font size</div>
+									<div class="item-navtype"></div>
+								</div>
+
+								<div class="item" id="lyrics-highlight-item" type="button">
+									<div class="item-icon font-highlight"></div>
+									<div class="item-text">Highlight style</div>
+									<div class="item-navtype"></div>
+								</div>
+
+								<div class="item" id="lyrics-anim-item" type="button">
+									<div class="item-icon font-anim"></div>
+									<div class="item-text">Highlight animation</div>
+									<div class="item-navtype"></div>
+								</div>
+
+								<div class="item" id="lyrics-quotes-item" type="button">
+									<div class="item-icon font-insert"></div>
+									<div class="item-text">Edit lyrics fail quotes</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Playback
+							<div class="box">
+								<div class="item" id="playback-queuefail-item" type="button">
+									<div class="item-icon soundfail"></div>
+									<div class="item-text">When queue fails</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="playback-shuffle-item" type="button">
+									<div class="item-icon shuffle"></div>
+									<div class="item-text">Shuffle action</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="playback-loop-item" type="button">
+									<div class="item-icon repeat"></div>
+									<div class="item-text">Loop action</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Recommendation system
+							<div class="box">
+								<div class="item" id="customize-mix-item" type="button">
+									<div class="item-icon mix"></div>
+									<div class="item-text">Customize MIX</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item" id="mix-fallback-item" type="button">
+									<div class="item-icon mix"></div>
+									<div class="item-text">When MIX fails</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="customize-home-item" type="button">
+									<div class="item-icon homepage"></div>
+									<div class="item-text">Customize Home page</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item" id="stats-collect-item" type="button">
+									<div class="item-icon trafic-data"></div>
+									<div class="item-text">Data collection</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item danger" id="stats-clear-item" type="button">
+									<div class="item-icon clear"></div>
+									<div class="item-text">Clear all colected data</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="configure-content-item" type="button">
+									<div class="item-icon config"></div>
+									<div class="item-text">Configure content</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item" id="stats-export-item" type="button">
+									<div class="item-icon json"></div>
+									<div class="item-text">Export all statistics data</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section">
+							Storage
+							<div class="box">
+								<div class="item" id="manage-storage-item" type="button">
+									<div class="item-icon storage"></div>
+									<div class="item-text">Manage storage</div>
+									<div class="item-navtype page"></div>
+								</div>
+								<div class="item" id="clear-local-cache-button" type="button">
+									<div class="item-icon clear-cache"></div>
+									<div class="item-text">Clear cache</div>
+									<div class="item-navtype"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section info">
+							About app
+							<div class="box">
+								<div class="item">
+									<div class="item-text">Version: 1.0 (in beta)</div>
+								</div>
+								<div class="item" id="about-build-info" type="button">
+									<div class="item-text">Build Info</div>
+								</div>
+								<div class="item" id="about-server-info" type="button">
+									<div class="item-text">Server info</div>
+								</div>
+								<div class="item">
+									<div class="item-text">Created by everm4iva</div>
+								</div>
+								<div class="item" id="about-license" type="button">
+									<div class="item-text">See License</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div class="item" id="about-privacy" type="button">
+									<div class="item-text">See Privacy & Data Protection</div>
+									<div class="item-navtype"></div>
+								</div>
+								<div
+									type="button"
+									class="item"
+									onclick="
+										window.open('https://github.com/everm4iva/starl/blob/main/cool-people.md')
+									">
+									<div class="item-text">View all supporters (open github)</div>
+									<div class="item-navtype page"></div>
+								</div>
+							</div>
+						</div>
+						<!-- --- -->
+						<div class="section filler"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script defer src="cordova.js"></script>
+		<script>
+			window.STARL_API_BASE = 'https://bangsunsetdream.tail82eddd.ts.net';
+			document.addEventListener(
+				'deviceready',
+				function () {
+					if (window.StarlSplash && typeof window.StarlSplash.hide === 'function') {
+						window.StarlSplash.hide();
+					}
+				},
+				false,
+			);
+		</script>
+		<script defer src="./auth.js"></script>
+		<script defer src="./js/client/core/common.js"></script>
+		<script defer src="./js/client/core/share-intent.js"></script>
+		<script defer src="./js/client/core/version-compare.js"></script>
+		<script defer src="./js/client/core/update-check.js"></script>
+		<script defer src="./js/client/core/file-protocol.js"></script>
+		<script defer src="./js/client/core/back-button.js"></script>
+		<script defer src="./js/client/sync/account-state.js"></script>
+		<script defer src="./js/client/data/media-cache.js"></script>
+		<!-- storage: cache limits + overflow enforcement (reads media-cache); storage-page renders it -->
+		<script defer src="./js/client/data/storage.js"></script>
+		<script defer src="./js/client/ui/storage-page.js"></script>
+		<script defer src="./js/client/data/listening-history.js"></script>
+		<!-- stats-tracker: reports engagement (clicks/opens/listened-time/skips) to the server -->
+		<script defer src="./js/client/data/stats-tracker.js"></script>
+		<!-- recommend-prefs: the "more/less/none of this" thingy (weights + weekly self-adjust) -->
+		<script defer src="./js/client/data/recommend-prefs.js"></script>
+		<!-- lyrics-cache: tiny localStorage store for fetched lyrics (used by lyrics.js) -->
+		<script defer src="./js/client/data/lyrics-cache.js"></script>
+		<script defer src="./js/client/ui/function/favorites.js"></script>
+		<script defer src="./js/client/ui/function/follows.js"></script>
+		<script defer src="./js/client/playback/queue.js"></script>
+		<!-- hls.js: HLS playback for live streams (the WebView <audio> can't play m3u8 natively) -->
+		<script defer src="./js/vendor/hls.min.js"></script>
+		<!-- playback-state first: single owner of the audio element + shared playback state -->
+		<script defer src="./js/client/playback/playback-state.js"></script>
+		<!-- now-playing: shared 'is this row playing' highlighting for all track-row builders -->
+		<script defer src="./js/client/playback/now-playing.js"></script>
+		<!-- offline-availability: dims rows not fully cached while offline (wraps now-playing) -->
+		<script defer src="./js/client/playback/offline-availability.js"></script>
+		<!-- runtime after state: aliases audio, owns setPlayIconState/setRepeatEnabled + blob fallback -->
+		<script defer src="./js/client/playback/runtime/runtime.js"></script>
+		<!-- layout: element refs + auth + account panel actions -->
+		<script defer src="./js/client/layout.js"></script>
+		<!-- layout-tabs: CSS helpers, time display, scrubbing, tab nav -->
+		<script defer src="./js/client/layout-tabs.js"></script>
+		<!-- meta after layout: setTrackMeta uses setTextVar from layout -->
+		<script defer src="./js/client/playback/sidethings/meta.js"></script>
+		<script defer src="./js/client/server/player.js"></script>
+		<!-- account-settings: editable name/picture, applies on top of player.js's OAuth profile -->
+		<script defer src="./js/client/ui/function/account-settings.js"></script>
+		<!-- engine after layout+meta: uses playerTime, setLoadingState, setTrackMeta -->
+		<script defer src="./js/client/playback/engine.js"></script>
+		<!-- runtime-media-session: Web Media Session API handlers (before notifications) -->
+		<script defer src="./js/client/playback/runtime/runtime-media-session.js"></script>
+		<!-- runtime-notifications-handler: MusicControls message routing -->
+		<script defer src="./js/client/playback/runtime/runtime-notifications-handler.js"></script>
+		<!-- runtime-notifications: Android lock-screen notification + deviceready -->
+		<script defer src="./js/client/playback/runtime/runtime-notifications.js"></script>
+		<!-- engine-player after notifications: starlPlayer API needs updateNativeElapsedState etc. -->
+		<script defer src="./js/client/playback/engine-player.js"></script>
+		<!-- player after engine: declares setPlayerOpen, calls restorePlayerState (engine) -->
+		<script defer src="./js/client/player.js"></script>
+		<script defer src="./js/client/playback/queue-player.js"></script>
+		<!-- mix-engine: builds a "Create MIX" from radio candidates + your stats/settings -->
+		<script defer src="./js/client/playback/sidethings/mix-engine.js"></script>
+		<!-- mix-fallback: "When MIX fails" - builds a mix from your downloads (offline / no radio) -->
+		<script defer src="./js/client/playback/sidethings/mix-fallback.js"></script>
+		<!-- track-context-queue: queue panel, loaded before track-context-menu -->
+		<script defer src="./js/client/ui/playback/track-context-queue.js"></script>
+		<script defer src="./js/client/ui/playback/track-context-menu.js"></script>
+		<!-- mix-menu: the "Create MIX" chooser opened from the track context menu -->
+		<script defer src="./js/client/ui/mix-menu.js"></script>
+		<!-- track-context-stats: statistics panel called by track-context-menu -->
+		<script defer src="./js/client/ui/playback/track-context-stats.js"></script>
+		<script defer src="./js/client/ui/components/context-menu.js"></script>
+		<script defer src="./js/client/ui/function/gestures.js"></script>
+		<script defer src="./js/client/ui/components/bottom-sheet.js"></script>
+		<!-- smart-queue: "When queue fails" recovery policy + its settings sheet -->
+		<script defer src="./js/client/playback/smart-queue.js"></script>
+		<!-- playback-prefs: "Shuffle action" + "Loop action" settings (after runtime: uses setRepeatEnabled) -->
+		<script defer src="./js/client/playback/playback-prefs.js"></script>
+		<!-- appearence: reads CSS vars from root.css at runtime, no hardcoded color/font/anim lists -->
+		<script defer src="./js/client/ui/function/appearence.js"></script>
+		<!-- lyrics-settings: lyrics font/size/highlight/animation + the quotes editor -->
+		<script defer src="./js/client/ui/function/lyrics-settings.js"></script>
+		<!-- stats-settings: the "Data collection" switch + clear + export buttons (uses starlStats) -->
+		<script defer src="./js/client/ui/stats-settings.js"></script>
+		<!-- recommendation-page: shared builder for the Customize MIX / Customize Home pages -->
+		<script defer src="./js/client/ui/recommendation-page.js"></script>
+		<script defer src="./js/client/ui/mix-settings-page.js"></script>
+		<!-- mix-fallback-menu: the "When MIX fails" chooser sheet (off / similar / any) -->
+		<script defer src="./js/client/ui/mix-fallback-menu.js"></script>
+		<script defer src="./js/client/ui/home/home-settings-page.js"></script>
+		<!-- recommend-menu: the little "Recommend:" hover popup on home cards -->
+		<script defer src="./js/client/ui/components/recommend-menu.js"></script>
+		<!-- configure-content: the full page (General / Removed / Recommending tabs) -->
+		<script defer src="./js/client/ui/configure-content-page.js"></script>
+		<!-- playlists: CRUD first, UI rendering second -->
+		<!-- file-export: shared "save this as a file" helper (native picker / browser blob) -->
+		<script defer src="./js/client/data/file-export.js"></script>
+		<script defer src="./js/client/ui/playlist/playlists.js"></script>
+		<script defer src="./js/client/ui/playlist/playlists-ui.js"></script>
+		<script defer src="./js/client/ui/playlist/inside-playlist.js"></script>
+		<script defer src="./js/client/ui/function/spotify-import.js"></script>
+		<script defer src="./js/client/ui/function/json-import.js"></script>
+		<!-- playlist-export: export / update-via-json; playlist-repair: refetch covers + re-match dead tracks -->
+		<script defer src="./js/client/ui/playlist/playlist-export.js"></script>
+		<script defer src="./js/client/ui/playlist/playlist-repair.js"></script>
+		<script defer src="./js/client/ui/playlist/import-playlist.js"></script>
+		<script defer src="./js/client/library/library-native.js"></script>
+		<script defer src="./js/client/library/explode-violently.js"></script>
+		<!-- artist-cards: card builders, loaded before artist-page -->
+		<script defer src="./js/client/library/artist-cards.js"></script>
+		<script defer src="./js/client/library/artist-page.js"></script>
+		<script defer src="./js/client/library/library.js"></script>
+		<script defer src="./js/client/search/library-search.js"></script>
+		<script defer src="./js/client/ui/components/player-context-sheet.js"></script>
+		<script defer src="./js/client/playback/sidethings/lyrics.js"></script>
+		<script defer src="./js/client/ui/playback/last-tracks.js"></script>
+		<!-- home recommendation rows: shared helper first, then each row -->
+		<script defer src="./js/client/ui/home/home-common.js"></script>
+		<script defer src="./js/client/ui/home/home-recommended.js"></script>
+		<script defer src="./js/client/ui/home/home-new-releases.js"></script>
+		<script defer src="./js/client/ui/home/home-pickup-albums.js"></script>
+		<script defer src="./js/client/ui/home/home-pickup-artists.js"></script>
+		<!-- search: core first, recents renderer second -->
+		<script defer src="./js/client/search/search.js"></script>
+		<script defer src="./js/client/search/search-recents.js"></script>
+		<!-- build-info / server-info: About-app rows in the account tab -->
+		<script defer src="./js/client/ui/components/build-info.js"></script>
+		<script defer src="./js/client/ui/components/server-info.js"></script>
+		<!-- mini-markdown: tiny md -> html converter (must load before legal-docs) -->
+		<script defer src="./js/vendor/mini-markdown.js"></script>
+		<!-- legal-docs: "See License" / "See Privacy & Data Protection" viewer -->
+		<script defer src="./js/client/ui/components/legal-docs.js"></script>
+	</body>
+</html>

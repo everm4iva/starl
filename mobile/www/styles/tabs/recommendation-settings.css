@@ -1,0 +1,107 @@
+/* --------- selectable option list (used in sheets and pages) --------- */
+
+.rec-option-list {
+	display: flex;
+	flex-direction: column;
+	padding: 0 20px 8px 20px;
+	gap: 8px;
+}
+
+.rec-option-row {
+	padding: 12px 14px;
+	border-radius: 10px;
+	background-color: rgba(255, 255, 255, 0.06);
+	border: 1px solid transparent;
+	cursor: pointer;
+}
+
+.rec-option-row.is-selected {
+	background-color: rgba(255, 255, 255, 0.12);
+	border-color: var(--app-accent);
+}
+
+.rec-option-label {
+	font-size: 1rem;
+	color: white;
+}
+
+.rec-option-note {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.5);
+	margin-top: 4px;
+}
+
+/* --------- full-page overlay (Customize MIX / Customize Home) --------- */
+
+.rec-page {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1200;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--bg-color);
+	background-image: var(--player-bg);
+	background-size: cover;
+	background-position: center;
+	color: var(--font-color);
+}
+
+.rec-topbar {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	padding: 16px;
+	padding-top: calc(var(--status-bar-space) + 12px);
+	flex-shrink: 0;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(10px);
+}
+
+.rec-back {
+	width: 26px;
+	height: 26px;
+	flex-shrink: 0;
+	background-image: url('../../media/common-icons/light/chevron-left.svg');
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+	opacity: 0.85;
+	cursor: pointer;
+}
+
+.rec-back:active {
+	opacity: 1;
+}
+
+.rec-title {
+	font-size: 1.2rem;
+	font-weight: 500;
+}
+
+.rec-scroll {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 8px 0 32px 0;
+	background-color: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(10px);
+	scrollbar-width: thin;
+	scrollbar-color: var(--app-accent-transparent-8);
+}
+
+.rec-group-title {
+	font-size: 0.95rem;
+	color: rgba(255, 255, 255, 0.85);
+	font-weight: 600;
+	padding: 14px 20px 6px 20px;
+}
+
+.rec-group-note {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.45);
+	padding: 0 20px 6px 20px;
+}

@@ -1,0 +1,37 @@
+.pub-srv-dot {
+	width: 10px;
+	height: 10px;
+	flex: none;
+	border-radius: 50%;
+	margin-right: 2px;
+}
+
+.pub-srv-dot--online {
+	background: #3ecf6a;
+	box-shadow: 0 0 6px #3ecf6a88;
+}
+
+.pub-srv-dot--offline {
+	background: #6a6a6a;
+}
+
+.pub-srv-dot--unavailable {
+	background: #e6493f;
+	box-shadow: 0 0 6px #e6493f88;
+}
+
+.pub-srv-dot--repair {
+	background: #e6a53f;
+	box-shadow: 0 0 6px #e6a53f88;
+}
+
+.pub-srv-dot--updating {
+	background: #3f9de6;
+	box-shadow: 0 0 6px #3f9de688;
+	animation: pubSrvPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pubSrvPulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
