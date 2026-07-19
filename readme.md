@@ -63,6 +63,9 @@ see more screenshots and design descriptions in the [screenshots](!readme-assets
 
 Open an issue or submit a pull request. All contributions are welcome, from bug fixes to new features. I recommend you to read existing issues from the creator to understand the overall structure.
 
+Also, i added this thing in product hunt.. i donno what more to say..
+
+<a href="https://www.producthunt.com/products/starl?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-starl" target="_blank" rel="noopener noreferrer"><img alt="starl - An open, streaming music client ♡ | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1200941&amp;theme=dark&amp;t=1784501596819"></a>
 ---
 
 ## License
