@@ -6,6 +6,10 @@ So you wanna run your own Starl server? Nice. This is the little book that expla
 
 Heads up: this is the *public, self-hosted* server, the one anybody can run. It lives in `server/` directory. It is not my private public server, it's the copy made for you to own and mess with.
 
+Here are the direct download urls for the servers :3 
+
+[server-windows.zip](https://github.com/everm4iva/starl/releases/latest/download/starl-server-windows.zip) - [server-ubuntu.zip](https://github.com/everm4iva/starl/releases/latest/download/starl-server-ubuntu.zip) - [server-macos.zip](https://github.com/everm4iva/starl/releases/latest/download/starl-server-macos.zip)
+
 ## ☆ Start here
 
 - [How it works](how-it-works.md) - what has inside and what happens the first time you run it
