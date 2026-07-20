@@ -2,7 +2,7 @@
   "name": "starl-server",
   "displayName": "Starl Server",
   "ProductName": "everm4iva.starl-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "starl audio server",
   "author": "everm4iva",
   "company": "everm4iva",
@@ -31,17 +31,17 @@
     "build": "npm run build:bundle && npm run build:sea && npm run build:worker && npm run build:assemble"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
-    "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^4.0.1",
+    "express-rate-limit": "^8.6.0",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.1.0",
     "multer": "^2.2.0",
-    "sharp": "^0.35.1",
+    "sharp": "^0.35.3",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
+    "dotenv": "^17.4.2",
+    "esbuild": "^0.28.1",
     "postject": "^1.0.0-alpha.6",
     "rcedit": "^5.0.2"
   }

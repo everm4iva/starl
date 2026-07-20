@@ -1,6 +1,6 @@
 /*
  * ☆ Worker supervisor
-* like those guys in da work
+ * like those guys in da work
  * -> optionally spawns the Python resolver worker (SPAWN_WORKER=1) and restarts it if it
  *    dies, so the brain and worker come up together. With SPAWN_WORKER=0 you manage the
  *    worker yourself (e.g. its own service) and this only health-checks it.
@@ -8,7 +8,7 @@
 
 import {spawn} from 'node:child_process';
 import path from 'node:path';
-import {BASE_DIR, SPAWN_WORKER} from '../config.js';
+import {BASE_DIR, SPAWN_WORKER, WORKER_PORT} from '../config.js';
 import {worker} from './worker-client.js';
 
 let child = null;
@@ -28,7 +28,11 @@ function workerCommand() {
 function launch() {
 	if (stopping) return;
 	const {cmd, args} = workerCommand();
-	child = spawn(cmd, args, {cwd: BASE_DIR, stdio: ['ignore', 'inherit', 'inherit']});
+	child = spawn(cmd, args, {
+		cwd: BASE_DIR,
+		stdio: ['ignore', 'inherit', 'inherit'],
+		env: {...process.env, WORKER_PORT: String(WORKER_PORT)},
+	});
 	child.on('exit', (code, signal) => {
 		child = null;
 		if (stopping) return;

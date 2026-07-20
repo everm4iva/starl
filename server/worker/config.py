@@ -10,6 +10,7 @@ import os
 
 WORKER_DIR = Path(__file__).resolve().parent
 BASE_DIR = WORKER_DIR.parent  # new-server/
+CONFIG_FILE = BASE_DIR / "config.yaml"
 ENV_FILE = BASE_DIR / ".env"
 
 
@@ -34,6 +35,35 @@ def _load_env(path: Path) -> None:
 _load_env(ENV_FILE)
 
 
+def _load_worker_port(path: Path) -> int:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return int(os.environ.get("WORKER_PORT", "6918") or "6918")
+
+    in_worker_section = False
+    for raw_line in text.splitlines():
+        line = raw_line.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        if not line.startswith(" ") and line.rstrip(":") == "worker":
+            in_worker_section = True
+            continue
+        if not in_worker_section:
+            continue
+        if not line.startswith(" "):
+            break
+        stripped = line.strip()
+        if stripped.startswith("port:"):
+            value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+            try:
+                return int(value)
+            except ValueError:
+                break
+
+    return int(os.environ.get("WORKER_PORT", "6918") or "6918")
+
+
 def _resolve_dir(name: str, fallback: Path) -> Path:
     raw = os.environ.get(name, "").strip().strip('"')
     if not raw:
@@ -48,7 +78,7 @@ CACHE_DIR = _resolve_dir("CACHE_DIR", BASE_DIR / "cache")
 AUDIO_DIR = CACHE_DIR / "audio"
 YTM_CACHE_DIR = DATA_DIR / "ytm_cache"
 
-WORKER_PORT = int(os.environ.get("WORKER_PORT", "6913") or "6913")
+WORKER_PORT = _load_worker_port(CONFIG_FILE)
 
 # yt-dlp / ffmpeg knobs (same env names the old server honored).
 # Cookies path resolves like DATA_DIR/CACHE_DIR: a relative value is anchored to

@@ -128,6 +128,7 @@ function clearAllLocalAccountData() {
 	const bannerTitle = document.getElementById('update-banner-title');
 	const bannerSub = document.getElementById('update-banner-sub');
 	const updateBtn = document.getElementById('update-app-button');
+	const updateRow = document.getElementById('update-notifications-item');
 	if (!banner) return;
 
 	const DISMISS_KEY = 'starl_update_banner_dismissed_version';
@@ -159,6 +160,149 @@ function clearAllLocalAccountData() {
 
 	function hideBanner() {
 		banner.classList.add('hidden');
+	}
+
+	function sheetAction(label, handler, kind) {
+		const row = document.createElement('div');
+		row.className = 'bsc-action' + (kind === 'danger' ? ' danger' : '');
+		const text = document.createElement('span');
+		text.textContent = label;
+		const current = document.createElement('span');
+		current.className = 'bsc-action-current';
+		current.style.marginLeft = 'auto';
+		current.style.fontSize = '0.78rem';
+		current.style.opacity = '0.7';
+		current.style.display = 'none';
+		current.textContent = 'Current';
+		row.appendChild(text);
+		row.appendChild(current);
+		row.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			handler();
+			if (window.starlBottomSheet && typeof window.starlBottomSheet.close === 'function') {
+				window.starlBottomSheet.close();
+			}
+		});
+		row._currentBadge = current;
+		return row;
+	}
+
+	function formatSuppressionLabel(state) {
+		if (!state) return 'Updates are currently enabled.';
+		if (state.mode === 'never') return 'Updates are currently disabled.';
+		if (state.mode === 'snooze') {
+			const remainingMs = Number(state.until || 0) - Date.now();
+			if (remainingMs <= 0) return 'Updates are currently enabled.';
+			const hours = Math.max(1, Math.ceil(remainingMs / (60 * 60 * 1000)));
+			if (hours < 24) return 'Updates are snoozed for about ' + hours + ' hour' + (hours === 1 ? '' : 's') + '.';
+			const days = Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+			return 'Updates are snoozed for about ' + days + ' day' + (days === 1 ? '' : 's') + '.';
+		}
+		return 'Updates are currently enabled.';
+	}
+
+	function setBannerSuppression(mode, until) {
+		const upd = window.starlUpdateCheck;
+		if (!upd) return;
+		if (typeof upd.setCheckSuppression === 'function') {
+			upd.setCheckSuppression(mode, until);
+		} else if (mode === 'never' && typeof upd.clearCheckSuppression === 'function') {
+			upd.clearCheckSuppression();
+		}
+		if (typeof upd.check === 'function') upd.check();
+		hideBanner();
+	}
+
+	function openUpdateSheet() {
+		const sheet = window.starlBottomSheet;
+		if (!sheet || typeof sheet.open !== 'function') return;
+		const updateCheck = window.starlUpdateCheck;
+		const currentSuppression =
+			updateCheck && typeof updateCheck.getCheckSuppression === 'function'
+				? updateCheck.getCheckSuppression()
+				: null;
+		const selectedMode = currentSuppression ? currentSuppression.mode : 'enabled';
+
+		sheet.open({
+			render(body) {
+				const title = document.createElement('div');
+				title.className = 'bsc-settings-header';
+				title.textContent = 'Update notifications';
+				body.appendChild(title);
+
+				const note = document.createElement('div');
+				note.className = 'ipl-status';
+				note.textContent = formatSuppressionLabel(currentSuppression);
+				body.appendChild(note);
+
+				const enabledRow = sheetAction('Check for updates', () => {
+					const upd = window.starlUpdateCheck;
+					if (upd && typeof upd.clearCheckSuppression === 'function') upd.clearCheckSuppression();
+					if (upd && typeof upd.check === 'function') upd.check();
+				});
+				if (selectedMode === 'enabled') {
+					enabledRow._currentBadge.style.display = 'inline';
+					enabledRow.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+				}
+				body.appendChild(enabledRow);
+
+				const disabledRow = sheetAction('Never check for updates', () => setBannerSuppression('never'));
+				if (selectedMode === 'never') {
+					disabledRow._currentBadge.style.display = 'inline';
+					disabledRow.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+				}
+				body.appendChild(disabledRow);
+
+				const divider = document.createElement('div');
+				divider.className = 'bsc-separator';
+				divider.style.marginTop = '12px';
+				divider.style.marginBottom = '12px';
+				body.appendChild(divider);
+
+				const snoozeTitle = document.createElement('div');
+				snoozeTitle.className = 'bsc-settings-header';
+				snoozeTitle.textContent = 'Snooze';
+				snoozeTitle.style.paddingTop = '0';
+				snoozeTitle.style.paddingBottom = '12px';
+				body.appendChild(snoozeTitle);
+
+				const dayRow = sheetAction("Don't check for 1 day", () =>
+					setBannerSuppression('snooze', Date.now() + 24 * 60 * 60 * 1000),
+				);
+				const weekRow = sheetAction("Don't check for a week", () =>
+					setBannerSuppression('snooze', Date.now() + 7 * 24 * 60 * 60 * 1000),
+				);
+				const monthRow = sheetAction("Don't check for a month", () =>
+					setBannerSuppression('snooze', Date.now() + 30 * 24 * 60 * 60 * 1000),
+				);
+				if (selectedMode === 'snooze' && currentSuppression && currentSuppression.until) {
+					const until = Number(currentSuppression.until || 0);
+					const dayMs = 24 * 60 * 60 * 1000;
+					const weekMs = 7 * dayMs;
+					const monthMs = 30 * dayMs;
+					const remaining = until - Date.now();
+					const closest = Math.min(
+						Math.abs(remaining - dayMs),
+						Math.abs(remaining - weekMs),
+						Math.abs(remaining - monthMs),
+					);
+					if (closest === Math.abs(remaining - dayMs)) {
+						dayRow._currentBadge.style.display = 'inline';
+						dayRow.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+					} else if (closest === Math.abs(remaining - weekMs)) {
+						weekRow._currentBadge.style.display = 'inline';
+						weekRow.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+					} else {
+						monthRow._currentBadge.style.display = 'inline';
+						monthRow.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+					}
+				}
+				body.appendChild(dayRow);
+				body.appendChild(weekRow);
+				body.appendChild(monthRow);
+			},
+		});
 	}
 
 	/* ☆======= Swipe left-to-right to dismiss =======☆ */
@@ -211,6 +355,19 @@ function clearAllLocalAccountData() {
 			}
 		});
 	})();
+
+	if (updateRow) {
+		updateRow.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			openUpdateSheet();
+		});
+		updateRow.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			openUpdateSheet();
+		});
+	}
 
 	// restore from cached state immediately
 	const upd = window.starlUpdateCheck;

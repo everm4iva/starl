@@ -9,6 +9,7 @@ data/
 cache/
 dist/
 build/
+.github/
 
 # config.yaml is generated fresh per server on first run (and holds your own auth secret),
 # so we never ship one, each operator gets their own

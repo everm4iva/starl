@@ -9,30 +9,30 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import {fileURLToPath} from 'node:url';
 import dotenv from 'dotenv';
-import { BASE_DIR, CONFIG_PATH, config } from './config-file.js';
+import {BASE_DIR, CONFIG_PATH, config} from './config-file.js';
 
 // re-export these so the rest of the code can grab them straight from config.js like before
-export { BASE_DIR, CONFIG_PATH };
+export {BASE_DIR, CONFIG_PATH};
 
 // an optional .env is still honored if you drop one in, handy for an operator who wants to
 // override a value without editing the yaml, but the public build ships without one at all
 const ENV_PATH = path.join(BASE_DIR, '.env');
-if (fs.existsSync(ENV_PATH)) dotenv.config({ path: ENV_PATH, quiet: true });
+if (fs.existsSync(ENV_PATH)) dotenv.config({path: ENV_PATH, quiet: true});
 
 // same env tolerance the old config had, some keys carried a trailing space in the name,
 // so we look under both spellings and trim the quotes off, no surprises
 function env(name, fallback = '') {
-  let value = process.env[name];
-  if (value === undefined || value === '') value = process.env[`${name} `];
-  if (value === undefined) value = fallback;
-  return String(value).trim().replace(/^"|"$/g, '');
+	let value = process.env[name];
+	if (value === undefined || value === '') value = process.env[`${name} `];
+	if (value === undefined) value = fallback;
+	return String(value).trim().replace(/^"|"$/g, '');
 }
 
 // tiny helper to dig into a yaml section without blowing up if its missing or weird
 function section(name) {
-  return (config && typeof config[name] === 'object' && config[name]) || {};
+	return (config && typeof config[name] === 'object' && config[name]) || {};
 }
 const serverCfg = section('server');
 const limitsCfg = section('limits');
@@ -41,8 +41,8 @@ const workerCfg = section('worker');
 const networkCfg = section('network');
 
 function resolveDir(name, fallback) {
-  const raw = env(name) || fallback;
-  return path.isAbsolute(raw) ? raw : path.resolve(BASE_DIR, raw);
+	const raw = env(name) || fallback;
+	return path.isAbsolute(raw) ? raw : path.resolve(BASE_DIR, raw);
 }
 
 // --- data + cache roots, self-contained right beside the server ---
@@ -92,7 +92,7 @@ export const AUTH_SECRET = String(authCfg.secret || '');
 // --- ports ---
 export const PORT = Number.parseInt(serverCfg.port, 10) || 6912;
 export const PAGE_PORT = Number.parseInt(serverCfg.page_port, 10) || 6910;
-export const WORKER_PORT = Number.parseInt(workerCfg.port, 10) || 6913;
+export const WORKER_PORT = Number.parseInt(workerCfg.port, 10) || 6918;
 export const WORKER_URL = env('WORKER_URL') || `http://127.0.0.1:${WORKER_PORT}`;
 // whether index.js should spawn the python worker itself (vs you running it yourself)
 export const SPAWN_WORKER = workerCfg.spawn !== false;
@@ -100,16 +100,16 @@ export const SPAWN_WORKER = workerCfg.spawn !== false;
 // --- who can reach the api from a browser (cors), see network.allowed_origins in config.yaml ---
 // "*" (or "open") anywhere in the list means any origin is fine, otherwise its an exact allow-list
 function parseOrigins(raw) {
-  const clean = (o) => String(o).trim().replace(/\/$/, '');
-  if (Array.isArray(raw)) {
-    const list = raw.map(clean).filter(Boolean);
-    return list.length ? list : ['*'];
-  }
-  if (typeof raw === 'string' && raw.trim()) {
-    const s = raw.trim().toLowerCase();
-    return (s === '*' || s === 'open') ? ['*'] : [clean(raw)];
-  }
-  return ['*']; // missing or weird -> open, so an old config still lets the app in
+	const clean = (o) => String(o).trim().replace(/\/$/, '');
+	if (Array.isArray(raw)) {
+		const list = raw.map(clean).filter(Boolean);
+		return list.length ? list : ['*'];
+	}
+	if (typeof raw === 'string' && raw.trim()) {
+		const s = raw.trim().toLowerCase();
+		return s === '*' || s === 'open' ? ['*'] : [clean(raw)];
+	}
+	return ['*']; // missing or weird -> open, so an old config still lets the app in
 }
 export const ALLOWED_ORIGINS = parseOrigins(networkCfg.allowed_origins);
 
@@ -117,11 +117,14 @@ export const ALLOWED_ORIGINS = parseOrigins(networkCfg.allowed_origins);
 // dev reads package.json straight off disk; a packaged build has no package.json (and no
 // import.meta.url once bundled), so build-bundle.mjs bakes the version in as __SERVER_VERSION__
 function readVersion() {
-  if (process.env.STARL_PACKAGED === '1') {
-    return typeof __SERVER_VERSION__ === 'string' ? __SERVER_VERSION__ : 'unknown';
-  }
-  const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
-  try { return String(JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '') || 'unknown'; }
-  catch { return 'unknown'; } // best effort, a missing package.json shouldnt take the boot down
+	if (process.env.STARL_PACKAGED === '1') {
+		return typeof __SERVER_VERSION__ === 'string' ? __SERVER_VERSION__ : 'unknown';
+	}
+	const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+	try {
+		return String(JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '') || 'unknown';
+	} catch {
+		return 'unknown';
+	} // best effort, a missing package.json shouldnt take the boot down
 }
 export const SERVER_VERSION = readVersion();

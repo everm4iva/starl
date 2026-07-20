@@ -337,6 +337,10 @@
 .box .item .item-icon.data-object {
 	background-image: url('../../media/common-icons/light/data-object.svg');
 }
+
+.box .item .item-icon.update{
+	background-image: url('../../media/common-icons/light/update.svg');
+}
 /* ------------------- */
 
 .box .item .item-navtype.page {

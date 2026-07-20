@@ -19,7 +19,7 @@ import {registerSweeper} from '../jobs/janitor.js';
 export const lyricsRouter = Router();
 
 const LRCLIB_URL = 'https://lrclib.net/api/get';
-const USER_AGENT = 'StarlMusic/1.0.0 (https://github.com/everm4iva/starl)';
+const USER_AGENT = 'StarlMusic/1.0.1 (https://github.com/everm4iva/starl)';
 const FOUND_TTL = 30 * 24 * 3600; // 30 days - lyrics for a known track basically never change
 const MISS_TTL = 24 * 3600; // 1 day - give a track that lacked lyrics a chance to gain them
 

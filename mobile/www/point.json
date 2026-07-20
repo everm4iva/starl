@@ -2,14 +2,14 @@
 	"name": "starl",
 	"creator": "everm4iva",
 	"edition": "mobile",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"build": {
-		"date": "2026-07-19",
+		"date": "2026-07-20",
 		"edition": "mobile",
 		"protocol": "beta",
 		"type": "release",
 		"author": "everm4iva / zoeisrad.af",
 		"target": "android +11",
-		"core app size": "40MB~"
+		"core app size": "45MB~"
 	}
 }

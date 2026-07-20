@@ -1,7 +1,23 @@
 # Starl - Changelog
 
+# ☆ Beta 1.0.1 (2026-07-20)
+- Minor bug fixes and optimizations.
+
+## New stuff
+- Added website item to settings info section.
+- Added a new option on settings, "Update Notifications", to enable/disable or snooze for days/weeks/months update notifications on the app.
+
+## Fixed
+- Since i updated the youtube scrappers, mixes, home page recommendations and most fetch functions are now working again! (server side)
+- Update banner doesn't appear anymore on offlie mode.
+
+## Server Stuff
+- Updated server dependencies to latest versions.
+- Removed "pot-provider" package, just a dependency that was not being used anymore, if any bug was caused by this change, please report it.
+- Configured port in "config.yaml" wasn't applying through out the code. Fixed that
+
 # ☆ Beta 1.0 (2026-07-14)
-> "Get your mood on"
+- "Get your mood on"
 
 Gosh.. it's been a long time (almost 4 weeks lol) since the last update, here is the full thing, and toguether, a new generation of this project. Enjoy.
 
