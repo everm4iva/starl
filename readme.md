@@ -66,6 +66,12 @@ Open an issue or submit a pull request. All contributions are welcome, from bug 
 Also, i added this thing in product hunt.. i donno what more to say..
 
 <a href="https://www.producthunt.com/products/starl?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-starl" target="_blank" rel="noopener noreferrer"><img alt="starl - An open, streaming music client ♡ | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1200941&amp;theme=dark&amp;t=1784501596819"></a>
+
+
+Soon i will lauch a discord server for the community, to make it easier to talk to the community, share ideas, get help and even share your own music things!
+
+Also because i want to stream the whole development process, it will be fun as heck!
+
 ---
 
 ## License
