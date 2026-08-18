@@ -19,6 +19,13 @@
 
 ---
 
+##  !- NOTICE / WARNING -!
+Public server is going to be inactive/closed in 25th august for maintenance, that means you can't access your data on it before it's totally repaired.
+
+I (the creator) recommend you to backup and export your data before that.
+
+Another note: music streaming (the point of a music server) is like.. not working? that's why i am warning you this instead of pretending nothing wrong is happening and making you experience technical hiccups. 
+
 ## What is this awesome looking thing?
 
 Starl is a **free and open-source music client** - no ads, no algorithms you don't control, no subscriptions. You own your music and your data.
